@@ -11,7 +11,6 @@ import {
 import { ChevronDownIcon } from '@heroicons/react/24/solid';
 
 import {
-  useSearchParams,
   usePathname,
   useRouter
 } from 'next/navigation';
@@ -20,18 +19,15 @@ const TopCharacterSelect: React.FC<React.ComponentProps<'div'>> = ({
   className,
   ...props
 }) => {
-  const searchParams = useSearchParams();
+  const router = useRouter();
   const pathname = usePathname();
-  const { replace } = useRouter();
+  const defaultCharaName = decodeURIComponent(
+    pathname.replace('/', '')
+  );
+  console.log('defaultCharaName: ', defaultCharaName);
 
   const handleSelect = (charaName: string) => {
-    const params = new URLSearchParams(searchParams);
-    if (charaName) {
-      params.set('oshi', charaName);
-    } else {
-      params.delete('oshi');
-    }
-    replace(`${pathname}?${params.toString()}`);
+    router.push(`/${charaName}`);
   };
 
   return (
@@ -51,7 +47,7 @@ const TopCharacterSelect: React.FC<React.ComponentProps<'div'>> = ({
               'py-1.5 px-3 text-sm/6 text-slate-400'
             )}
             onChange={e => handleSelect(e.target.value)}
-            defaultValue={searchParams.get('oshi')?.toString()}
+            defaultValue={defaultCharaName}
           >
             <option value="">選択...</option>
             <option value="氷上格">氷上格</option>

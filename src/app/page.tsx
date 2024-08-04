@@ -8,14 +8,9 @@ export default function Home({
     oshi?: string;
   }
 }) {
-  const query = searchParams?.oshi || '';
+  const oshi = searchParams?.oshi || '';
   return (
-    <main className={clsx(
-      'h-[calc(100vh-3rem)] flex flex-col items-center',
-      'p-6 md:p-24'
-    )}>
-      <TopCharacterSelect className='my-5'/>
-    </main>
+    <div>推しの組み合わせを分析します...</div>
   );
 }
 

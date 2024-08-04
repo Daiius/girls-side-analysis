@@ -8,6 +8,8 @@ import { ThemeProvider } from 'next-themes';
 import Header from '@/components/Header';
 import SettingsProvider from '@/providers/SettingsProvider';
 
+import TopCharacterSelect from '@/components/TopCharacterSelect';
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -32,10 +34,21 @@ export default function RootLayout({
             inter.className
           )}>
             <Header />
-            {children}
+            <main className={clsx(
+              'h-[calc(100vh-3rem)] flex flex-col items-center'
+            )}>
+              <div className={clsx(
+                'flex flex-col items-center',
+                'p-6 md:p-24'
+              )}>
+                <TopCharacterSelect className='my-5'/>
+              </div>
+              {children}
+            </main>
           </body>
         </ThemeProvider>
       </SettingsProvider>
     </html>
   );
 }
+
