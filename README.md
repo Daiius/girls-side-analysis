@@ -21,8 +21,74 @@
 先ずは既に借りているサーバ内で動く範囲でやってみます
 
 # 開発記録
+
 ## Next.jsの構成検討
 当初は分析結果を全部まとめてStatic Renderingして返すことを考えていたが、
 先ずは表示したい分析結果をsearchParamsに入れておき、
 サーバ側でDynamic Renderingしてもよいかもしれない。
 
+### もう少し考えたい
+やはりユーザ1人1人のアクセスでDB集計をやり直すのは
+ちょっと違うのでは...
+新規登録時にはrevalidatePathをして集計をやり直し、
+更新時には即時のDB集計を行わず、定期的な処理とするのは
+どうだろうか
+
+→ `export const revalidate = 60 * 5;` で実現できそう?
+
+でもキャラ毎のパスをstaticにするのは何か違う気もする。
+とはいえdynamicなパスを設定するとstatic renderingにはならなかったのでは？
+
+→ `generateStaticParams()`を使う手が有るらしい。
+これはビルド時にパラメータを列挙して自動で複数のdynamic pathを
+準備する機能の様に思われる。
+キャラごとの集計結果をgenerateStaticParams()に持たせておいて...
+revalidateと組み合わせられるのだろうか？
+
+→ できそうな感覚がある
+
+## データベース構成の検討
+ユーザが後から推しを変更したり、
+コミュニティの異なる新規ユーザ群が登録を行ったりすることで
+時系列で傾向が変化していく様子を追いかけられたら楽しそう。
+
+複数の推しの組み合わせはいつも同時に登録されると仮定して
+（具体的には一つのinsert文でいつもまとめて登録するようにして）、
+twitterIDとtimestampを組みにして全ての新規追加・更新を同じテーブルに
+記録してみる。
+
+```sql
+  SELECT
+    twitter_id, 
+    MAX(voted_time) as voted_time,
+    charaName,
+    level,
+  FROM
+    Votes
+  WHERE
+    voted_time < $specified_time
+  GROUP BY twitter_id
+  ;
+```
+...みたいなSQL文で時系列分析も出来るような気がする
+
+```plantuml
+@startuml
+hide circle
+skinparam linetype ortho
+entity Characters {
+    *series: number <<登場シリーズ番号>>
+    *name: varchar <<キャラ名>>
+}
+entity Votes {
+    *twitterID
+    *voteTime
+    --
+    *charaName: <<キャラ名>> <<FK>>
+    *level: <<推しレベル≒順位>>
+}
+
+Characters ||-o{ Votes
+
+@enduml
+```
