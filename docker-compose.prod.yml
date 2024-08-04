@@ -1,0 +1,4 @@
+services:
+  girls-side-analysis-nextjs:
+    command: ['pnpm', 'prod-local']
+
