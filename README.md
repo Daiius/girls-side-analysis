@@ -81,13 +81,15 @@ hide circle
 skinparam linetype ortho
 entity Characters {
     *series: number <<登場シリーズ番号>>
+    *sort: number <<公式サイト等での紹介順>>
+    --
     *name: varchar <<キャラ名>>
 }
 entity Votes {
     *twitterID
     *voteTime
-    --
     *charaName: <<キャラ名>> <<FK>>
+    --
     *level: <<推しレベル≒順位>>
 }
 
@@ -95,3 +97,112 @@ Characters ||-o{ Votes
 
 @enduml
 ```
+
+## データベース構成の再検討
+VotesのtwitterID, voteTimeをprimaryKeyにするつもりだったが、
+同じtwitterID, voteTimeを持ったVotes複数個の組で
+推しの組み合わせを表現することができない
+→ characterNameもprimaryKeyに入れることで対処できるかも
+
+## データベース分析方法
+### 一番新しい投稿日時のデータのみ取り出す
+```sql
+select 
+  * 
+from 
+  Votes as t1 
+where 
+  voted_time = (
+    select 
+      max(voted_time)
+    from 
+      Votes as t2 
+    where 
+      t1.twitter_id = t2.twitter_id
+  )
+;
+```
+...でできそう
+
+### 推しキャラが関係するVotesだけ取り出す
+```sql
+select 
+  * 
+from 
+  Votes as t1 
+where 
+  '柊夜ノ介' in (
+    select 
+      character_name
+    from 
+      Votes as t2 
+    where 
+      t1.twitter_id = t2.twitter_id 
+      and 
+      t1.voted_time = t2.voted_time
+  )
+;
+```
+...でできそう
+
+### 推しキャラが関係するVotesのうち、投稿日時が一番新しいもののみを取り出す
+```sql
+select 
+  * 
+from 
+  Votes as t1 
+where 
+  '柊夜ノ介' in (
+    select 
+      character_name
+    from 
+      Votes as t2 
+    where 
+      t1.twitter_id = t2.twitter_id 
+      and 
+      t1.voted_time = t2.voted_time
+  ) 
+  and 
+  voted_time = (
+    select 
+      max(voted_time) 
+    from 
+      Votes as t3 
+    where
+      t1.twitter_id = t3.twitter_id
+  );
+```
+...でできそう
+
+### 推しキャラが関係するVotesのうち、投稿日時が一番新しいもののみを取り出して、しかも推しキャラ以外の情報だけを取り出す
+```sql
+select 
+  * 
+from 
+  Votes as t1 
+where 
+  '柊夜ノ介' in (
+    select 
+      character_name
+    from 
+      Votes as t2 
+    where 
+      t1.twitter_id = t2.twitter_id 
+      and 
+      t1.voted_time = t2.voted_time
+  ) 
+  and 
+  voted_time = (
+    select 
+      max(voted_time) 
+    from 
+      Votes as t3 
+    where
+      t1.twitter_id = t3.twitter_id
+  )
+  and
+  character_name <> '柊夜ノ介'
+;
+```
+...でできそう
+
