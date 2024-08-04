@@ -1,6 +1,10 @@
 import React from 'react';
 import clsx from 'clsx';
 
+// 5分毎にアップデート
+// NOTE: 今はテスト用にちょっと頻繁にします
+export const revalidate = 30;
+
 export async function generateStaticParams() {
   return [{ charaName: '氷上格' }, { charaName: '柊夜ノ介'}];
 }
@@ -11,6 +15,7 @@ export default function Page({
   const decodedCharaName = decodeURIComponent(params.charaName)
   return (
     <div className='flex flex-col items-center'>
+      <div>{Date.now()}</div>
       <div>分析結果:</div>
       <div className='py-5'>
         {decodedCharaName} が好きな人は、○○も好きな人が多いです！

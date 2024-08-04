@@ -24,7 +24,6 @@ const TopCharacterSelect: React.FC<React.ComponentProps<'div'>> = ({
   const defaultCharaName = decodeURIComponent(
     pathname.replace('/', '')
   );
-  console.log('defaultCharaName: ', defaultCharaName);
 
   const handleSelect = (charaName: string) => {
     router.push(`/${charaName}`);
