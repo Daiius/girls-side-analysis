@@ -1,0 +1,38 @@
+services:
+  girls-side-analysis-nextjs:
+    build:
+      dockerfile: ./Dockerfile.nextjs
+    container_name: girls-side-analysis-nextjs-dev
+    env_file:
+      - .env
+    volumes:
+      - .:/app:ro
+    tmpfs:
+      - /app/.next
+
+  database:
+    image: mysql:8.0-debian
+    container_name: girls-side-analysis-database
+    env_file:
+      - .env
+    environment:
+      TZ: 'Asia/Tokyo'
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      interval: 5s
+      timeout: 20s
+      retries: 3
+      start_period: 5s
+    
+  webserver:
+    image: nginx
+    container_name: girls-side-analysis-webserver
+    ports:
+      - 80:80
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+
+networks:
+  default:
+    name: girls-side-analysis-network
+

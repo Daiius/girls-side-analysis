@@ -1,36 +1,23 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Girl's Side Analysis サイト開発記録
+古いものほど下に記述されます
 
-## Getting Started
 
-First, run the development server:
+## 背景
+ー妻がGSシリーズのファンで、X（旧Twitter）上で他のファンと交流しています
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- GSシリーズのある男子を好きな人は、他にどの男子が好きか気になるか...
+言い換えれば、推しの組み合わせは皆同じではなさそう
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- GSシリーズファン同士がSNSなどでやり取りをしていると自然と
+察するものがあるらしく、推しの組み合わせには何か傾向が有りそう
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- 公式の人気投票では、推しの組み合わせについての情報が得られない...
+何か可視化できる情報収集/結果表示の道具が欲しい
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+- GSシリーズファンの交流を助ける機能も持ったWebアプリケーションとして
+開発できないだろうか？
 
-## Learn More
+- 本当のところサーバ維持費くらい稼ぎたいのですが、
+稼ぎ方が分からない＆隣で見ていてGSシリーズが面白いので、
+先ずは既に借りているサーバ内で動く範囲でやってみます
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
