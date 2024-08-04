@@ -10,12 +10,30 @@ import {
 } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/24/solid';
 
-
+import {
+  useSearchParams,
+  usePathname,
+  useRouter
+} from 'next/navigation';
 
 const TopCharacterSelect: React.FC<React.ComponentProps<'div'>> = ({
   className,
   ...props
 }) => {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const { replace } = useRouter();
+
+  const handleSelect = (charaName: string) => {
+    const params = new URLSearchParams(searchParams);
+    if (charaName) {
+      params.set('oshi', charaName);
+    } else {
+      params.delete('oshi');
+    }
+    replace(`${pathname}?${params.toString()}`);
+  };
+
   return (
     <div className={clsx(className)} {...props}>
       <Field>
@@ -32,6 +50,8 @@ const TopCharacterSelect: React.FC<React.ComponentProps<'div'>> = ({
               'bg-black/5 dark:bg-white/5',
               'py-1.5 px-3 text-sm/6 text-slate-400'
             )}
+            onChange={e => handleSelect(e.target.value)}
+            defaultValue={searchParams.get('oshi')?.toString()}
           >
             <option value="">選択...</option>
             <option value="氷上格">氷上格</option>
