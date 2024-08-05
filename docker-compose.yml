@@ -23,6 +23,8 @@ services:
     environment:
       TZ: 'Asia/Tokyo'
       LANG: 'ja_JP.UTF-8'
+    cap_add:
+      - SYS_NICE
     healthcheck:
       test: mysql -u $MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE -e "select 1;"
       interval: 5s
@@ -43,12 +45,12 @@ services:
         npm install -g pnpm \
         && pnpm drizzle-kit push \
           --dialect=mysql \
-          --schema=db/schema.ts \
+          --schema=./src/db/schema.ts \
           --host=$DB_HOST \
           --user=$MYSQL_USER \
           --password=$MYSQL_PASSWORD \
-          --database=$MYSQL_DATABASE \
-        && pnpx tsx addTestData.ts
+          --database=$MYSQL_DATABASE; \
+        pnpx tsx addTestData.ts
       '
     depends_on:
       database:

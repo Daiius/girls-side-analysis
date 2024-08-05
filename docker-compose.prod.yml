@@ -1,4 +1,12 @@
 services:
   girls-side-analysis-nextjs:
     command: ['pnpm', 'prod-local']
+    depends_on:
+      database-preparation:
+        condition: service_completed_successfully
+  
+  webserver:
+    depends_on:
+      database-preparation:
+        condition: service_completed_successfully
 
