@@ -2,6 +2,7 @@
   "name": "girls-side-analysis",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -13,6 +14,9 @@
     "@headlessui/react": "^2.1.2",
     "@heroicons/react": "^2.1.5",
     "clsx": "^2.1.1",
+    "drizzle-kit": "^0.23.1",
+    "drizzle-orm": "^0.32.1",
+    "mysql2": "^3.11.0",
     "next": "15.0.0-canary.101",
     "next-themes": "^0.3.0",
     "react": "19.0.0-rc-8269d55d-20240802",

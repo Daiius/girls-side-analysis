@@ -22,6 +22,12 @@
 
 ## アイディアメモ
 - 次に攻略するキャラに悩んだ時のアイディアを出せるかも
+- キャラの属性（先輩、先生、他校生 等...）を記録しておくことで、
+  推しキャラのより大きな傾向をつかんでみたい気もする
+  - 属性は公式に決まっているわけでない&唯一無二に近いものもあるので、
+    認識違いなどの火種になるのは怖いかも...(王子、勉強、芸術...とかはアリかも)
+- 「現実逃避ボタン」で認識したくない結果を非表示に出来たら精神的によさそう
+  (「そんな...私の推しキャラがこのキャラと一緒に表示されるなんて...」)
 
 # 開発記録
 
@@ -49,6 +55,8 @@
 revalidateと組み合わせられるのだろうか？
 
 → できそうな感覚がある
+
+[x] OK、できました！
 
 ## データベース構成の検討
 ユーザが後から推しを変更したり、
@@ -81,13 +89,15 @@ hide circle
 skinparam linetype ortho
 entity Characters {
     *series: number <<登場シリーズ番号>>
+    *sort: number <<公式サイト等での紹介順>>
+    --
     *name: varchar <<キャラ名>>
 }
 entity Votes {
     *twitterID
     *voteTime
-    --
     *charaName: <<キャラ名>> <<FK>>
+    --
     *level: <<推しレベル≒順位>>
 }
 
@@ -95,3 +105,182 @@ Characters ||-o{ Votes
 
 @enduml
 ```
+
+## データベース構成の再検討
+VotesのtwitterID, voteTimeをprimaryKeyにするつもりだったが、
+同じtwitterID, voteTimeを持ったVotes複数個の組で
+推しの組み合わせを表現することができない
+→ characterNameもprimaryKeyに入れることで対処できるかも
+
+## データベース分析方法
+### 一番新しい投稿日時のデータのみ取り出す
+```sql
+select 
+  * 
+from 
+  Votes as t1 
+where 
+  voted_time = (
+    select 
+      max(voted_time)
+    from 
+      Votes as t2 
+    where 
+      t1.twitter_id = t2.twitter_id
+  )
+;
+```
+...でできそう
+
+### 推しキャラが関係するVotesだけ取り出す
+```sql
+select 
+  * 
+from 
+  Votes as t1 
+where 
+  '柊夜ノ介' in (
+    select 
+      character_name
+    from 
+      Votes as t2 
+    where 
+      t1.twitter_id = t2.twitter_id 
+      and 
+      t1.voted_time = t2.voted_time
+  )
+;
+```
+...でできそう
+
+### 推しキャラが関係するVotesのうち、投稿日時が一番新しいもののみを取り出す
+```sql
+select 
+  * 
+from 
+  Votes as t1 
+where 
+  '柊夜ノ介' in (
+    select 
+      character_name
+    from 
+      Votes as t2 
+    where 
+      t1.twitter_id = t2.twitter_id 
+      and 
+      t1.voted_time = t2.voted_time
+  ) 
+  and 
+  voted_time = (
+    select 
+      max(voted_time) 
+    from 
+      Votes as t3 
+    where
+      t1.twitter_id = t3.twitter_id
+  );
+```
+...でできそう
+
+### 推しキャラが関係するVotesのうち、投稿日時が一番新しいもののみを取り出して、しかも推しキャラ以外の情報だけを取り出す
+```sql
+select 
+  * 
+from 
+  Votes as t1 
+where 
+  '柊夜ノ介' in (
+    select 
+      character_name
+    from 
+      Votes as t2 
+    where 
+      t1.twitter_id = t2.twitter_id 
+      and 
+      t1.voted_time = t2.voted_time
+  ) 
+  and 
+  voted_time = (
+    select 
+      max(voted_time) 
+    from 
+      Votes as t3 
+    where
+      t1.twitter_id = t3.twitter_id
+  )
+  and
+  character_name <> '柊夜ノ介'
+;
+```
+...でできそう
+
+### Drizzle ORM では 定数 in () をexistsを使って書き直す必要が有りそう...
+```sql
+select 
+  * 
+from 
+  Votes as t1 
+where 
+  exists (
+    select 
+      character_name
+    from 
+      Votes as t2 
+    where 
+      t1.twitter_id = t2.twitter_id 
+      and 
+      t1.voted_time = t2.voted_time
+      and
+      t2.character_name = '柊夜ノ介'
+  ) 
+  and 
+  voted_time = (
+    select 
+      max(voted_time) 
+    from 
+      Votes as t3 
+    where
+      t1.twitter_id = t3.twitter_id
+  )
+  and
+  character_name <> '柊夜ノ介'
+;
+```
+...でできそう
+
+### 更にキャラクターごとに集計
+```sql
+select 
+  character_name,
+  count(*) as count 
+from 
+  Votes as t1 
+where 
+  exists (
+    select 
+      character_name
+    from 
+      Votes as t2 
+    where 
+      t1.twitter_id = t2.twitter_id 
+      and 
+      t1.voted_time = t2.voted_time
+      and
+      t2.character_name = '柊夜ノ介'
+  ) 
+  and 
+  voted_time = (
+    select 
+      max(voted_time) 
+    from 
+      Votes as t3 
+    where
+      t1.twitter_id = t3.twitter_id
+  )
+  and
+  character_name <> '柊夜ノ介'
+group by
+  character_name
+;
+```
+...でできそう
