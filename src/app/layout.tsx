@@ -1,3 +1,6 @@
+
+export const dynamic = 'force-static';
+
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -7,7 +10,6 @@ import { ThemeProvider } from 'next-themes';
 
 import Header from '@/components/Header';
 import SettingsProvider from '@/providers/SettingsProvider';
-
 import TopCharacterSelect from '@/components/TopCharacterSelect';
 
 const inter = Inter({ subsets: ["latin"] });
