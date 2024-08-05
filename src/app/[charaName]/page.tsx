@@ -1,14 +1,16 @@
 import React from 'react';
 import clsx from 'clsx';
 
-import { getVotesRelatedToOshi } from '@/actions/votesActions';
+import { getCharacters } from '@/lib/characters'; 
+import { getVotesRelatedToOshi } from '@/lib/votes';
 
 // 5分毎にアップデート
 // NOTE: 今はテスト用にちょっと頻繁にします
 export const revalidate = 30;
 
 export async function generateStaticParams() {
-  return [{ charaName: '氷上格' }, { charaName: '柊夜ノ介'}];
+  const characters = await getCharacters();
+  return characters.map(chara => ({ charaName: chara.name }));
 }
 
 export default async function Page({
