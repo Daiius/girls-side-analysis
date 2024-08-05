@@ -5,6 +5,7 @@ import { ArrowLeftEndOnRectangleIcon } from '@heroicons/react/24/outline';
 
 export default async function Home() {
   const session = await auth();
+  console.log('session: ', session);
   return (
     <>
       <div>推しの組み合わせを分析します...</div>
