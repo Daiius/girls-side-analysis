@@ -1,38 +1,48 @@
-import NextAuth from 'next-auth';
+import NextAuth, { DefaultSession, Profile, Session } from 'next-auth';
+import type { JWT } from 'next-auth/jwt';
 import Twitter from 'next-auth/providers/twitter';
+
+declare module 'next-auth' {
+  interface Profile {
+    data: {
+      name: string;
+      profile_image_url: string;
+      id: string;
+      username: string;
+    }
+  }
+
+  interface Session {
+    user: {
+      username: string;
+    } & DefaultSession['user']
+  }
+}
+declare module 'next-auth/jwt' {
+  interface JWT {
+    id: string;
+    username: string;
+  }
+}
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
   trustHost: true,
   session: { strategy: 'jwt' },
-  providers: [Twitter({
-    profile(profile) {
-      return {
-        id: profile.id_str as string,
-        name: profile.name as string,
-        image: profile.profile_image_url_https as string,
-      }
-    }
-  })],
+  providers: [Twitter],
   debug: true,
   callbacks: {
     async jwt({ token, account, profile }) {
-      console.log('jwt, token: ', token);
-      console.log('jwt, account: ', account);
-      console.log('jwt, profile: ', profile);
       if (account && profile) {
-        token.sub = profile.id ?? '';
-        token.email = profile.email;
-        token.username = profile.login;
+        token.id = profile.data.id;
+        token.username = profile.data.username;
       }
-      console.log('jwt, token: ', token);
       return token;
     },
     async session({ session, token }) {
-      console.log('session, token: ', token);
-      session.user.id = token.sub ?? '';
-      session.user.email = token.email ?? '';
-      //session.user.username = token.username ?? '';
-      console.log('session, session: ', session);
+      if (token?.id) {
+        session.user.id = token.id;
+        session.user.username = token.username;
+      }
       return session;
     },
     async authorized({ auth, request: { nextUrl }}) {
