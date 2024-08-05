@@ -9,7 +9,7 @@ export const characters = mysqlTable('Characters', {
   sort:
     tinyint('sort', { unsigned: true }).notNull(),
   name: 
-    varchar('name', { length: 20 }).unique(),
+    varchar('name', { length: 20 }).unique().notNull(),
 }, (table) => ({
   primaryKey:
     primaryKey({ columns: [table.series, table.sort] }),
