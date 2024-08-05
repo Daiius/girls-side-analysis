@@ -1,4 +1,4 @@
-# Girl's Side Analysis ~情報共有・分析サイト~
+# Girl's Side Analysis 情報共有・分析サイト
 
 # 背景
 - 知り合いGSシリーズのファンで、X（旧Twitter）上で
