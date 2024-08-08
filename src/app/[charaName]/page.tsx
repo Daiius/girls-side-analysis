@@ -4,6 +4,8 @@ import clsx from 'clsx';
 import { getCharacters } from '@/lib/characters'; 
 import { getVotesRelatedToOshi } from '@/lib/votes';
 
+import TopCharacterSelect from '@/components/TopCharacterSelect';
+
 // 5分毎にアップデート
 // NOTE: 今はテスト用にちょっと頻繁にします
 export const revalidate = 30;
@@ -22,6 +24,12 @@ export default async function Page({
 
   return (
     <div className='flex flex-col items-center'>
+      <div className={clsx(
+        'flex flex-col items-center',
+        'p-6 md:p-24'
+      )}>
+        <TopCharacterSelect className='my-5'/>
+      </div>
       <div>{Date.now()}</div>
       <div>分析結果:</div>
       <div className='py-5'>
