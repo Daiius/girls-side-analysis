@@ -1,4 +1,10 @@
-import { datetime, mysqlTable, primaryKey, tinyint, varchar } from 'drizzle-orm/mysql-core';
+import { 
+  mysqlTable, 
+  primaryKey, 
+  tinyint, 
+  varchar,
+  timestamp 
+} from 'drizzle-orm/mysql-core';
 
 /**
  * 登場人物を記録したテーブル
@@ -22,16 +28,13 @@ export const votes = mysqlTable('Votes', {
   twitterID: 
     varchar('twitter_id', { length: 32 }).notNull(),
   votedTime: 
-    datetime('voted_time').notNull(),
+    timestamp('voted_time').notNull().defaultNow(),
 
   characterName: 
-    varchar('character_name', { length: 20 })
-      .references(
-        () => characters.name, {
-          onUpdate: 'cascade',
-          onDelete: 'restrict',
-        }
-      ),
+    varchar('character_name', { length: 20 }).references(
+      () => characters.name,
+      { onUpdate: 'cascade', onDelete: 'restrict' }
+    ),
   level:
     tinyint('level', { unsigned: true }).notNull(),
 }, (table) => ({
@@ -45,4 +48,38 @@ export const votes = mysqlTable('Votes', {
     }),
 }));
 
+/**
+ * GSシリーズのプレイ状態の選択肢テーブル
+ */
+export const userStatesMaster = mysqlTable('UserStatesMaster', {
+  state:
+    varchar('state', { length: 20 }).primaryKey(),
+  sort:
+    tinyint('sort', { unsigned: true }).notNull(),
+});
+
+/**
+ * TwitterIDとGSシリーズのプレイ状態を紐づけるテーブル
+ */
+export const userStates = mysqlTable('UserStates', {
+  twitterID:
+    varchar('twitter_id', { length: 20 }).notNull(),
+  recordedTime:
+    timestamp('recorded_time').defaultNow().notNull(),
+  series:
+    tinyint('series', { unsigned: true }).notNull(),
+  status:
+    varchar('status', { length: 20 }).notNull()
+      .references(
+        () => userStatesMaster.state,
+        { onUpdate: 'cascade', onDelete: 'restrict' }
+      ),
+}, (table) => ({
+  primaryKey:
+    primaryKey({ columns: [
+      table.twitterID, 
+      table.recordedTime, 
+      table.series
+    ]}),
+}));
 

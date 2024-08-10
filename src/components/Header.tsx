@@ -1,6 +1,7 @@
 import React from 'react';
 import clsx from 'clsx';
 
+import HeaderProfileLink from './HeaderProfileLink';
 import ThemeChanger from './ThemeChanger';
 
 const Header: React.FC = () => (
@@ -13,7 +14,8 @@ const Header: React.FC = () => (
     <div>
       💚💙Girl's Side Analysis💗🧡
     </div>
-    <ThemeChanger className='ms-auto'/>
+    <HeaderProfileLink />
+    <ThemeChanger />
   </div>
 );
 
