@@ -1,5 +1,10 @@
 import { db, connection } from './src/db';
-import { characters, votes } from './src/db/schema';
+import { 
+  characters, 
+  votes,
+  userStatesMaster,
+  userStates,
+} from './src/db/schema';
 
 
 await db.insert(characters).values([
@@ -68,6 +73,50 @@ await db.insert(characters).values([
   { name: '花椿みちる', series: 4, sort: 12 },
   { name: '花椿ひかる', series: 4, sort: 13 },
 ]);
+
+// プレイ状態の選択肢を生成
+await db.insert(userStatesMaster).values([
+  { state: '未プレイ', sort: 0 },
+  { state: '実況視聴', sort: 1 },
+  { state: 'プレイ済み', sort: 2 },
+]);
+
+// ID毎にプレイ状態を記録
+await db.transaction(async (tx) =>{
+  // GS4を初プレイしたtestIDさん
+  const twitterID = 'testID';
+  const recordedTime = new Date('2023/09/21 00:00:00'); 
+  await db.insert(userStates).values([
+    { twitterID, recordedTime, series: 1, status: '未プレイ' }, 
+    { twitterID, recordedTime, series: 2, status: '未プレイ' }, 
+    { twitterID, recordedTime, series: 3, status: '未プレイ' }, 
+    { twitterID, recordedTime, series: 4, status: 'プレイ済み' }, 
+  ]);
+});
+
+await db.transaction(async (tx) => {
+  // 年が変わるまでに一通りプレイした記録を追加
+  const twitterID = 'testID';
+  const recordedTime = new Date('2024/01/01 00:00:00'); 
+  await db.insert(userStates).values([
+    { twitterID, recordedTime, series: 1, status: 'プレイ済み' }, 
+    { twitterID, recordedTime, series: 2, status: 'プレイ済み' }, 
+    { twitterID, recordedTime, series: 3, status: 'プレイ済み' }, 
+    { twitterID, recordedTime, series: 4, status: 'プレイ済み' }, 
+  ]);
+});
+
+await db.transaction(async (tx) => {
+  // 以前から格ヤノ推しの人のプレイ記録
+  const twitterID = process.env.TEST_TWITTER_ID ?? 'testID2';
+  const recordedTime = new Date('2023/05/31 00:00:00');
+  await db.insert(userStates).values([
+    { twitterID, recordedTime, series: 1, status: '実況視聴' }, 
+    { twitterID, recordedTime, series: 2, status: 'プレイ済み' }, 
+    { twitterID, recordedTime, series: 3, status: '実況視聴' }, 
+    { twitterID, recordedTime, series: 4, status: 'プレイ済み' }, 
+  ]);
+});
 
 await db.insert(votes).values([
   // かつてヤノ単体推しだったある人が、
