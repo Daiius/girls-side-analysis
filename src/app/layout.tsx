@@ -1,5 +1,5 @@
 
-export const dynamic = 'force-static';
+//export const dynamic = 'force-static';
 
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
@@ -37,14 +37,9 @@ export default function RootLayout({
           )}>
             <Header />
             <main className={clsx(
-              'h-[calc(100vh-3rem)] flex flex-col items-center'
+              'h-[calc(100vh-3rem)] flex flex-col items-center',
+              'p-5 md:p-24'
             )}>
-              <div className={clsx(
-                'flex flex-col items-center',
-                'p-6 md:p-24'
-              )}>
-                <TopCharacterSelect className='my-5'/>
-              </div>
               {children}
             </main>
           </body>

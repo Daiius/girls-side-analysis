@@ -1,16 +1,18 @@
-import TopCharacterSelect from '@/components/TopCharacterSelect';
 import clsx from 'clsx';
 
-export default function Home({
-  searchParams
-}: {
-  searchParams?: {
-    oshi?: string;
-  }
-}) {
-  const oshi = searchParams?.oshi || '';
+import TopCharacterSelect from '@/components/TopCharacterSelect';
+
+export default async function Home() {
   return (
-    <div>推しの組み合わせを分析します...</div>
+    <>
+      <div>推しの組み合わせを分析します...</div>
+      <div className={clsx(
+        'flex flex-col items-center',
+        'p-6 md:p-24'
+      )}>
+        <TopCharacterSelect className='my-5'/>
+      </div>
+    </>
   );
 }
 
