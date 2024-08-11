@@ -140,12 +140,12 @@ await db.insert(votes).values([
   },
   // ある人は登録した時にはすでにヤノくん&格くん推し
   {
-    twitterID: 'testID2',
+    twitterID: process.env.TEST_TWITTER_ID ?? 'testID2',
     votedTime: new Date('2023/05/31 00:00:00'),
     characterName: '柊夜ノ介',
     level: 2,
   }, {
-    twitterID: 'testID2',
+    twitterID: process.env.TEST_TWITTER_ID ?? 'testID2',
     votedTime: new Date('2023/05/31 00:00:00'),
     characterName: '氷上格',
     level: 1,
