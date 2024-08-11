@@ -2,7 +2,9 @@
 
 import { db } from '@/db';
 import { votes } from '@/db/schema';
-import { eq, ne, exists, and, max, count, desc } from 'drizzle-orm';
+import { 
+  eq, ne, exists, and, max, count, desc, asc
+} from 'drizzle-orm';
 import { alias } from 'drizzle-orm/mysql-core';
 
 export const getVotesRelatedToOshi = async (
@@ -51,5 +53,26 @@ export const getVotesRelatedToOshi = async (
     .groupBy(t1.characterName)
     .orderBy(desc(count(t1.characterName)));
 
+};
+
+export const getLatestVotes = async (twitterID: string) => {
+  const t1 = alias(votes, 't1');
+  return await db
+    .select({
+      characterName: votes.characterName,
+      level: votes.level,
+    })
+    .from(votes)
+    .where(
+      and(
+        eq(votes.twitterID, twitterID),
+        eq(
+          votes.votedTime,
+          db.select({ max_voted_time: max(t1.votedTime) })
+            .from(t1)
+            .where(eq(t1.twitterID, twitterID))
+        )
+      )
+    ).orderBy(asc(votes.level))
 };
 
