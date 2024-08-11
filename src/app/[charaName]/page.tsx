@@ -12,11 +12,22 @@ import TopCharacterSelect from '@/components/TopCharacterSelect';
 // NOTE: 今はテスト用にちょっと頻繁にします
 export const revalidate = 30;
 
+/**
+ * データベースからキャラクター一覧を取得して
+ * 対応する分析ページを事前に生成出来るようにします
+ */
 export async function generateStaticParams() {
   const characters = await getCharacters();
   return characters.map(chara => ({ charaName: chara.name }));
 }
 
+/**
+ * 各キャラの、同時に推されているキャラ分析ページ
+ *
+ * 誰かがアクセスする度に毎回データ分析していては
+ * サーバの処理能力が間に合わないと考えたので、
+ * 一定時間ごとにrevalidateする静的ページとします
+ */
 export default async function Page({
   params
 }: { params: { charaName: string }}) {

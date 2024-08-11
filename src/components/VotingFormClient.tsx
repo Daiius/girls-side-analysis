@@ -20,7 +20,13 @@ import { vote } from '@/actions/voteActions';
 import { useRouter } from 'next/navigation';
 
 
-
+/**
+ * 投票フォーム用client componentです
+ *
+ * server actionsを用いて内容をサーバに送信し、その結果を取得します
+ * プレイ状況表示用、推し組み合わせ用、submit用の
+ * 子コンポーネントを持ちます
+ */
 const VotingFormClient: React.FC<{
   userStatesMaster: UserStatesMaster;
   latestUserState: UserState;

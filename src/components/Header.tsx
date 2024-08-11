@@ -6,6 +6,10 @@ import Link from 'next/link';
 import HeaderProfileLink from './HeaderProfileLink';
 import ThemeChanger from './ThemeChanger';
 
+/**
+ * トップページへのリンク、投票ページへのリンク、
+ * テーマ切り替えボタンを持ったヘッダです
+ */
 const Header: React.FC = () => (
   <div className={clsx(
     'h-[3rem] w-full bg-sky-500 dark:bg-sky-900',

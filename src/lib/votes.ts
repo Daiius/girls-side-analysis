@@ -7,15 +7,20 @@ import {
 } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/mysql-core';
 
+/** 
+ * 指定されたキャラと同時に推されるキャラの
+ * ランキングを取得します
+ *
+ * 推しキャラに関連するVotesのうち、
+ * 同じtwitterIDを持つVotesのうちで最も新しいもののうち、
+ * 推しキャラ以外の名前のデータを抜き出し、
+ * 出現回数をカウントします
+ */
 export const getVotesRelatedToOshi = async (
   oshi: string
 ) => {
   const t1 = alias(votes, 't1');
   const t2 = alias(votes, 't2');
-  // 推しキャラに関連するVotesのうち、
-  // 同じtwitterIDを持つVotesのうちで最も新しいもののうち、
-  // 推しキャラ以外の名前のデータを抜き出し、
-  // 出現回数をカウントします
   return await db
     .select({
       characterName: t1.characterName,
@@ -55,6 +60,10 @@ export const getVotesRelatedToOshi = async (
 
 };
 
+/**
+ * 指定されたtwitterIDに紐づけられた投票のうち、
+ * 最新のものを取得します
+ */
 export const getLatestVotes = async (twitterID: string) => {
   const t1 = alias(votes, 't1');
   return await db

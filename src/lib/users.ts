@@ -2,7 +2,7 @@ import { db } from '@/db';
 import { userStates, userStatesMaster } from '@/db/schema';
 import { eq, max, and, asc } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/mysql-core';
-import { revalidatePath } from 'next/cache';
+//import { revalidatePath } from 'next/cache';
 
 /**
  * 最新のユーザ状況データを取得します
@@ -67,7 +67,9 @@ export const insertUserStatesIfUpdated = async ({
         { twitterID, series: 4, status: gs4State },
       ]);
 
-      revalidatePath('/[charaName]');
+      // revalidatePath('/[charaName]');
+      // 一定時間ごとに/[charaName]ページは再生成されるはずなので
+      // コメントアウト
     }
   }
 };
