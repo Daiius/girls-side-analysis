@@ -1,6 +1,8 @@
 import React from 'react';
 import clsx from 'clsx';
 
+import Link from 'next/link';
+
 import HeaderProfileLink from './HeaderProfileLink';
 import ThemeChanger from './ThemeChanger';
 
@@ -11,9 +13,9 @@ const Header: React.FC = () => (
     'px-4',
   )}>
     {/* ロゴ */}
-    <div>
+    <Link href='/'>
       💚💙Girl's Side Analysis💗🧡
-    </div>
+    </Link>
     <HeaderProfileLink />
     <ThemeChanger />
   </div>
