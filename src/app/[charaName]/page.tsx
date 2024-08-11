@@ -1,6 +1,8 @@
 import React from 'react';
 import clsx from 'clsx';
 
+import { notFound } from 'next/navigation';
+
 import { getCharacters } from '@/lib/characters'; 
 import { getVotesRelatedToOshi } from '@/lib/votes';
 
@@ -19,6 +21,11 @@ export default async function Page({
   params
 }: { params: { charaName: string }}) {
   const decodedCharaName = decodeURIComponent(params.charaName)
+
+  const characters = await getCharacters();
+  if (!characters.map(c => c.name).includes(decodedCharaName)) {
+    notFound();
+  }
 
   const data = await getVotesRelatedToOshi(decodedCharaName);
 
