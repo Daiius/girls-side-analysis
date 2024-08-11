@@ -5,18 +5,27 @@ import {
   getLatestUserState,
   getUserStatesMaster,
 } from '@/lib/users';
+import { getCharacters } from '@/lib/characters';
+import { getLatestVotes } from '@/lib/votes';
 
 
 const VotingForm: React.FC = async () => {
   const session = await auth();
-  const latestUserState = await getLatestUserState(
-    session?.user.id ?? ''
-  );
+  if (session?.user.id == null) {
+    throw new Error('Failed to get user information.');
+  }
+
+  const latestUserState = await getLatestUserState(session.user.id);
   const userStatesMaster = await getUserStatesMaster();
+  const characters = await getCharacters();
+  const latestVotes = await getLatestVotes(session.user.id);
+
   return (
     <VotingFormClient
       latestUserState={latestUserState}
       userStatesMaster={userStatesMaster}
+      characters={characters}
+      latestVotes={latestVotes}
     />
   );
 };

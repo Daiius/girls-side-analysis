@@ -1,71 +1,86 @@
 'use client'
 
-import clsx from 'clsx';
+import React from 'react';
+
+import Button from '@/components/Button';
+import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
+import VotingFormUserStatesClient, {
+  gsSeries
+} from '@/components/VotingFormUserStatesClient';
+import VotingFormCharactersClient from './VotingFormCharactersClient';
 
 import {
-  Field,
-  Label,
-  Select,
-} from '@headlessui/react';
-import { ChevronDownIcon } from '@heroicons/react/24/solid';
+  UserStatesMaster,
+  UserState,
+  Character,
+  Vote,
+} from '@/types';
 
-import type { 
-  getUserStatesMaster, 
-  getLatestUserState,
-} from '@/lib/users';
+import { vote } from '@/actions/voteActions';
+import { useRouter } from 'next/navigation';
 
-type UserStatesMaster = 
-  Awaited<ReturnType<typeof getUserStatesMaster>>;
-type UserState = 
-  Awaited<ReturnType<typeof getLatestUserState>>;
 
-const gsSeries = [
-  { name: 'GS1', series: 1 },
-  { name: 'GS2', series: 2 },
-  { name: 'GS3', series: 3 },
-  { name: 'GS4', series: 4 },
-];
 
 const VotingFormClient: React.FC<{
   userStatesMaster: UserStatesMaster;
   latestUserState: UserState;
+  characters: Character[];
+  latestVotes: Vote[];
 }> = ({
   userStatesMaster,
   latestUserState,
+  characters,
+  latestVotes,
 }) => {
+
+  const router = useRouter();
+
+  const latestUserStateDict = latestUserState
+    .map(lus => ({ [lus.series]: lus.state }))
+    .reduce((acc, curr) => ({ ...acc, ...curr }));
+
+  const [errorMessage, formAction, isPending] = React.useActionState(
+    async (prevState: string|undefined, formData: FormData) => {
+      const isSameAsLastState = gsSeries.every(gs => 
+        formData.get(gs.name) === latestUserStateDict[gs.series]
+      );
+      if (isSameAsLastState) {
+        return '投票完了！（過去データと同じ）';
+      }
+      await vote(formData);
+      router.refresh();
+      return '投票完了!';
+    },
+    undefined
+  );
+
   return (
-    <div className='flex flex-wrap md:flex-row gap-4'>
-      {gsSeries.map(gs =>
-        <Field key={gs.series} className='flex flex-row items-center'>
-          <Label className='mr-3'>{gs.name}: </Label>
-          <div className='relative'>
-          <Select 
-            className={clsx(
-              'block w-full appearance-none rounded-lg border-none',
-              'bg-black/5 dark:bg-white/5 w-full',
-              'py-1.5 pl-2 pr-3 text-sm/6 text-slate-400'
-            )}
-            defaultValue={latestUserState.find(s =>
-              s.series === gs.series
-            )?.state}
-          >
-            {userStatesMaster.map(s =>
-              <option key={s.sort} value={s.state}>
-                {s.state}
-              </option>
-            )}
-          </Select>
-          <ChevronDownIcon
-            className={clsx(
-              'group pointer-events-none absolute top-2.5 right-1 size-4',
-              'fill-black/60 dark:fill-white/60'
-            )}
-            aria-hidden
-          />
-          </div>
-        </Field>
-      )}
-    </div>
+    <form action={formAction}>
+      {latestUserState.length > 0 && 
+        <div>最後の投票内容:</div>
+      }
+      <VotingFormUserStatesClient
+        latestUserStateDict={latestUserStateDict}
+        userStatesMaster={userStatesMaster} 
+      />
+      <VotingFormCharactersClient
+        characters={characters}
+        latestVotes={latestVotes}
+      />
+      <div className='mt-5 flex flex-col'>
+        <Button 
+          type='submit'
+          className='flex flex-row items-center ms-auto'
+          disabled={isPending}
+        >
+          <span className='mr-2'>投票！</span>
+          <PaperAirplaneIcon className='size-4'/>
+        </Button>
+        {errorMessage &&
+          <div className='self-center'>{errorMessage}</div>
+        }
+      </div>
+    </form>
   );
 };
 

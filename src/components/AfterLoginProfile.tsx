@@ -26,7 +26,9 @@ const AfterLoginProfile: React.FC<{ session: Session }> = async ({ session }) =>
           </Button>
         </form>
       </div>
+
       <VotingForm />
+
     </div>
   );
 };
