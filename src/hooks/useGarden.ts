@@ -7,10 +7,21 @@ export const useGarden = ({
 }: {
   latestVotes: Vote[];
 }) => {
+
+  type GardenData = Vote & { position: number };
+  const maxLevel = Math.max(...latestVotes.map(lv => lv.level));
+
   const [charactersInGarden, setCharactersInGarden] =
     React.useState<Vote[]>(latestVotes);
   
-  const maxLevel = Math.max(...charactersInGarden.map(c => c.level));
+  const positionData: GardenData[] = [];
+  for (const c of charactersInGarden) {
+    const position = positionData
+      .filter(pd => pd.level === c.level)
+      ?.length ?? 0;
+    positionData.push({ ...c, position });
+  }
+  
   
   /**
    * 推し順位を減少させます
@@ -77,7 +88,7 @@ export const useGarden = ({
   };
 
   return {
-    charactersInGarden,
+    charactersInGarden: positionData,
     maxLevel,
     increaseLevel,
     decreaseLevel,

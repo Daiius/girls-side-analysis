@@ -41,41 +41,32 @@ const VotingFormCharactersClient: React.FC<{
   return (
     <div>
       <div>推しを追加:</div>
-      {/* レベルごとに左右に分けて表示 */}
-      <div className='flex flex-row gap-2'>
-        {[...new Array(maxLevel)]
-          .map((_, i) => i + 1)
-          .map(level => 
-            <div key={level}>
-              推し順位: {level}
-              <div className='flex flex-col'>
-                {/* 同じ推し順位のキャラを縦に並べて表示 */}
-                {charactersInGarden
-                  .filter(c => c.level === level)
-                  .map(c =>
-                    <Transition
-                      as='div'
-                      show
-                      enter='transition-opacity ease-in-out duration-250'
-                      enterFrom='opacity-0'
-                      enterTo='opacity-100'
-                      leave='transition-opacity ease-in-out duration-250'
-                      leaveFrom='opacity-100'
-                      leaveTo='opacity-0'
-                    >
-                      <CharacterStrip
-                        key={`${c.characterName}-${c.level}`}
-                        characterName={c.characterName}
-                        increaseLevel={() => increaseLevel(c.characterName)}
-                        decreaseLevel={() => decreaseLevel(c.characterName)}
-                      />
-                    </Transition>
-                  )
-                }
-              </div>
+        <div className='relative'>
+          {/* 上部に順位表示 */}
+          {[...new Array(maxLevel)].map((_, ilevel) =>
+            <div 
+              key={ilevel+1}
+              className='absolute'
+              style={{top: '0rem', left: `${(ilevel)*10}rem`}}
+            >
+              推し順位: {ilevel + 1}
             </div>
-          )
-        }
+          )}
+          {charactersInGarden
+            .map(c =>
+              <CharacterStrip
+                className={clsx(
+                  'absolute', 
+                  'transition-transform duration-100 ease-in-out'
+                )}
+                style={{ transform: `translate(${(c.level-1)*10}rem,${(c.position+1)*4}rem)` }}
+                key={`${c.characterName}`}
+                characterName={c.characterName}
+                increaseLevel={() => increaseLevel(c.characterName)}
+                decreaseLevel={() => decreaseLevel(c.characterName)}
+              />
+            )
+          }
       </div>
     </div>
   );
