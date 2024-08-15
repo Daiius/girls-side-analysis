@@ -9,7 +9,12 @@ import { MoonIcon, SunIcon } from '@heroicons/react/24/outline';
 
 import { useSettings } from '@/providers/SettingsProvider';
 
-const ThemeChanger: React.FC<React.ComponentProps<typeof Switch>> = ({
+/**
+ * next-themesによるテーマ切り替えスイッチです
+ */
+const ThemeChanger: React.FC<
+  React.ComponentProps<typeof Switch>
+> = ({
   className,
   ...props
 }) => {

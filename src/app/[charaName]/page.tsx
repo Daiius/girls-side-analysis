@@ -1,6 +1,8 @@
 import React from 'react';
 import clsx from 'clsx';
 
+import { notFound } from 'next/navigation';
+
 import { getCharacters } from '@/lib/characters'; 
 import { getVotesRelatedToOshi } from '@/lib/votes';
 
@@ -10,15 +12,31 @@ import TopCharacterSelect from '@/components/TopCharacterSelect';
 // NOTE: 今はテスト用にちょっと頻繁にします
 export const revalidate = 30;
 
+/**
+ * データベースからキャラクター一覧を取得して
+ * 対応する分析ページを事前に生成出来るようにします
+ */
 export async function generateStaticParams() {
   const characters = await getCharacters();
   return characters.map(chara => ({ charaName: chara.name }));
 }
 
+/**
+ * 各キャラの、同時に推されているキャラ分析ページ
+ *
+ * 誰かがアクセスする度に毎回データ分析していては
+ * サーバの処理能力が間に合わないと考えたので、
+ * 一定時間ごとにrevalidateする静的ページとします
+ */
 export default async function Page({
   params
 }: { params: { charaName: string }}) {
   const decodedCharaName = decodeURIComponent(params.charaName)
+
+  const characters = await getCharacters();
+  if (!characters.map(c => c.name).includes(decodedCharaName)) {
+    notFound();
+  }
 
   const data = await getVotesRelatedToOshi(decodedCharaName);
 
