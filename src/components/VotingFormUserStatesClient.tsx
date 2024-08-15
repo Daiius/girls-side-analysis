@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react';
 import clsx from 'clsx';
 
 import {
@@ -25,15 +26,26 @@ export const gsSeries = [
  *
  * データベース中の選択肢から選んで、シリーズごとに記録します
  */
-const VotingFormUserStatesClient: React.FC<{
-  latestUserStateDict: { [key: number]: string },
-  userStatesMaster: UserStatesMaster,
-}> = ({
+const VotingFormUserStatesClient: React.FC<
+  {
+    latestUserStateDict: { [key: number]: string },
+    userStatesMaster: UserStatesMaster,
+  }
+  & React.ComponentProps<'div'>
+> = ({
   latestUserStateDict,
   userStatesMaster,
+  className,
+  ...props
 }) => {
   return (
-    <div className='flex flex-wrap md:flex-row gap-4'>
+    <div 
+      className={clsx(
+        'flex flex-wrap md:flex-row gap-4',
+        className,
+      )}
+      {...props}
+    >
       {gsSeries.map(gs =>
         <Field key={gs.series} className='flex flex-row items-center'>
           <Label className='mr-3'>{gs.name}: </Label>

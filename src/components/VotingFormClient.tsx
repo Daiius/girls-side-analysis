@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react';
+import clsx from 'clsx';
 
 import Button from '@/components/Button';
 import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
@@ -27,16 +28,21 @@ import { useRouter } from 'next/navigation';
  * プレイ状況表示用、推し組み合わせ用、submit用の
  * 子コンポーネントを持ちます
  */
-const VotingFormClient: React.FC<{
-  userStatesMaster: UserStatesMaster;
-  latestUserState: UserState;
-  characters: Character[];
-  latestVotes: Vote[];
-}> = ({
+const VotingFormClient: React.FC<
+  {
+    userStatesMaster: UserStatesMaster;
+    latestUserState: UserState;
+    characters: Character[];
+    latestVotes: Vote[];
+  }
+  & React.ComponentProps<'form'>
+> = ({
   userStatesMaster,
   latestUserState,
   characters,
   latestVotes,
+  className,
+  ...props
 }) => {
 
   const router = useRouter();
@@ -61,22 +67,18 @@ const VotingFormClient: React.FC<{
   );
 
   return (
-    <form action={formAction}>
-      {latestUserState.length > 0 && 
-        <div>最後の投票内容:</div>
-      }
-      <VotingFormUserStatesClient
-        latestUserStateDict={latestUserStateDict}
-        userStatesMaster={userStatesMaster} 
-      />
-      <VotingFormCharactersClient
-        characters={characters}
-        latestVotes={latestVotes}
-      />
-      <div className='mt-5 flex flex-col'>
+    <form 
+      className={clsx('flex flex-col', className)}
+      action={formAction}
+      {...props}
+    >
+      <div className='flex flex-col'>
         <Button 
           type='submit'
-          className='flex flex-row items-center ms-auto'
+          className={clsx(
+            'flex flex-row items-center self-center',
+            'px-2'
+          )}
           disabled={isPending}
         >
           <span className='mr-2'>投票！</span>
@@ -86,6 +88,19 @@ const VotingFormClient: React.FC<{
           <div className='self-center'>{errorMessage}</div>
         }
       </div>
+      {latestUserState.length > 0 && 
+        <div>最後の投票内容:</div>
+      }
+      <VotingFormUserStatesClient
+        className='h-auto'
+        latestUserStateDict={latestUserStateDict}
+        userStatesMaster={userStatesMaster} 
+      />
+      <VotingFormCharactersClient
+        className='flex-1 overflow-auto p-2'
+        characters={characters}
+        latestVotes={latestVotes}
+      />
     </form>
   );
 };

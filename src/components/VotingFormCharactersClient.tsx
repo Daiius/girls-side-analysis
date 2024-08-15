@@ -11,11 +11,6 @@ import {
 import CharacterStrip from './CharacterStrip';
 import { useGarden } from '@/hooks/useGarden';
 
-import {
-  Transition
-} from '@headlessui/react';
-
-
 /**
  * 推しキャラ組み合わせの投票用コンポーネント
  *
@@ -23,12 +18,17 @@ import {
  * 並び替えや項目追加など、インタラクションが多くなるので
  * Client Componentとして作成しています
  */
-const VotingFormCharactersClient: React.FC<{
-  characters: Character[],
-  latestVotes: Vote[],
-}> = ({
+const VotingFormCharactersClient: React.FC<
+  {
+    characters: Character[],
+    latestVotes: Vote[],
+  }
+  & React.ComponentProps<'div'>
+> = ({
   characters,
   latestVotes,
+  className,
+  ...props
 }) => {
 
   const {
@@ -39,8 +39,10 @@ const VotingFormCharactersClient: React.FC<{
   } = useGarden({ latestVotes });
   
   return (
-    <div>
-      <div>推しを追加:</div>
+    <div 
+      className={clsx(className)}
+      {...props}
+    >
         <div className='relative'>
           {/* 上部に順位表示 */}
           {[...new Array(maxLevel)].map((_, ilevel) =>
@@ -57,9 +59,12 @@ const VotingFormCharactersClient: React.FC<{
               <CharacterStrip
                 className={clsx(
                   'absolute', 
-                  'transition-transform duration-100 ease-in-out'
+                  'transition-transform duration-100 ease-in-out',
                 )}
-                style={{ transform: `translate(${(c.level-1)*10}rem,${(c.position+1)*4}rem)` }}
+                style={{ 
+                  transform: 
+                    `translate(${(c.level-1)*10}rem,${c.position*4+2}rem)` 
+                }}
                 key={`${c.characterName}`}
                 characterName={c.characterName}
                 increaseLevel={() => increaseLevel(c.characterName)}

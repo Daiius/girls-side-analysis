@@ -23,7 +23,7 @@ const CharacterStrip: React.FC<
 }) => (
   <div 
     className={clsx(
-      'outline outline-1 outline-slate-200 rounded-md',
+      'border border-1 border-slate-200 rounded-md',
       'p-3 w-fit',
       'flex flex-row  items-center gap-2',
       className,

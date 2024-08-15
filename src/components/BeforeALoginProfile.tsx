@@ -1,11 +1,24 @@
+import clsx from 'clsx';
+
 import { signIn } from '@/auth';
 import DataUsageDialog from '@/components/DataUsageDialog';
 import Button from '@/components/Button';
 
 import { ArrowLeftEndOnRectangleIcon } from '@heroicons/react/24/outline';
 
-const BeforeLoginProfile: React.FC = () => (
-  <div className='flex flex-col gap-2'>
+const BeforeLoginProfile: React.FC<
+  React.ComponentProps<'div'>
+> = ({
+  className,
+  ...props
+}) => (
+  <div 
+    className={clsx(
+      'flex flex-col gap-2',
+      className,
+    )}
+    {...props}
+  >
       <div className='text-lg font-bold'>
         Twitterアカウント連携について：
       </div>
