@@ -9,7 +9,6 @@ export const useGarden = ({
 }) => {
 
   type GardenData = Vote & { position: number };
-  const maxLevel = Math.max(...latestVotes.map(lv => lv.level));
 
   const [charactersInGarden, setCharactersInGarden] =
     React.useState<Vote[]>(latestVotes);
@@ -21,6 +20,10 @@ export const useGarden = ({
       ?.length ?? 0;
     positionData.push({ ...c, position });
   }
+  
+  const maxLevel = Math.max(
+    ...charactersInGarden.map(lv => lv.level)
+  );
   
   
   /**
