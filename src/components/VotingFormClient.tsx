@@ -17,6 +17,8 @@ import {
   Vote,
 } from '@/types';
 
+import { useGarden } from '@/hooks/useGarden';
+
 import { vote } from '@/actions/voteActions';
 import { useRouter } from 'next/navigation';
 
@@ -46,6 +48,13 @@ const VotingFormClient: React.FC<
 }) => {
 
   const router = useRouter();
+
+  const {
+    charactersInGarden,
+    maxLevel,
+    increaseLevel,
+    decreaseLevel,
+  } = useGarden({ latestVotes });
 
   const latestUserStateDict = latestUserState
     .map(lus => ({ [lus.series]: lus.state }))
@@ -100,6 +109,10 @@ const VotingFormClient: React.FC<
         className='flex-1 overflow-auto p-2'
         characters={characters}
         latestVotes={latestVotes}
+        maxLevel={maxLevel}
+        charactersInGarden={charactersInGarden}
+        increaseLevel={increaseLevel}
+        decreaseLevel={decreaseLevel}
       />
     </form>
   );
