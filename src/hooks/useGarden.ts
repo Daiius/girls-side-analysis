@@ -90,11 +90,19 @@ export const useGarden = ({
     );
   };
 
+  const addCharacter = (charaName: string) => {
+    setCharactersInGarden([
+      ...charactersInGarden,
+      { characterName: charaName, level: maxLevel }
+    ]);
+  };
+
   return {
     charactersInGarden: positionData,
     maxLevel,
     increaseLevel,
     decreaseLevel,
+    addCharacter,
   };
 };
 
