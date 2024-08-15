@@ -9,6 +9,7 @@ import VotingFormUserStatesClient, {
   gsSeries
 } from '@/components/VotingFormUserStatesClient';
 import VotingFormCharactersClient from './VotingFormCharactersClient';
+import AddCharacterSelect from '@/components/AddCharacterSelect';
 
 import {
   UserStatesMaster,
@@ -54,6 +55,7 @@ const VotingFormClient: React.FC<
     maxLevel,
     increaseLevel,
     decreaseLevel,
+    addCharacter,
   } = useGarden({ latestVotes });
 
   const latestUserStateDict = latestUserState
@@ -113,6 +115,13 @@ const VotingFormClient: React.FC<
         charactersInGarden={charactersInGarden}
         increaseLevel={increaseLevel}
         decreaseLevel={decreaseLevel}
+      />
+      <AddCharacterSelect 
+        characters={characters}
+        selectedCharaNames={
+          charactersInGarden.map(c => c.characterName)
+        }
+        addCharacter={addCharacter}
       />
     </form>
   );

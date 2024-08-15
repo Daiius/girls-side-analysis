@@ -49,7 +49,7 @@ const VotingFormCharactersClient: React.FC<
           {[...new Array(maxLevel)].map((_, ilevel) =>
             <div 
               key={ilevel+1}
-              className='absolute'
+              className='absolute whitespace-nowrap'
               style={{top: '0rem', left: `${(ilevel)*10}rem`}}
             >
               推し順位: {ilevel + 1}
