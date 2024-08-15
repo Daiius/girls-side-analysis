@@ -6,7 +6,6 @@ import { signOut } from '@/auth';
 import Button from '@/components/Button';
 import VotingForm from './VotingForm';
 
-
 /**
  * ログイン後のプロファイル画面です
  */

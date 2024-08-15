@@ -9,7 +9,6 @@ import {
 } from '@/types';
 
 import CharacterStrip from './CharacterStrip';
-import { useGarden } from '@/hooks/useGarden';
 
 /**
  * 推しキャラ組み合わせの投票用コンポーネント
@@ -22,21 +21,23 @@ const VotingFormCharactersClient: React.FC<
   {
     characters: Character[],
     latestVotes: Vote[],
+    maxLevel: number;
+    charactersInGarden: (Vote & { position: number })[];
+    increaseLevel: (charaName: string) => void;
+    decreaseLevel: (charaName: string) => void;
   }
   & React.ComponentProps<'div'>
 > = ({
   characters,
   latestVotes,
+  maxLevel,
+  charactersInGarden,
+  increaseLevel,
+  decreaseLevel,
   className,
   ...props
 }) => {
 
-  const {
-    charactersInGarden,
-    maxLevel,
-    increaseLevel,
-    decreaseLevel,
-  } = useGarden({ latestVotes });
   
   return (
     <div 
