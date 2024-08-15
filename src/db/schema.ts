@@ -31,10 +31,11 @@ export const votes = mysqlTable('Votes', {
     timestamp('voted_time').notNull().defaultNow(),
 
   characterName: 
-    varchar('character_name', { length: 20 }).references(
-      () => characters.name,
-      { onUpdate: 'cascade', onDelete: 'restrict' }
-    ),
+    varchar('character_name', { length: 20 }).notNull()
+      .references(
+        () => characters.name,
+        { onUpdate: 'cascade', onDelete: 'restrict' }
+      ),
   level:
     tinyint('level', { unsigned: true }).notNull(),
 }, (table) => ({

@@ -14,9 +14,15 @@ import {
   usePathname,
   useRouter
 } from 'next/navigation';
-import { Character } from '@/lib/characters';
+import { Character } from '@/types';
 
-
+/**
+ * キャラ毎の分析ページに移動するためのSelectコンポーネントです
+ * インタラクション担当の子コンポーネントです
+ *
+ * キャラ名が選択されると、対応する分析ページに移動します
+ * デフォルト選択肢を選ぶとトップページに移動します
+ */
 const TopCharacterSelectClient: React.FC<
   React.ComponentProps<'div'>
   & { characters: Character[] }

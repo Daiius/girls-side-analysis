@@ -7,7 +7,7 @@ import Button from '@/components/Button';
 /**
  * プロファイルページへのリンク
  *
- * リンク先では非表示になります
+ * リンク先では非表示にするため、client componentとしています
  */
 const HeaderProfileLink: React.FC = () => {
   const pathname  = usePathname();
