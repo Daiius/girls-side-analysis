@@ -9,7 +9,8 @@ import type {
 import type {
   getLatestVotes
 } from '@/lib/votes';
-import { ExtractElement } from './lib/utils';
+
+export type ExtractElement<T> = T extends (infer U)[] ? U : never;
 
 export type UserStatesMaster = 
   Awaited<ReturnType<typeof getUserStatesMaster>>;

@@ -49,8 +49,8 @@ const VotingFormCharactersClient: React.FC<
           {[...new Array(maxLevel)].map((_, ilevel) =>
             <div 
               key={ilevel+1}
-              className='absolute'
-              style={{top: '0rem', left: `${(ilevel)*10}rem`}}
+              className='absolute whitespace-nowrap'
+              style={{top: '0rem', left: `${(ilevel)*13.5}rem`}}
             >
               推し順位: {ilevel + 1}
             </div>
@@ -61,10 +61,11 @@ const VotingFormCharactersClient: React.FC<
                 className={clsx(
                   'absolute', 
                   'transition-transform duration-100 ease-in-out',
+                  'w-[13rem] h-[3rem]',
                 )}
                 style={{ 
                   transform: 
-                    `translate(${(c.level-1)*10}rem,${c.position*4+2}rem)` 
+                    `translate(${(c.level-1)*13.5}rem,${c.position*4+2}rem)` 
                 }}
                 key={`${c.characterName}`}
                 characterName={c.characterName}

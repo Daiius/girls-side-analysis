@@ -53,7 +53,7 @@ const TopCharacterSelectClient: React.FC<
         <div className='relative'>
           <Select
             className={clsx(
-              'mt-3 block w-full appearance-none rounded-lg border-none',
+              'block w-full appearance-none rounded-lg border-none',
               'bg-black/5 dark:bg-white/5',
               'py-1.5 px-3 text-sm/6 text-slate-400'
             )}

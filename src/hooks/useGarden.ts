@@ -2,6 +2,11 @@ import React from 'react';
 
 import { Vote } from '@/types';
 
+/**
+ * 推し組み合わせ投票のキャラクター選択処理を行います
+ *
+ * 4thのマリィ・ガーデンに見立ててキャラクターを追加・移動します
+ */
 export const useGarden = ({
   latestVotes 
 }: {
@@ -34,35 +39,18 @@ export const useGarden = ({
   const decreaseLevel = (charaName: string) => {
     const levelOfTarget = charactersInGarden 
       .find(c => c.characterName === charaName)?.level;
-    if (levelOfTarget <= 1) return;
+    if (levelOfTarget == null || levelOfTarget <= 1) return;
 
-    const isOnlyCharaInLevel = charactersInGarden
-      .filter(c => c.level === levelOfTarget)
-      .length <= 1;
-    if (isOnlyCharaInLevel) {
-      // 自分と自分以下の順位のキャラを変化させる
-      setCharactersInGarden(
-        charactersInGarden.map(c =>
-          levelOfTarget <= c.level
-          ? { 
-              characterName: c.characterName,
-              level: c.level - 1,
-            }
-          : c
-        )
-      );
-    } else {
-      // 該当キャラクターのみ順位を変化させる
-      setCharactersInGarden(
-        charactersInGarden.map(v =>
-          charaName === v.characterName
-          ? { characterName: v.characterName,
-              level: v.level - 1,
-           }
-          : v
-        )
-      );
-    }
+    // 該当キャラクターのみ順位を変化させる
+    setCharactersInGarden([
+      ...charactersInGarden.filter(v =>
+        charaName !== v.characterName
+      ),
+      {
+        characterName: charaName,
+        level: levelOfTarget - 1,
+      }
+    ]);
   };
   
   /**
@@ -73,21 +61,28 @@ export const useGarden = ({
   const increaseLevel = (charaName: string) => {
     const levelOfTarget = charactersInGarden 
       .find(c => c.characterName === charaName)?.level;
+    if (levelOfTarget == null) return;
     const isOnlyCharaInLevel = charactersInGarden
       .filter(c => c.level === levelOfTarget)
       .length <= 1;
     if (isOnlyCharaInLevel) return;
 
-    setCharactersInGarden(
-      charactersInGarden.map(v =>
-        charaName === v.characterName
-        ? {
-            characterName: v.characterName,
-            level: v.level + 1,
-          }
-        : v
-      )
-    );
+    setCharactersInGarden([
+      ...charactersInGarden.filter(v =>
+        charaName !== v.characterName
+      ),
+      {
+        characterName: charaName,
+        level: levelOfTarget + 1,
+      }
+    ]);
+  };
+
+  const addCharacter = (charaName: string) => {
+    setCharactersInGarden([
+      ...charactersInGarden,
+      { characterName: charaName, level: maxLevel }
+    ]);
   };
 
   return {
@@ -95,6 +90,7 @@ export const useGarden = ({
     maxLevel,
     increaseLevel,
     decreaseLevel,
+    addCharacter,
   };
 };
 
