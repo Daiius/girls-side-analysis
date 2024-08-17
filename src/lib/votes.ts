@@ -7,6 +7,8 @@ import {
 } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/mysql-core';
 
+import { Vote } from '@/types';
+
 /** 
  * 指定されたキャラと同時に推されるキャラの
  * ランキングを取得します
@@ -83,5 +85,33 @@ export const getLatestVotes = async (twitterID: string) => {
         )
       )
     ).orderBy(asc(votes.level))
+};
+
+export const insertVotesIfUpdated = async ({
+  twitterID,
+  data,
+}: {
+  twitterID: string;
+  data: Vote[];
+}) => {
+  const latestVotes = await getLatestVotes(twitterID);
+  const isSame: boolean = 
+    // 長さが異なればそもそも再投票の対象
+       latestVotes.length === data.length 
+    // 長さが同じだったとしても中身を比較する
+    && data.every(d =>
+        latestVotes.some(lv =>
+          Object.keys(lv).every(key => 
+            d[key as keyof Vote] === lv[key as keyof Vote]
+          )
+        )
+       );
+    if (!isSame) {
+      await db
+        .insert(votes)
+        .values(
+          data.map(d => ({ ...d, twitterID }))
+        );
+    }
 };
 
