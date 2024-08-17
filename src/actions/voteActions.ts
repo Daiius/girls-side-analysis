@@ -2,8 +2,23 @@
 
 import { auth } from '@/auth';
 import { insertUserStatesIfUpdated } from '@/lib/users';
+import { insertVotesIfUpdated } from '@/lib/votes';
 
-export const vote = async (formData: FormData) => {
+import { Vote } from '@/types';
+
+/**
+ * ユーザのプレイ状況と推しデータの記録を行います
+ */
+export const vote = async (
+  /**
+   * uncontrolledなフォームデータによるユーザのプレイ状況
+   */
+  formData: FormData,
+  /**
+   * ユーザが設定した投票状態
+   */ 
+  userVotes: Vote[],
+) => {
 
   const session = await auth();
   if (session?.user.id == null) {
@@ -27,7 +42,10 @@ export const vote = async (formData: FormData) => {
     ],
   });
 
-
+  await insertVotesIfUpdated({
+    twitterID: session.user.id,
+    data: userVotes,
+  });
 
 };
 

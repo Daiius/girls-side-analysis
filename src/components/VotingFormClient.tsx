@@ -64,15 +64,35 @@ const VotingFormClient: React.FC<
 
   const [errorMessage, formAction, isPending] = React.useActionState(
     async (prevState: string|undefined, formData: FormData) => {
-      const isSameAsLastState = gsSeries.every(gs => 
+      const isSamePlayerStatus = gsSeries.every(gs => 
         formData.get(gs.name) === latestUserStateDict[gs.series]
       );
-      if (isSameAsLastState) {
+      const isSameVotes: boolean =
+           latestVotes.length === charactersInGarden.length // 長さが異なればそもそも再投票の対象
+        && charactersInGarden.every(d =>
+            latestVotes.some(lv =>
+              Object.keys(lv).every(key => 
+                d[key as keyof Vote] === lv[key as keyof Vote]
+              )
+            )
+           );
+
+      if (isSamePlayerStatus && isSameVotes) {
+        // 投票処理をスキップする
         return '投票完了！（過去データと同じ）';
       }
-      await vote(formData);
+
+      await vote(formData, charactersInGarden);
       router.refresh();
-      return '投票完了!';
+      
+      if (!isSamePlayerStatus && isSameVotes) {
+        return '投票完了！（プレイ状況のみ更新）';
+      }
+      if (isSamePlayerStatus && !isSameVotes) {
+        return '投票完了！（推しデータのみ更新）';
+      }
+
+      return '投票完了！';
     },
     undefined
   );
