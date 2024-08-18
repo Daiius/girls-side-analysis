@@ -45,7 +45,7 @@ const TopAnalysis: React.FC<
         .map((characterName, iCharacterName) => ({ 
           id: characterName, 
           label: characterName,
-          shape: 'image',
+          shape: 'circularImage',
           image: '/girls-side-analysis/characters/placeholder.svg',
           size: iCharacterName === 0 ? 50 : 25,
         }));
@@ -70,7 +70,8 @@ const TopAnalysis: React.FC<
           font: {
             color: '#FFFFFF',
           }
-        }
+        },
+        //autoResize: false,
       });
     }
   }, [mounted, targetCharacterName]);
@@ -88,22 +89,21 @@ const TopAnalysis: React.FC<
     return () => clearInterval(interval);
   }, []);
 
-  React.useLayoutEffect(() => {
-    if (mounted && refNetwork.current) {
-      refNetwork.current.setSize('auto', 'auto');
-      refNetwork.current.fit();
-    }
-  });
-
   return (
     <div
       className={clsx(className)}
       {...props}
     >
-      <div>推し組み合わせデータ：{targetCharacterName}</div>
+      <div className='h-[2rem]'>
+        {targetCharacterName} 推しの人は、○○も推しています！
+      </div>
       <div
         id={ContainerName}
-        className='w-full h-full'
+        className={clsx(
+          'w-full h-[calc(100%-2rem)]',
+          'border border-1 border-slate-500',
+          'rounded-lg',
+        )}
       />
     </div>
   );
