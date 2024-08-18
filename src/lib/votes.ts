@@ -129,12 +129,15 @@ export const getLatestVotesForAnalysis = async () => {
       const oshiCombinationDataDict = oshiCombinationData
         .map(ocd => ({ [ocd.characterName]: ocd.count }))
         .reduce((acc, curr) => ({ ...acc, ...curr }), {});
-      return {
-        [character.name]: oshiCombinationDataDict
-      };
+      return oshiCombinationData.length > 0
+        ? {
+            [character.name]: oshiCombinationDataDict
+          }
+        : {};
     });
   const data = await Promise.all(dataPromise);
-  const result = data.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+  const result = data
+    .reduce((acc, curr) => ({ ...acc, ...curr }), {});
   return result;
 };
 

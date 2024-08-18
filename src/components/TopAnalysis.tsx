@@ -24,71 +24,88 @@ const TopAnalysis: React.FC<
   className,
   ...props
 }) => {
-  const nodeData = Object.keys(topAnalysisData)
-    .map(characterName =>
-      ({ id: characterName, label: characterName })
-    );
-  const nodes = new DataSet<Node>(nodeData);
-  //const nodes = new DataSet<Node>([
-  //  { id: 1, label: "Node 1" },
-  //  { id: 2, label: "Node 2" },
-  //  { id: 3, label: "Node 3" },
-  //  { id: 4, label: "Node 4" },
-  //  { id: 5, label: "Node 5" },
-  //]);
-
-  const edgeData = Object.entries(topAnalysisData)
-    .flatMap(([fromKey, dict]: [string, {[key: string]: number}]) =>
-      Object.entries(dict)
-        .map(([toKey, count]) =>
-          ({ from: fromKey, to: toKey })
-        )
-    );
-  const filteredEdgeData: Edge[] = [];
-  for (const tmpEdge of edgeData) {
-    if (!filteredEdgeData.some(e =>
-      e.from === tmpEdge.to && e.to === tmpEdge.from
-    )) {
-      filteredEdgeData.push(tmpEdge);
-    }
-  }
-  const edges = new DataSet<Edge>(filteredEdgeData);
-  //const edges = new DataSet<Edge>([
-  //  { from: 1, to: 3 },
-  //  { from: 1, to: 2 },
-  //  { from: 2, to: 4 },
-  //  { from: 2, to: 5 },
-  //  { from: 3, to: 3 },
-  //]);
-
   const [mounted, setMounted] = React.useState<boolean>(false);
+  React.useEffect(() => setMounted(true), []);
+  
+  const [targetCharacterName, setTargetCharacterName] =
+    React.useState<string>(Object.keys(topAnalysisData)[0]);
+
   const refNetwork = React.useRef<Network|null>(null);
 
-  React.useEffect(() => setMounted(true), []);
   React.useEffect(() => {
     if (mounted) {
       const container = document.getElementById(ContainerName)
       if (container == null ) {
         throw new Error(`div element with id ${ContainerName} not found!`); 
       }
+      const nodeData = [
+          targetCharacterName,
+          ...Object.keys(topAnalysisData[targetCharacterName])
+        ]
+        .map((characterName, iCharacterName) => ({ 
+          id: characterName, 
+          label: characterName,
+          shape: 'image',
+          image: '/girls-side-analysis/characters/placeholder.svg',
+          size: iCharacterName === 0 ? 50 : 25,
+        }));
+      const nodes = new DataSet<Node>(nodeData);
+
+
+      const totalCount = Object.values(
+        topAnalysisData[targetCharacterName]
+      ).reduce((curr, total) => total + curr, 0);
+      const edgeData = Object.entries(
+        topAnalysisData[targetCharacterName]
+      ).map(([toKey, count]) => ({ 
+        from: targetCharacterName, 
+        to: toKey, 
+        width: Math.max(1, count / totalCount * 10),
+        label: `${count}`
+      }));
+      const edges = new DataSet<Edge>(edgeData);
       const data: Data = { nodes, edges };
-      refNetwork.current = new Network(container, data, {});
+      refNetwork.current = new Network(container, data, {
+        nodes: {
+          font: {
+            color: '#FFFFFF',
+          }
+        }
+      });
     }
-  }, [mounted]);
+  }, [mounted, targetCharacterName]);
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setTargetCharacterName(prevCharacterName => {
+        const currentIndex = Object.keys(topAnalysisData)
+          .indexOf(prevCharacterName);
+        return Object.keys(topAnalysisData)[
+            (currentIndex + 1) % Object.keys(topAnalysisData).length
+          ];
+      });
+    }, 10_000);
+    return () => clearInterval(interval);
+  }, []);
 
   React.useLayoutEffect(() => {
     if (mounted && refNetwork.current) {
-      refNetwork.current.setSize('100%', '100%');
+      refNetwork.current.setSize('auto', 'auto');
       refNetwork.current.fit();
     }
   });
 
   return (
-    <div 
+    <div
       className={clsx(className)}
-      id={ContainerName}
       {...props}
-    />
+    >
+      <div>推し組み合わせデータ：{targetCharacterName}</div>
+      <div
+        id={ContainerName}
+        className='w-full h-full'
+      />
+    </div>
   );
 };
 
