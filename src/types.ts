@@ -7,7 +7,8 @@ import type {
   getCharacters
 } from '@/lib/characters';
 import type {
-  getLatestVotes
+  getLatestVotes,
+  getLatestVotesForAnalysis
 } from '@/lib/votes';
 
 export type ExtractElement<T> = T extends (infer U)[] ? U : never;
@@ -23,3 +24,5 @@ export type Character =
 export type Vote =
   ExtractElement<Awaited<ReturnType<typeof getLatestVotes>>>;
 
+export type TopAnalysisData =
+  Awaited<ReturnType<typeof getLatestVotesForAnalysis>>;

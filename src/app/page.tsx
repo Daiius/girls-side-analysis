@@ -2,8 +2,17 @@ import clsx from 'clsx';
 
 import TopCharacterSelect from '@/components/TopCharacterSelect';
 import TopAnalysis from '@/components/TopAnalysis';
+import { getLatestVotesForAnalysis } from '@/lib/votes';
+
+// トップページは多くの人がアクセスすることを想定し、
+// static renderingにします...
+export const dynamic = 'force-static';
+export const revalidate = 30;
 
 export default async function Home() {
+
+  const data = await getLatestVotesForAnalysis();
+
   return (
     <div className='h-full flex flex-col'>
       <div>推しの組み合わせを分析します...</div>
@@ -18,6 +27,7 @@ export default async function Home() {
             'border border-1 border-slate-500',
             'rounded-lg',
           )}
+          topAnalysisData={data}
         />
       </div>
     </div>
