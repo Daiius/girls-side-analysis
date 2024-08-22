@@ -12,6 +12,7 @@ import {
 } from 'vis-network/standalone/esm/vis-network';
 
 import { TopAnalysisData } from '@/types';
+import { useTheme } from 'next-themes';
 
 
 const ContainerName: string = 'top-analysis-network' as const;
@@ -29,6 +30,8 @@ const TopAnalysis: React.FC<
   
   const [targetCharacterName, setTargetCharacterName] =
     React.useState<string>(Object.keys(topAnalysisData)[0]);
+
+  const { theme } = useTheme();
 
   const refNetwork = React.useRef<Network|null>(null);
 
@@ -60,21 +63,25 @@ const TopAnalysis: React.FC<
       ).map(([toKey, count]) => ({ 
         from: targetCharacterName, 
         to: toKey, 
-        width: Math.max(1, count / totalCount * 10),
-        label: `${count}`
+        width: Math.max(1, count / totalCount * 20),
+        label: `${count}`,
+        length: 500,
       }));
       const edges = new DataSet<Edge>(edgeData);
       const data: Data = { nodes, edges };
       refNetwork.current = new Network(container, data, {
         nodes: {
           font: {
-            color: '#FFFFFF',
+            color: theme === 'dark' ? '#FFFFFF' : '#000000',
           }
         },
-        //autoResize: false,
+        edges: {
+          length: 1000,
+        },
+        physics: false,
       });
     }
-  }, [mounted, targetCharacterName]);
+  }, [mounted, targetCharacterName, theme]);
 
   React.useEffect(() => {
     const interval = setInterval(() => {
@@ -95,7 +102,10 @@ const TopAnalysis: React.FC<
       {...props}
     >
       <div className='h-[2rem]'>
-        {targetCharacterName} 推しの人は、○○も推しています！
+        <span className='font-bold'>
+          {targetCharacterName}
+        </span>
+        <span> 推しの人が同時に推すのは...</span>
       </div>
       <div
         id={ContainerName}
