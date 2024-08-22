@@ -2,20 +2,12 @@
 
 import React from 'react';
 import clsx from 'clsx';
+import Image from 'next/image';
 
-import { 
-  Node, 
-  Edge, 
-  DataSet, 
-  Network, 
-  Data
-} from 'vis-network/standalone/esm/vis-network';
 
 import { TopAnalysisData } from '@/types';
-import { useTheme } from 'next-themes';
 
 
-const ContainerName: string = 'top-analysis-network' as const;
 
 const TopAnalysis: React.FC<
   { topAnalysisData: TopAnalysisData }
@@ -25,63 +17,13 @@ const TopAnalysis: React.FC<
   className,
   ...props
 }) => {
-  const [mounted, setMounted] = React.useState<boolean>(false);
-  React.useEffect(() => setMounted(true), []);
   
   const [targetCharacterName, setTargetCharacterName] =
     React.useState<string>(Object.keys(topAnalysisData)[0]);
 
-  const { theme } = useTheme();
-
-  const refNetwork = React.useRef<Network|null>(null);
-
-  React.useEffect(() => {
-    if (mounted) {
-      const container = document.getElementById(ContainerName)
-      if (container == null ) {
-        throw new Error(`div element with id ${ContainerName} not found!`); 
-      }
-      const nodeData = [
-          targetCharacterName,
-          ...Object.keys(topAnalysisData[targetCharacterName])
-        ]
-        .map((characterName, iCharacterName) => ({ 
-          id: characterName, 
-          label: characterName,
-          shape: 'circularImage',
-          image: '/girls-side-analysis/characters/placeholder.svg',
-          size: iCharacterName === 0 ? 50 : 25,
-        }));
-      const nodes = new DataSet<Node>(nodeData);
-
-
-      const totalCount = Object.values(
-        topAnalysisData[targetCharacterName]
-      ).reduce((curr, total) => total + curr, 0);
-      const edgeData = Object.entries(
-        topAnalysisData[targetCharacterName]
-      ).map(([toKey, count]) => ({ 
-        from: targetCharacterName, 
-        to: toKey, 
-        width: Math.max(1, count / totalCount * 20),
-        label: `${count}`,
-        length: 500,
-      }));
-      const edges = new DataSet<Edge>(edgeData);
-      const data: Data = { nodes, edges };
-      refNetwork.current = new Network(container, data, {
-        nodes: {
-          font: {
-            color: theme === 'dark' ? '#FFFFFF' : '#000000',
-          }
-        },
-        edges: {
-          length: 1000,
-        },
-        physics: false,
-      });
-    }
-  }, [mounted, targetCharacterName, theme]);
+  const totalCount = Object.values(
+    topAnalysisData[targetCharacterName]
+  ).reduce((total, curr)=> total + curr, 0);
 
   React.useEffect(() => {
     const interval = setInterval(() => {
@@ -102,19 +44,44 @@ const TopAnalysis: React.FC<
       {...props}
     >
       <div className='h-[2rem]'>
-        <span className='font-bold'>
+        <span className='text-lg font-bold'>
           {targetCharacterName}
         </span>
         <span> 推しの人が同時に推すのは...</span>
       </div>
-      <div
-        id={ContainerName}
+      <div 
         className={clsx(
-          'w-full h-[calc(100%-2rem)]',
-          'border border-1 border-slate-500',
-          'rounded-lg',
+          'border border-1 border-black dark:border-white',
+          'rounded-lg p-4',
+          'flex flex-col gap-1',
         )}
-      />
+      >
+        {Object.entries(topAnalysisData[targetCharacterName])
+          .map(([characterName, count]) =>
+            <div 
+              key={characterName}
+              className='flex flex-row items-center gap-1'
+            >
+              <div className='flex flex-col items-center'>
+                <Image
+                  src='/girls-side-analysis/characters/placeholder.svg'
+                  alt={characterName}
+                  width={100}
+                  height={100}
+                  className='rounded-lg bg-white/5'
+                />
+                <div className='text-lg font-bold'>{characterName}</div>
+              </div>
+              <div
+                className='bg-sky-500 rounded-md text-lg p-2 text-white'
+                style={{ width: `calc(${count/totalCount*100}%)`}}
+              >
+                {count}票
+              </div>
+            </div>
+          )
+        }
+      </div>
     </div>
   );
 };
