@@ -15,7 +15,9 @@ export default async function Home() {
 
   return (
     <div className='w-full h-full flex flex-col items-center gap-2'>
-      <div>推しの組み合わせを分析します...</div>
+      <div className='text-lg font-bold'>
+        あなたの推しを教えて下さい！
+      </div>
       <TopCharacterSelect />
       <TopAnalysis
         className={clsx('w-full h-full')}
