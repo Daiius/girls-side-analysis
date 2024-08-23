@@ -41,16 +41,39 @@ export const useGarden = ({
       .find(c => c.characterName === charaName)?.level;
     if (levelOfTarget == null || levelOfTarget <= 1) return;
 
-    // 該当キャラクターのみ順位を変化させる
-    setCharactersInGarden([
-      ...charactersInGarden.filter(v =>
-        charaName !== v.characterName
-      ),
-      {
-        characterName: charaName,
-        level: levelOfTarget - 1,
-      }
-    ]);
+    if (
+      charactersInGarden
+        .filter(c => c.level === levelOfTarget)
+        .length === 1
+    ) {
+      // 単純に順位を上げると空の順位ができてしまう
+      // 自分以下の順位のキャラクターの順位を一つ上昇する
+      setCharactersInGarden([
+        ...charactersInGarden.filter(v =>
+          charaName !== v.characterName
+        ).map(v =>
+          v.level >= levelOfTarget // 等号は成立しないはず
+            ? { ...v, level: v.level - 1 }
+            : v
+        ),
+        {
+          characterName: charaName,
+          level: levelOfTarget - 1,
+        }
+      ]);
+    } else {
+      // 空の順位ができないので安心
+      // 該当キャラクターのみ順位を変化させる
+      setCharactersInGarden([
+        ...charactersInGarden.filter(v =>
+          charaName !== v.characterName
+        ),
+        {
+          characterName: charaName,
+          level: levelOfTarget - 1,
+        }
+      ]);
+    }
   };
   
   /**
@@ -65,17 +88,26 @@ export const useGarden = ({
     const isOnlyCharaInLevel = charactersInGarden
       .filter(c => c.level === levelOfTarget)
       .length <= 1;
-    if (isOnlyCharaInLevel) return;
-
-    setCharactersInGarden([
-      ...charactersInGarden.filter(v =>
-        charaName !== v.characterName
-      ),
-      {
-        characterName: charaName,
-        level: levelOfTarget + 1,
+    if (isOnlyCharaInLevel) {
+      if (levelOfTarget === maxLevel) {
+        // 最大レベルで孤立している場合...
+        // 対象を削除します
+        setCharactersInGarden(
+          charactersInGarden.filter(c => c.characterName !== charaName)
+        );
       }
-    ]);
+    } else {
+      // 単純に順位を一つ増やす
+      setCharactersInGarden([
+        ...charactersInGarden.filter(v =>
+          charaName !== v.characterName
+        ),
+        {
+          characterName: charaName,
+          level: levelOfTarget + 1,
+        }
+      ]);
+    }
   };
 
   const addCharacter = (charaName: string) => {
