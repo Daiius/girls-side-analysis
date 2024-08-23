@@ -18,7 +18,12 @@ const Header: React.FC = () => (
   )}>
     {/* ロゴ */}
     <Link href='/'>
-      💚💙Girl's Side Analysis💗🧡
+      <span className='hidden sm:block'>
+        💚💙Girl's Side Analysis💗🧡
+      </span>
+      <span className='sm:hidden'>
+        💚💙GS Analysis💗🧡
+      </span>
     </Link>
     <HeaderProfileLink />
     <ThemeChanger />

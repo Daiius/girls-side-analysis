@@ -1,18 +1,29 @@
 import clsx from 'clsx';
 
 import TopCharacterSelect from '@/components/TopCharacterSelect';
+import TopAnalysis from '@/components/TopAnalysis';
+import { getLatestVotesForAnalysis } from '@/lib/votes';
+
+// トップページは多くの人がアクセスすることを想定し、
+// static renderingにします...
+export const dynamic = 'force-static';
+export const revalidate = 30;
 
 export default async function Home() {
+
+  const data = await getLatestVotesForAnalysis();
+
   return (
-    <>
-      <div>推しの組み合わせを分析します...</div>
-      <div className={clsx(
-        'flex flex-col items-center',
-        'p-6 md:p-24'
-      )}>
-        <TopCharacterSelect className='my-5'/>
+    <div className='w-full h-full flex flex-col items-center gap-2'>
+      <div className='text-xl font-bold h-2rem'>
+        あなたの推しを教えて下さい！
       </div>
-    </>
+      <TopCharacterSelect className='h-3rem'/>
+      <TopAnalysis
+        className={clsx('w-full h-[calc(100%-6rem)]')}
+        topAnalysisData={data}
+      />
+    </div>
   );
 }
 

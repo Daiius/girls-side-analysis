@@ -44,25 +44,19 @@ const TopCharacterSelectClient: React.FC<
   return (
     <div className={clsx(className)} {...props}>
       <Field>
-        <Label>あなたの推しキャラは？</Label>
-        <Description className={clsx(
-          'text-slate-500 dark:text-slate-300 ml-2'
-        )}>
-          分析結果を表示します...
-        </Description>
         <div className='relative'>
           <Select
             className={clsx(
               'block w-full appearance-none rounded-lg border-none',
               'bg-black/5 dark:bg-white/5',
-              'py-1.5 px-3 text-sm/6 text-slate-400'
+              'py-1.5 px-3 text-sm/6'
             )}
             onChange={e => handleSelect(e.target.value)}
             defaultValue={defaultCharaName}
           >
-            <option value="">選択...</option>
+            <option className='text-black' value="">選択...</option>
             {characters.map(chara => 
-              <option key={chara.name} value={chara.name}>
+              <option className='text-black' key={chara.name} value={chara.name}>
                 {chara.name}
               </option>
             )}
@@ -75,6 +69,11 @@ const TopCharacterSelectClient: React.FC<
             aria-hidden
           />
         </div>
+        <Description className={clsx(
+          'text-slate-700 dark:text-slate-300 ml-2'
+        )}>
+          分析結果を表示します...
+        </Description>
       </Field>
     </div>
   );
