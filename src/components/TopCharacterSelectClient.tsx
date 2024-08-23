@@ -49,14 +49,14 @@ const TopCharacterSelectClient: React.FC<
             className={clsx(
               'block w-full appearance-none rounded-lg border-none',
               'bg-black/5 dark:bg-white/5',
-              'py-1.5 px-3 text-sm/6 text-slate-700'
+              'py-1.5 px-3 text-sm/6'
             )}
             onChange={e => handleSelect(e.target.value)}
             defaultValue={defaultCharaName}
           >
-            <option value="">選択...</option>
+            <option className='text-black' value="">選択...</option>
             {characters.map(chara => 
-              <option key={chara.name} value={chara.name}>
+              <option className='text-black' key={chara.name} value={chara.name}>
                 {chara.name}
               </option>
             )}

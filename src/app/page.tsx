@@ -15,12 +15,12 @@ export default async function Home() {
 
   return (
     <div className='w-full h-full flex flex-col items-center gap-2'>
-      <div className='text-xl font-bold'>
+      <div className='text-xl font-bold h-2rem'>
         あなたの推しを教えて下さい！
       </div>
-      <TopCharacterSelect />
+      <TopCharacterSelect className='h-3rem'/>
       <TopAnalysis
-        className={clsx('w-full h-full')}
+        className={clsx('w-full h-[calc(100%-6rem)]')}
         topAnalysisData={data}
       />
     </div>
