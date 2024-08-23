@@ -29,7 +29,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
   trustHost: true,
   session: { strategy: 'jwt' },
   providers: [Twitter],
-  debug: true,
+  debug: process.env.NODE_ENV !== 'production',
   callbacks: {
     async jwt({ token, account, profile }) {
       if (account && profile) {
@@ -46,7 +46,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       return session;
     },
     async authorized({ auth, request: { nextUrl }}) {
-      console.log('authorized, auth: ', auth);
       const isLoggedIn = !!auth?.user;
       const isOnRoot = nextUrl.pathname === '/girls-side-analysis';
       const isOnProfile = nextUrl.pathname === '/girls-side-analysis/profile';
