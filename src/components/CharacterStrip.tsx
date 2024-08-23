@@ -15,6 +15,7 @@ const CharacterStrip: React.FC<
     decreaseLevel: () => void;
     isLonlyAtMaxLevel: boolean;
     isLonlyAtLevel: boolean;
+    level: number;
   } 
   & React.ComponentProps<'div'>
 >= ({
@@ -23,6 +24,7 @@ const CharacterStrip: React.FC<
   decreaseLevel,
   isLonlyAtMaxLevel,
   isLonlyAtLevel,
+  level,
   className,
   ...props
 }) => (
@@ -36,7 +38,10 @@ const CharacterStrip: React.FC<
     )}
     {...props}
   >
-    <Button onClick={decreaseLevel}>
+    <Button 
+      onClick={decreaseLevel}
+      disabled={level === 1}
+    >
       <ChevronLeftIcon className='size-4' />
     </Button>
     <div className='flex flex-col'>

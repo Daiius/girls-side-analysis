@@ -87,6 +87,7 @@ const VotingFormCharactersClient: React.FC<
                     .filter(tmp => tmp.level === c.level)
                     .length === 1
                 }
+                level={c.level}
               />
             )
           }
