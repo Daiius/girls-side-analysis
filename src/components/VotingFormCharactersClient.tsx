@@ -42,7 +42,8 @@ const VotingFormCharactersClient: React.FC<
   return (
     <div 
       className={clsx(
-        'bg-white/5 border border-1 border-slate-500',
+        'dark:bg-white/10 bg-black/5',
+        'border border-1 border-slate-500',
         'rounded-lg',
         className
       )}
@@ -75,6 +76,17 @@ const VotingFormCharactersClient: React.FC<
                 characterName={c.characterName}
                 increaseLevel={() => increaseLevel(c.characterName)}
                 decreaseLevel={() => decreaseLevel(c.characterName)}
+                isLonlyAtMaxLevel={
+                     c.level === maxLevel
+                  && charactersInGarden
+                       .filter(tmp => tmp.level === maxLevel)
+                       .length === 1
+                }
+                isLonlyAtLevel={
+                  charactersInGarden
+                    .filter(tmp => tmp.level === c.level)
+                    .length === 1
+                }
               />
             )
           }

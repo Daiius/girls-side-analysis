@@ -5,6 +5,7 @@ import Button from '@/components/Button';
 import { 
   ChevronLeftIcon, 
   ChevronRightIcon,
+  XCircleIcon,
 } from '@heroicons/react/24/outline';
 
 const CharacterStrip: React.FC<
@@ -12,22 +13,25 @@ const CharacterStrip: React.FC<
     characterName: string;
     increaseLevel: () => void;
     decreaseLevel: () => void;
+    isLonlyAtMaxLevel: boolean;
+    isLonlyAtLevel: boolean;
   } 
   & React.ComponentProps<'div'>
 >= ({
   characterName,
   increaseLevel,
   decreaseLevel,
+  isLonlyAtMaxLevel,
+  isLonlyAtLevel,
   className,
   ...props
 }) => (
   <div 
     className={clsx(
-      'border border-1 border-slate-200 rounded-md',
+      'border border-1 border-slate-800 dark:border-slate-200 rounded-md',
       'py-3 px-2',
       'flex flex-row  items-center gap-2 justify-between',
-       characterName === 'クリストファー・ウェザーフィールド' 
-         && 'text-xs',
+      characterName.includes('・') && 'text-xs',
       className,
     )}
     {...props}
@@ -51,8 +55,14 @@ const CharacterStrip: React.FC<
         }
       </span>
     </div>
-    <Button onClick={increaseLevel}>
-      <ChevronRightIcon className='size-4' />
+    <Button 
+      onClick={increaseLevel}
+      disabled={!isLonlyAtMaxLevel && isLonlyAtLevel}
+    >
+      {isLonlyAtMaxLevel
+        ? <XCircleIcon className='size-4' /> 
+        : <ChevronRightIcon className='size-4' />
+      }
     </Button>
   </div>
 );
