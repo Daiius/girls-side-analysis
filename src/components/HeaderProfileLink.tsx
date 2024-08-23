@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Button from '@/components/Button';
+import { UserCircleIcon } from '@heroicons/react/24/outline';
 
 /**
  * プロファイルページへのリンク
@@ -15,8 +16,14 @@ const HeaderProfileLink: React.FC = () => {
     <>
       {pathname !== '/profile' &&
         <Link className='ms-auto' href='/profile'>
-          <Button className='px-2'>
-            投票/あなたのページへ
+          <Button className='px-2 flex flex-row gap-1 items-center'>
+            <span className='hidden sm:block'>
+              投票/あなたのページへ
+            </span>
+            <span className='sm:hidden'>
+              投票
+            </span>
+            <UserCircleIcon className='size-6' />
           </Button>
         </Link>
       }

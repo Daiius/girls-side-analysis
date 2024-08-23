@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from '@/db';
-import { votes } from '@/db/schema';
+import { votes, characters } from '@/db/schema';
 import { 
   eq, ne, exists, and, max, count, desc, asc
 } from 'drizzle-orm';
@@ -113,5 +113,31 @@ export const insertVotesIfUpdated = async ({
           data.map(d => ({ ...d, twitterID }))
         );
     }
+};
+
+export const getLatestVotesForAnalysis = async () => {
+  const allCharacters = await db.select()
+    .from(characters)
+    .orderBy(
+      asc(characters.sort), 
+      asc(characters.series)
+    );
+  const dataPromise = allCharacters
+    .map(async character => {
+      const oshiCombinationData =
+        await getVotesRelatedToOshi(character.name);
+      const oshiCombinationDataDict = oshiCombinationData
+        .map(ocd => ({ [ocd.characterName]: ocd.count }))
+        .reduce((acc, curr) => ({ ...acc, ...curr }), {});
+      return oshiCombinationData.length > 0
+        ? {
+            [character.name]: oshiCombinationDataDict
+          }
+        : {};
+    });
+  const data = await Promise.all(dataPromise);
+  const result = data
+    .reduce((acc, curr) => ({ ...acc, ...curr }), {});
+  return result;
 };
 

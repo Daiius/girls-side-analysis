@@ -41,7 +41,11 @@ const VotingFormCharactersClient: React.FC<
   
   return (
     <div 
-      className={clsx(className)}
+      className={clsx(
+        'bg-white/5 border border-1 border-slate-500',
+        'rounded-lg',
+        className
+      )}
       {...props}
     >
         <div className='relative'>
