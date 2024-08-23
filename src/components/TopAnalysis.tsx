@@ -25,6 +25,10 @@ const TopAnalysis: React.FC<
     topAnalysisData[targetCharacterName]
   ).reduce((total, curr)=> total + curr, 0);
 
+  const maxCount = Object.values(
+    topAnalysisData[targetCharacterName]
+  ).reduce((max, curr) => max < curr ? curr : max, 0);
+
   React.useEffect(() => {
     const interval = setInterval(() => {
       setTargetCharacterName(prevCharacterName => {
@@ -47,13 +51,13 @@ const TopAnalysis: React.FC<
         <span className='text-lg font-bold'>
           {targetCharacterName}
         </span>
-        <span> 推しの人が同時に推すのは...</span>
+        <span> 推しの人が同時に推すのは、</span>
       </div>
       <div 
         className={clsx(
           'border border-1 border-black dark:border-white',
-          'rounded-lg p-4',
-          'flex flex-col gap-1',
+          'rounded-lg p-4 h-[80%]',
+          'overflow-y-auto',
         )}
       >
         {Object.entries(topAnalysisData[targetCharacterName])
@@ -62,7 +66,14 @@ const TopAnalysis: React.FC<
               key={characterName}
               className='flex flex-row items-center gap-1'
             >
-              <div className='flex flex-col items-center'>
+              <div
+                className={clsx(
+                  'flex flex-col', 
+                  'w-[100px] h-[calc(110px+2rem)]',
+                  characterName.includes('・') 
+                    ? 'items-start' : 'items-center',
+                )}  
+              >
                 <Image
                   src='/girls-side-analysis/characters/placeholder.svg'
                   alt={characterName}
@@ -70,11 +81,29 @@ const TopAnalysis: React.FC<
                   height={100}
                   className='rounded-lg bg-white/5'
                 />
-                <div className='text-lg font-bold'>{characterName}</div>
+                <div
+                  className={clsx(
+                    'text-lg font-bold whitespace-nowrap',
+                    characterName.includes('・') && 'text-sm',
+                  )}
+                >
+                  {/* クリスの名前を収めるための処理 */}
+                  {characterName.includes('・')
+                    ? <div className='flex flex-col'>
+                        <span>
+                          {characterName.split('・')[0]}
+                        </span>
+                        <span>
+                          ・{characterName.split('・')[1]}
+                        </span>
+                      </div>
+                    : characterName
+                  }
+                </div>
               </div>
               <div
                 className='bg-sky-500 rounded-md text-lg p-2 text-white'
-                style={{ width: `calc(${count/totalCount*100}%)`}}
+                style={{ width: `calc(${count/maxCount*100}%)`}}
               >
                 {count}票
               </div>
