@@ -17,9 +17,9 @@ export const connection = mysql.createPool({
 
 const db = globalThis._db || drizzle(connection);
 
-if (process.env.NODE_ENV !== 'production') {
+//if (process.env.NODE_ENV !== 'production') {
   globalThis._db = db;
-}
+//}
 
 export { db };
 

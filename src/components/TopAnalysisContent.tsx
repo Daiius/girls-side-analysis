@@ -17,11 +17,11 @@ const TopAnalysisContent: React.FC<
   ...props
 }) => {
   const totalCount = Object.values(
-    topAnalysisData[targetCharacterName]
+    topAnalysisData[targetCharacterName] ?? 0
   ).reduce((total, curr)=> total + curr, 0);
 
   const maxCount = Object.values(
-    topAnalysisData[targetCharacterName]
+    topAnalysisData[targetCharacterName] ?? 0
   ).reduce((max, curr) => max < curr ? curr : max, 0);
   return (
     <div
@@ -41,7 +41,7 @@ const TopAnalysisContent: React.FC<
           'overflow-y-auto',
         )}
       >
-        {Object.entries(topAnalysisData[targetCharacterName])
+        {Object.entries(topAnalysisData[targetCharacterName] ?? {})
           .map(([characterName, count]) =>
             <div 
               key={characterName}
@@ -90,6 +90,12 @@ const TopAnalysisContent: React.FC<
               </div>
             </div>
           )
+        }
+        {topAnalysisData[targetCharacterName] == null &&
+          <div>
+            <span>データがまだ有りません... </span>
+            <span>推しの方は投票をお願いします！</span>
+          </div>
         }
       </div>
     </div>
