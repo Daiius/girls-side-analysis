@@ -1,10 +1,22 @@
-import { db, connection } from './src/db';
 import { 
   characters, 
   votes,
   userStatesMaster,
   userStates,
 } from './src/db/schema';
+
+import { drizzle } from 'drizzle-orm/mysql2';
+import mysql from 'mysql2/promise';
+
+const connection = await mysql.createConnection({
+  host: process.env.DB_HOST,
+  user: process.env.MYSQL_USER,
+  password: process.env.MYSQL_PASSWORD,
+  database: process.env.MYSQL_DATABASE,
+});
+
+
+const db = drizzle(connection);
 
 
 await db.insert(characters).values([
@@ -82,7 +94,7 @@ await db.insert(userStatesMaster).values([
 ]);
 
 // ID毎にプレイ状態を記録
-await db.transaction(async (tx) =>{
+await db.transaction(async (_tx) =>{
   // GS4を初プレイしたtestIDさん
   const twitterID = 'testID';
   const recordedTime = new Date('2023/09/21 00:00:00'); 
@@ -94,7 +106,7 @@ await db.transaction(async (tx) =>{
   ]);
 });
 
-await db.transaction(async (tx) => {
+await db.transaction(async (_tx) => {
   // 年が変わるまでに一通りプレイした記録を追加
   const twitterID = 'testID';
   const recordedTime = new Date('2024/01/01 00:00:00'); 
@@ -106,7 +118,7 @@ await db.transaction(async (tx) => {
   ]);
 });
 
-await db.transaction(async (tx) => {
+await db.transaction(async (_tx) => {
   // 以前から格ヤノ推しの人のプレイ記録
   const twitterID = process.env.TEST_TWITTER_ID ?? 'testID2';
   const recordedTime = new Date('2023/05/31 00:00:00');
