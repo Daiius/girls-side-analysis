@@ -99,26 +99,10 @@ const VotingFormClient: React.FC<
 
   return (
     <form 
-      className={clsx('flex flex-col', className)}
+      className={clsx('flex flex-col gap-5', className)}
       action={formAction}
       {...props}
     >
-      <div className='flex flex-col'>
-        <Button 
-          type='submit'
-          className={clsx(
-            'flex flex-row items-center self-center',
-            'px-2 text-2xl font-bold border-2'
-          )}
-          disabled={isPending}
-        >
-          <span className='mr-2'>投票！</span>
-          <PaperAirplaneIcon className='size-6'/>
-        </Button>
-        {errorMessage &&
-          <div className='self-center'>{errorMessage}</div>
-        }
-      </div>
       {latestUserState.length > 0 && 
         <div>最後の投票内容:</div>
       }
@@ -143,6 +127,22 @@ const VotingFormClient: React.FC<
         }
         addCharacter={addCharacter}
       />
+      <div className='flex flex-col mb-16'>
+        <Button 
+          type='submit'
+          className={clsx(
+            'flex flex-row items-center self-center',
+            'px-2 text-2xl font-bold border-2'
+          )}
+          disabled={isPending}
+        >
+          <span className='mr-2'>投票！</span>
+          <PaperAirplaneIcon className='size-6'/>
+        </Button>
+        {errorMessage &&
+          <div className='self-center'>{errorMessage}</div>
+        }
+      </div>
     </form>
   );
 };
