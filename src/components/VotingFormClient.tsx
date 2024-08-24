@@ -60,7 +60,7 @@ const VotingFormClient: React.FC<
 
   const latestUserStateDict = latestUserState
     .map(lus => ({ [lus.series]: lus.state }))
-    .reduce((acc, curr) => ({ ...acc, ...curr }));
+    .reduce((acc, curr) => ({ ...acc, ...curr }), {});
 
   const [errorMessage, formAction, isPending] = React.useActionState(
     async (prevState: string|undefined, formData: FormData) => {
