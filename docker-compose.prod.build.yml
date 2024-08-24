@@ -1,17 +1,27 @@
 services:
   girls-side-analysis-nextjs:
-    build:
-      dockerfile: ./Dockerfile.nextjs
-    container_name: girls-side-analysis-nextjs-dev
+    image: docker:latest
+    container_name: girls-side-analysis-dood
     env_file:
       - .env
+    environment:
+      DOCKER_BUILDKIT: 0
     volumes:
       - .:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /app
     tmpfs:
       - /app/.next
+    command: >
+      docker build
+        --network=girls-side-analysis-build-network
+        -t girls-side-analysis-nextjs
+        -f Dockerfile.nextjs.prod .
+    depends_on:
+      database-preparation:
+        condition: service_completed_successfully
 
   database:
-    #image: mysql:8.0-debian
     build:
       dockerfile: ./Dockerfile.mysql
     container_name: girls-side-analysis-database
@@ -38,7 +48,7 @@ services:
     env_file:
       - .env
     environment:
-      NODE_ENV: 'development'
+      NODE_ENV: 'production'
     volumes:
       - ./:/app:ro
     working_dir: /app
@@ -58,15 +68,7 @@ services:
       database:
         condition: service_healthy
     
-  webserver:
-    image: nginx
-    container_name: girls-side-analysis-webserver
-    ports:
-      - 80:80
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-
 networks:
   default:
-    name: girls-side-analysis-network
+    name: girls-side-analysis-build-network
 

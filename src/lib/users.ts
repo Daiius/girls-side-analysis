@@ -50,10 +50,14 @@ export const insertUserStatesIfUpdated = async ({
   data: { series: number; state: string; }[];
 }) => {
   const latestData = await getLatestUserState(twitterID);
-  if (latestData.some(ld => data.some(d => 
-    d.series === ld.series && d.state !== ld.state
-  ))) {
-    // シリーズプレイ状況が変化したとき
+  if (
+       latestData.length === 0
+    || latestData.some(ld => data.some(d => 
+        d.series === ld.series && d.state !== ld.state
+       ))
+  ) {
+    // 初投票のとき
+    // or シリーズプレイ状況が変化したとき
     const gs1State = data.find(d => d.series === 1)?.state;
     const gs2State = data.find(d => d.series === 2)?.state;
     const gs3State = data.find(d => d.series === 3)?.state;
@@ -66,10 +70,6 @@ export const insertUserStatesIfUpdated = async ({
         { twitterID, series: 3, status: gs3State },
         { twitterID, series: 4, status: gs4State },
       ]);
-
-      // revalidatePath('/[charaName]');
-      // 一定時間ごとに/[charaName]ページは再生成されるはずなので
-      // コメントアウト
     }
   }
 };

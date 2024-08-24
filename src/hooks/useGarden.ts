@@ -27,7 +27,8 @@ export const useGarden = ({
   }
   
   const maxLevel = Math.max(
-    ...charactersInGarden.map(lv => lv.level)
+    ...charactersInGarden.map(lv => lv.level),
+    1
   );
   
   

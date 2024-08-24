@@ -5,6 +5,7 @@ import { insertUserStatesIfUpdated } from '@/lib/users';
 import { insertVotesIfUpdated } from '@/lib/votes';
 
 import { Vote } from '@/types';
+import { revalidatePath } from 'next/cache';
 
 /**
  * ユーザのプレイ状況と推しデータの記録を行います
@@ -47,5 +48,7 @@ export const vote = async (
     data: userVotes,
   });
 
+  revalidatePath('/');
+  revalidatePath('/[charaName]');
 };
 

@@ -50,46 +50,52 @@ const VotingFormCharactersClient: React.FC<
       {...props}
     >
         <div className='relative'>
+          {charactersInGarden.length === 0 &&
+            <div>推しを選択、追加しましょう！</div>
+          }
           {/* 上部に順位表示 */}
-          {[...new Array(maxLevel)].map((_, ilevel) =>
-            <div 
-              key={ilevel+1}
-              className='absolute whitespace-nowrap'
-              style={{top: '0rem', left: `${(ilevel)*13.5}rem`}}
-            >
-              推し順位: {ilevel + 1}
-            </div>
-          )}
-          {charactersInGarden
-            .map(c =>
-              <CharacterStrip
-                className={clsx(
-                  'absolute', 
-                  'transition-transform duration-100 ease-in-out',
-                  'w-[13rem] h-[3rem]',
-                )}
-                style={{ 
-                  transform: 
-                    `translate(${(c.level-1)*13.5}rem,${c.position*4+2}rem)` 
-                }}
-                key={`${c.characterName}`}
-                characterName={c.characterName}
-                increaseLevel={() => increaseLevel(c.characterName)}
-                decreaseLevel={() => decreaseLevel(c.characterName)}
-                isLonlyAtMaxLevel={
-                     c.level === maxLevel
-                  && charactersInGarden
-                       .filter(tmp => tmp.level === maxLevel)
-                       .length === 1
-                }
-                isLonlyAtLevel={
-                  charactersInGarden
-                    .filter(tmp => tmp.level === c.level)
-                    .length === 1
-                }
-                level={c.level}
-              />
+          {charactersInGarden.length > 0 &&
+            [...new Array(maxLevel)].map((_, ilevel) =>
+              <div 
+                key={ilevel+1}
+                className='absolute whitespace-nowrap'
+                style={{top: '0rem', left: `${(ilevel)*13.5}rem`}}
+              >
+                推し順位: {ilevel + 1}
+              </div>
             )
+          }
+          {charactersInGarden.length > 0 &&
+            charactersInGarden
+              .map(c =>
+                <CharacterStrip
+                  className={clsx(
+                    'absolute', 
+                    'transition-transform duration-100 ease-in-out',
+                    'w-[13rem] h-[3rem]',
+                  )}
+                  style={{ 
+                    transform: 
+                      `translate(${(c.level-1)*13.5}rem,${c.position*4+2}rem)` 
+                  }}
+                  key={`${c.characterName}`}
+                  characterName={c.characterName}
+                  increaseLevel={() => increaseLevel(c.characterName)}
+                  decreaseLevel={() => decreaseLevel(c.characterName)}
+                  isLonlyAtMaxLevel={
+                       c.level === maxLevel
+                    && charactersInGarden
+                         .filter(tmp => tmp.level === maxLevel)
+                         .length === 1
+                  }
+                  isLonlyAtLevel={
+                    charactersInGarden
+                      .filter(tmp => tmp.level === c.level)
+                      .length === 1
+                  }
+                  level={c.level}
+                />
+              )
           }
       </div>
     </div>

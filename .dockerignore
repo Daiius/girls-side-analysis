@@ -1,0 +1,6 @@
+.next
+src/stories/
+.storybook/
+.drizzle/
+node_modules
+
