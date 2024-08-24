@@ -108,12 +108,12 @@ const VotingFormClient: React.FC<
           type='submit'
           className={clsx(
             'flex flex-row items-center self-center',
-            'px-2'
+            'px-2 text-2xl font-bold border-2'
           )}
           disabled={isPending}
         >
           <span className='mr-2'>投票！</span>
-          <PaperAirplaneIcon className='size-4'/>
+          <PaperAirplaneIcon className='size-6'/>
         </Button>
         {errorMessage &&
           <div className='self-center'>{errorMessage}</div>
