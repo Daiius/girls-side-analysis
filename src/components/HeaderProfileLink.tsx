@@ -1,5 +1,7 @@
 'use client'
 
+import clsx from 'clsx';
+
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Button from '@/components/Button';
@@ -16,7 +18,10 @@ const HeaderProfileLink: React.FC = () => {
     <>
       {pathname !== '/profile' &&
         <Link className='ms-auto' href='/profile'>
-          <Button className='px-2 flex flex-row gap-1 items-center'>
+          <Button className={clsx(
+            'px-2 flex flex-row gap-1 items-center',
+            'bg-white/70 text-black',
+          )}>
             <span className='hidden sm:block'>
               投票/あなたのページへ
             </span>

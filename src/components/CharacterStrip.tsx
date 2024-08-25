@@ -1,30 +1,23 @@
 import React from 'react';
 import clsx from 'clsx';
 
-import Button from '@/components/Button';
 import { 
-  ChevronLeftIcon, 
-  ChevronRightIcon,
-  XCircleIcon,
+  XMarkIcon,
+  Bars3Icon,
 } from '@heroicons/react/24/outline';
+import Button from './Button';
 
 const CharacterStrip: React.FC<
   {
     characterName: string;
-    increaseLevel: () => void;
-    decreaseLevel: () => void;
-    isLonlyAtMaxLevel: boolean;
-    isLonlyAtLevel: boolean;
     level: number;
+    onDelete: () => void;
   } 
   & React.ComponentProps<'div'>
 >= ({
   characterName,
-  increaseLevel,
-  decreaseLevel,
-  isLonlyAtMaxLevel,
-  isLonlyAtLevel,
   level,
+  onDelete,
   className,
   ...props
 }) => (
@@ -32,18 +25,13 @@ const CharacterStrip: React.FC<
     className={clsx(
       'border border-1 border-slate-800 dark:border-slate-200 rounded-md',
       'py-3 px-2',
-      'flex flex-row  items-center gap-2 justify-between',
+      'flex flex-row  items-center gap-2',
       characterName.includes('・') && 'text-xs',
       className,
     )}
     {...props}
   >
-    <Button 
-      onClick={decreaseLevel}
-      disabled={level === 1}
-    >
-      <ChevronLeftIcon className='size-4' />
-    </Button>
+    <Bars3Icon className='size-5' />
     <div className='flex flex-col'>
       <span className='font-bold'>
         {/* クリスの名前を収めるための処理 */}
@@ -60,14 +48,8 @@ const CharacterStrip: React.FC<
         }
       </span>
     </div>
-    <Button 
-      onClick={increaseLevel}
-      disabled={!isLonlyAtMaxLevel && isLonlyAtLevel}
-    >
-      {isLonlyAtMaxLevel
-        ? <XCircleIcon className='size-4' /> 
-        : <ChevronRightIcon className='size-4' />
-      }
+    <Button className='ms-auto border-none' onClick={onDelete}>
+      <XMarkIcon className='size-4' />
     </Button>
   </div>
 );

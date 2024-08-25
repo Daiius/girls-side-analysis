@@ -6,7 +6,7 @@ declare global {
 }
 
 
-export const connection = mysql.createPool({
+export const connection = await mysql.createConnection({ //mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.MYSQL_USER,
   password: process.env.MYSQL_PASSWORD,
