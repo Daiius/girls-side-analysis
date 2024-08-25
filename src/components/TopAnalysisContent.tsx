@@ -1,7 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
 
-import Image from 'next/image';
 
 import { TopAnalysisData } from '@/types';
 
@@ -45,16 +44,25 @@ const TopAnalysisContent: React.FC<
           .map(([characterName, count]) =>
             <div 
               key={characterName}
-              className='grid grid-cols-[100px_auto] items-center gap-1'
+              className={clsx(
+                'grid grid-cols-[150px_auto] items-center',
+                'mb-6 last:mb-0',
+              )}
             >
               <div
                 className={clsx(
                   'flex flex-col', 
-                  'w-[100px] h-[calc(110px+2rem)]',
-                  characterName.includes('・') 
-                    ? 'items-start' : 'items-center',
+                  'w-[150px]',
+                  'justify-self-end',
+                  characterName.includes('・')
+                    ? 'text-left'
+                    : 'text-right pr-3'
+                  //'h-[calc(110px+2rem)]',
+                  //characterName.includes('・') 
+                  //  ? 'items-start' : 'items-center',
                 )}  
               >
+                {/*
                 <Image
                   src='/girls-side-analysis/characters/placeholder.svg'
                   alt={characterName}
@@ -62,6 +70,7 @@ const TopAnalysisContent: React.FC<
                   height={100}
                   className='rounded-lg bg-white/5'
                 />
+                */}
                 <div
                   className={clsx(
                     'text-lg font-bold whitespace-nowrap',

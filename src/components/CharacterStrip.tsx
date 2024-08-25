@@ -2,18 +2,22 @@ import React from 'react';
 import clsx from 'clsx';
 
 import { 
+  XMarkIcon,
   Bars3Icon,
 } from '@heroicons/react/24/outline';
+import Button from './Button';
 
 const CharacterStrip: React.FC<
   {
     characterName: string;
     level: number;
+    onDelete: () => void;
   } 
   & React.ComponentProps<'div'>
 >= ({
   characterName,
   level,
+  onDelete,
   className,
   ...props
 }) => (
@@ -44,6 +48,9 @@ const CharacterStrip: React.FC<
         }
       </span>
     </div>
+    <Button className='ms-auto border-none' onClick={onDelete}>
+      <XMarkIcon className='size-4' />
+    </Button>
   </div>
 );
 

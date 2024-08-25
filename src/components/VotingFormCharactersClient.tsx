@@ -82,11 +82,15 @@ const VotingFormCharactersClient: React.FC<
 }) => {
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 10, }
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
-    useSensor(TouchSensor),
+    useSensor(TouchSensor, {
+      activationConstraint: { distance: 10 }
+    }),
   );
 
   const handleDragEnd = (e: DragEndEvent) => {
@@ -139,6 +143,10 @@ const VotingFormCharactersClient: React.FC<
                       key={c}
                       characterName={c}
                       level={ic}
+                      onDelete={() => setFavorites(items =>
+                        items
+                          .filter(characterName => characterName !== c)
+                      )}
                     />
                   )
               }
