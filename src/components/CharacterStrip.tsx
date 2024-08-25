@@ -8,19 +8,11 @@ import {
 const CharacterStrip: React.FC<
   {
     characterName: string;
-    increaseLevel: () => void;
-    decreaseLevel: () => void;
-    isLonlyAtMaxLevel: boolean;
-    isLonlyAtLevel: boolean;
     level: number;
   } 
   & React.ComponentProps<'div'>
 >= ({
   characterName,
-  increaseLevel,
-  decreaseLevel,
-  isLonlyAtMaxLevel,
-  isLonlyAtLevel,
   level,
   className,
   ...props
