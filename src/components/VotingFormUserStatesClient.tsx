@@ -59,12 +59,12 @@ const VotingFormUserStatesClient: React.FC<
             className={clsx(
               'block w-full appearance-none rounded-lg border-none',
               'bg-black/5 dark:bg-white/5 w-full',
-              'py-1.5 pl-2 pr-3 text-sm/6 text-slate-400'
+              'py-1.5 pl-2 pr-3 text-sm/6'
             )}
             defaultValue={latestUserStateDict[gs.series]}
           >
             {userStatesMaster.map(s =>
-              <option key={s.sort} value={s.state}>
+              <option className='text-black' key={s.sort} value={s.state}>
                 {s.state}
               </option>
             )}

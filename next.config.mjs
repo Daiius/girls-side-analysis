@@ -5,10 +5,10 @@ const nextConfig = {
   publicRuntimeConfig: {
     basePath: '/girls-side-analysis',
   },
-  webpack: (config) => ({
-    ...config,
-    optimization: { minimize: false }
-  }),
+  //webpack: (config) => ({
+  //  ...config,
+  //  optimization: { minimize: false }
+  //}),
 };
 
 export default nextConfig;

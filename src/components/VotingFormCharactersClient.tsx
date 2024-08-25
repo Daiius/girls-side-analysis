@@ -3,12 +3,58 @@
 import React from 'react';
 import clsx from 'clsx';
 
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+
 import { 
   Character,
   Vote,
 } from '@/types';
 
 import CharacterStrip from './CharacterStrip';
+
+
+const SortableCharacterStrip: React.FC<
+  React.ComponentProps<typeof CharacterStrip>
+> = (props) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: props.characterName });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition
+  };
+
+  return (
+    <div 
+      className='w-fit touch-none'
+      ref={setNodeRef} style={style} {...attributes} {...listeners}
+    >
+      <CharacterStrip {...props} />
+    </div>
+  );
+};
 
 /**
  * 推しキャラ組み合わせの投票用コンポーネント
@@ -21,23 +67,48 @@ const VotingFormCharactersClient: React.FC<
   {
     characters: Character[],
     latestVotes: Vote[],
-    maxLevel: number;
-    charactersInGarden: (Vote & { position: number })[];
-    increaseLevel: (charaName: string) => void;
-    decreaseLevel: (charaName: string) => void;
+    favorites: string[];
+    setFavorites: React.Dispatch<React.SetStateAction<string[]>
+    >
   }
   & React.ComponentProps<'div'>
 > = ({
   characters,
   latestVotes,
-  maxLevel,
-  charactersInGarden,
-  increaseLevel,
-  decreaseLevel,
+  favorites,
+  setFavorites,
   className,
   ...props
 }) => {
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 10, }
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { distance: 10 }
+    }),
+  );
+
+  const handleDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+
+    if (over == null) {
+      // 変な位置にドロップされた場合削除とみなす
+      // 2024/08/25時点ではうまくいかない
+      setFavorites(items => items.filter(c => c !== active.id));
+    } else if (active.id !== over.id) {
+      // それ以外はいれかえ
+      setFavorites(items => {
+        const oldIndex = items.findIndex(c => c === active.id);
+        const newIndex = items.findIndex(c => c === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
   
   return (
     <div 
@@ -49,54 +120,38 @@ const VotingFormCharactersClient: React.FC<
       )}
       {...props}
     >
-        <div className='relative'>
-          {charactersInGarden.length === 0 &&
-            <div>推しを選択、追加しましょう！</div>
-          }
-          {/* 上部に順位表示 */}
-          {charactersInGarden.length > 0 &&
-            [...new Array(maxLevel)].map((_, ilevel) =>
-              <div 
-                key={ilevel+1}
-                className='absolute whitespace-nowrap'
-                style={{top: '0rem', left: `${(ilevel)*13.5}rem`}}
-              >
-                推し順位: {ilevel + 1}
-              </div>
-            )
-          }
-          {charactersInGarden.length > 0 &&
-            charactersInGarden
-              .map(c =>
-                <CharacterStrip
-                  className={clsx(
-                    'absolute', 
-                    'transition-transform duration-100 ease-in-out',
-                    'w-[13rem] h-[3rem]',
-                  )}
-                  style={{ 
-                    transform: 
-                      `translate(${(c.level-1)*13.5}rem,${c.position*4+2}rem)` 
-                  }}
-                  key={`${c.characterName}`}
-                  characterName={c.characterName}
-                  increaseLevel={() => increaseLevel(c.characterName)}
-                  decreaseLevel={() => decreaseLevel(c.characterName)}
-                  isLonlyAtMaxLevel={
-                       c.level === maxLevel
-                    && charactersInGarden
-                         .filter(tmp => tmp.level === maxLevel)
-                         .length === 1
-                  }
-                  isLonlyAtLevel={
-                    charactersInGarden
-                      .filter(tmp => tmp.level === c.level)
-                      .length === 1
-                  }
-                  level={c.level}
-                />
-              )
-          }
+        <div className='flex flex-col gap-2'>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={favorites}
+              strategy={verticalListSortingStrategy}
+            >
+              {favorites.length === 0 &&
+                <div>推しを選択、追加しましょう！</div>
+              }
+              {favorites.length > 0 &&
+                favorites
+                  .map((c, ic) =>
+                    <SortableCharacterStrip
+                      className={clsx(
+                        'w-[13rem] h-[3rem]',
+                      )}
+                      key={c}
+                      characterName={c}
+                      level={ic}
+                      onDelete={() => setFavorites(items =>
+                        items
+                          .filter(characterName => characterName !== c)
+                      )}
+                    />
+                  )
+              }
+          </SortableContext>
+        </DndContext>
       </div>
     </div>
   );

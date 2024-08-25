@@ -37,7 +37,7 @@ const AddCharacterSelect: React.FC<
           className={clsx(
             'block w-full appearance-none rounded-lg border-none',
             'bg-black/5 dark:bg-white/5',
-            'py-1.5 px-3 text-sm/6 text-slate-400'
+            'py-1.5 px-3 text-sm/6'
           )}
           value={selectedName}
           onChange={e => setSelectedName(e.target.value)}
@@ -47,6 +47,7 @@ const AddCharacterSelect: React.FC<
               key={c.name}
               value={c.name}
               disabled={selectedCharaNames.includes(c.name)}
+              className='text-black'
             >
               {c.name}
               {selectedCharaNames.includes(c.name) &&

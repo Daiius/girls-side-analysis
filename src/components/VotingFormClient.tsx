@@ -18,8 +18,6 @@ import {
   Vote,
 } from '@/types';
 
-import { useGarden } from '@/hooks/useGarden';
-
 import { vote } from '@/actions/voteActions';
 import { useRouter } from 'next/navigation';
 
@@ -50,13 +48,11 @@ const VotingFormClient: React.FC<
 
   const router = useRouter();
 
-  const {
-    charactersInGarden,
-    maxLevel,
-    increaseLevel,
-    decreaseLevel,
-    addCharacter,
-  } = useGarden({ latestVotes });
+  const [favorites, setFavorites] = React.useState<string[]>(
+    latestVotes
+      .toSorted((a, b) => a.level - b.level)
+      .map(c => c.characterName)
+  );
 
   const latestUserStateDict = latestUserState
     .map(lus => ({ [lus.series]: lus.state }))
@@ -68,13 +64,9 @@ const VotingFormClient: React.FC<
         formData.get(gs.name) === latestUserStateDict[gs.series]
       );
       const isSameVotes: boolean =
-           latestVotes.length === charactersInGarden.length // 長さが異なればそもそも再投票の対象
-        && charactersInGarden.every(d =>
-            latestVotes.some(lv =>
-              Object.keys(lv).every(key => 
-                d[key as keyof Vote] === lv[key as keyof Vote]
-              )
-            )
+           latestVotes.length === favorites.length // 長さが異なればそもそも再投票の対象
+        && favorites.every(d =>
+            latestVotes.some(lv => lv.characterName === d)
            );
 
       if (isSamePlayerStatus && isSameVotes) {
@@ -82,7 +74,12 @@ const VotingFormClient: React.FC<
         return '投票完了！（過去データと同じ）';
       }
 
-      await vote(formData, charactersInGarden);
+      await vote(
+        formData, 
+        favorites.map((characterName, iCharacterName) =>
+          ({ characterName, level: iCharacterName })
+        )
+      );
       router.refresh();
       
       if (!isSamePlayerStatus && isSameVotes) {
@@ -99,26 +96,10 @@ const VotingFormClient: React.FC<
 
   return (
     <form 
-      className={clsx('flex flex-col', className)}
+      className={clsx('flex flex-col gap-5', className)}
       action={formAction}
       {...props}
     >
-      <div className='flex flex-col'>
-        <Button 
-          type='submit'
-          className={clsx(
-            'flex flex-row items-center self-center',
-            'px-2'
-          )}
-          disabled={isPending}
-        >
-          <span className='mr-2'>投票！</span>
-          <PaperAirplaneIcon className='size-4'/>
-        </Button>
-        {errorMessage &&
-          <div className='self-center'>{errorMessage}</div>
-        }
-      </div>
       {latestUserState.length > 0 && 
         <div>最後の投票内容:</div>
       }
@@ -131,18 +112,32 @@ const VotingFormClient: React.FC<
         className='flex-1 overflow-auto p-2'
         characters={characters}
         latestVotes={latestVotes}
-        maxLevel={maxLevel}
-        charactersInGarden={charactersInGarden}
-        increaseLevel={increaseLevel}
-        decreaseLevel={decreaseLevel}
+        favorites={favorites}
+        setFavorites={setFavorites}
       />
       <AddCharacterSelect 
         characters={characters}
-        selectedCharaNames={
-          charactersInGarden.map(c => c.characterName)
+        selectedCharaNames={favorites}
+        addCharacter={(characterName: string) =>
+          setFavorites([...favorites, characterName])
         }
-        addCharacter={addCharacter}
       />
+      <div className='flex flex-col mb-16'>
+        <Button 
+          type='submit'
+          className={clsx(
+            'flex flex-row items-center self-center',
+            'px-2 text-2xl font-bold border-2'
+          )}
+          disabled={isPending}
+        >
+          <span className='mr-2'>投票！</span>
+          <PaperAirplaneIcon className='size-6'/>
+        </Button>
+        {errorMessage &&
+          <div className='self-center'>{errorMessage}</div>
+        }
+      </div>
     </form>
   );
 };
