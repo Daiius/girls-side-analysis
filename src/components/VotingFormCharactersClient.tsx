@@ -7,7 +7,7 @@ import {
   DndContext,
   closestCenter,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
   useSensor,
   useSensors,
@@ -48,7 +48,10 @@ const SortableCharacterStrip: React.FC<
 
   return (
     <div 
-      className='w-fit touch-none'
+      className={clsx(
+        'w-fit',
+        'touch-manipulation'
+      )}
       ref={setNodeRef} style={style} {...attributes} {...listeners}
     >
       <CharacterStrip {...props} />
@@ -82,14 +85,14 @@ const VotingFormCharactersClient: React.FC<
 }) => {
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 10, }
+    useSensor(TouchSensor, {
+      activationConstraint: { distance: 10 }
+    }),
+    useSensor(MouseSensor, {
+      activationConstraint: { distance: 10 }
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: { distance: 10 }
     }),
   );
 
