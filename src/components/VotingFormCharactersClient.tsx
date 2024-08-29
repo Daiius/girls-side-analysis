@@ -49,7 +49,7 @@ const SortableCharacterStrip: React.FC<
   return (
     <div 
       className={clsx(
-        'w-fit',
+        'w-fit touch-none',
       )}
       ref={setNodeRef} style={style} {...attributes} {...listeners}
     >
