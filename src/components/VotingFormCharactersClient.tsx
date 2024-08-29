@@ -50,7 +50,6 @@ const SortableCharacterStrip: React.FC<
     <div 
       className={clsx(
         'w-fit',
-        'touch-manipulation'
       )}
       ref={setNodeRef} style={style} {...attributes} {...listeners}
     >
