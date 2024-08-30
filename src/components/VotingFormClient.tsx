@@ -96,26 +96,27 @@ const VotingFormClient: React.FC<
 
   return (
     <form 
-      className={clsx('flex flex-col gap-5', className)}
+      className={clsx('flex flex-col', className)}
       action={formAction}
       {...props}
     >
       {latestUserState.length > 0 && 
-        <div>最後の投票内容:</div>
+        <div className='font-bold'>あなたの最後の投票内容:</div>
       }
       <VotingFormUserStatesClient
-        className='h-auto'
+        className='h-auto mb-2'
         latestUserStateDict={latestUserStateDict}
         userStatesMaster={userStatesMaster} 
       />
       <VotingFormCharactersClient
-        className='flex-1 overflow-auto p-2'
+        className='flex-1 overflow-auto p-2 mb-2'
         characters={characters}
         latestVotes={latestVotes}
         favorites={favorites}
         setFavorites={setFavorites}
       />
       <AddCharacterSelect 
+        className='mb-2'
         characters={characters}
         selectedCharaNames={favorites}
         addCharacter={(characterName: string) =>
