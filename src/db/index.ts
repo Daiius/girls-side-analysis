@@ -5,8 +5,8 @@ declare global {
   var _db: ReturnType<typeof drizzle> | undefined;
 }
 
-
-export const connection = await mysql.createConnection({ //mysql.createPool({
+//export const connection = await mysql.createConnection({
+export const connection = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.MYSQL_USER,
   password: process.env.MYSQL_PASSWORD,
