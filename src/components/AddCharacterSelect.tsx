@@ -28,9 +28,9 @@ const AddCharacterSelect: React.FC<
   const [selectedName, setSelectedName] = React.useState<string>(characters[0].name);
 
   return (
-    <div className='flex flex-row gap-2'>
+    <div className={clsx('flex flex-row gap-2', className)}>
       <div 
-        className={clsx('relative', className)}
+        className={clsx('relative')}
         {...props}
       >
         <Select
