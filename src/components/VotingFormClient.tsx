@@ -115,15 +115,16 @@ const VotingFormClient: React.FC<
         favorites={favorites}
         setFavorites={setFavorites}
       />
+      <div className='sm:hidden'>推し追加：</div>
       <AddCharacterSelect 
-        className='mb-2'
+        className='mb-2 h-[3rem]'
         characters={characters}
         selectedCharaNames={favorites}
         addCharacter={(characterName: string) =>
           setFavorites([...favorites, characterName])
         }
       />
-      <div className='flex flex-col mb-16'>
+      <div className='flex flex-col my-8'>
         <Button 
           type='submit'
           className={clsx(
