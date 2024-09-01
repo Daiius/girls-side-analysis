@@ -28,16 +28,21 @@ const AddCharacterSelect: React.FC<
   const [selectedName, setSelectedName] = React.useState<string>(characters[0].name);
 
   return (
-    <div className={clsx('flex flex-row gap-2', className)}>
+    <div
+      className={clsx(
+        'flex flex-row gap-2', 
+        className
+      )}
+    >
       <div 
         className={clsx('relative')}
         {...props}
       >
         <Select
           className={clsx(
-            'block w-full appearance-none rounded-lg border-none',
+            'block w-full h-full appearance-none rounded-lg border-none',
             'bg-black/5 dark:bg-white/5',
-            'py-1.5 px-3 text-sm/6'
+            'py-1.5 pl-3 pr-8 text-sm/6'
           )}
           value={selectedName}
           onChange={e => setSelectedName(e.target.value)}
@@ -47,7 +52,13 @@ const AddCharacterSelect: React.FC<
               key={c.name}
               value={c.name}
               disabled={selectedCharaNames.includes(c.name)}
-              className='text-black'
+              className={clsx(
+                'text-black',
+                c.series === 1 && 'bg-emerald-200',
+                c.series === 2 && 'bg-sky-200',
+                c.series === 3 && 'bg-pink-200',
+                c.series === 4 && 'bg-orange-200',
+              )}
             >
               {c.name}
               {selectedCharaNames.includes(c.name) &&
@@ -58,18 +69,23 @@ const AddCharacterSelect: React.FC<
         </Select>
         <ChevronDownIcon
           className={clsx(
-            'group pointer-events-none absolute top-2.5 right-2.5 size-4',
+            'group pointer-events-none absolute top-1/2 -translate-y-1/2 right-2.5 size-4',
             'fill-black/60 dark:fill-white/60'
           )}
           aria-hidden
         />
       </div>
       <Button 
-        className='flex flex-row gap-2 items-center px-2'
+        className={clsx(
+          'flex flex-row gap-2 items-center justify-center p-1 flex-1',
+          'min-w-12',
+        )}
         onClick={() => addCharacter(selectedName)}
         disabled={selectedCharaNames.includes(selectedName)}
       >
-        推し追加
+          <span className='hidden sm:block text-nowrap'>
+            推し追加
+          </span>
         <PlusIcon className='size-4' />
       </Button>
     </div>
