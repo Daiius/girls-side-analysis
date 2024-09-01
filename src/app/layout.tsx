@@ -26,7 +26,7 @@ export default function RootLayout({
       <SettingsProvider>
         <ThemeProvider defaultTheme='system' attribute='class'>
           <body className={clsx(
-            'h-full w-full',
+            'w-full min-h-screen',
             'text-black dark:text-white',
             'bg-gradient-to-b from-sky-100 to-sky-200',
             'dark:from-sky-800 dark:to-sky-900',
@@ -34,7 +34,7 @@ export default function RootLayout({
           )}>
             <Header />
             <main className={clsx(
-              'h-[calc(100vh-3rem)] flex flex-col items-center',
+              'flex flex-col items-center',
               'p-5 md:p-24'
             )}>
               {children}
