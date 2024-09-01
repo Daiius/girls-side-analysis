@@ -41,7 +41,7 @@ const VotingFormUserStatesClient: React.FC<
   return (
     <div 
       className={clsx(
-        'flex flex-wrap md:flex-row gap-4',
+        'flex flex-wrap sm:flex-row gap-4',
         className,
       )}
       {...props}
@@ -59,7 +59,7 @@ const VotingFormUserStatesClient: React.FC<
             className={clsx(
               'block w-full appearance-none rounded-lg border-none',
               'bg-black/5 dark:bg-white/5 w-full',
-              'py-1.5 pl-2 pr-3 text-sm/6'
+              'py-1.5 pl-2 pr-6 text-sm/6'
             )}
             defaultValue={latestUserStateDict[gs.series]}
           >

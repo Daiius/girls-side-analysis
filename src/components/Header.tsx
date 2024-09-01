@@ -12,8 +12,8 @@ import ThemeChanger from './ThemeChanger';
  */
 const Header: React.FC = () => (
   <div className={clsx(
-    'h-[3rem] w-full bg-sky-500 dark:bg-sky-900',
-    'flex flex-row items-center',
+    'sticky top-0 h-[3rem] w-full bg-sky-500/90 dark:bg-sky-900/90',
+    'flex flex-row items-center z-10',
     'px-4',
   )}>
     {/* ロゴ */}
