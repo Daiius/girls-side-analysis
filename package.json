@@ -17,9 +17,11 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@headlessui/react": "^2.1.2",
     "@heroicons/react": "^2.1.5",
+    "chart.js": "^4.4.4",
     "clsx": "^2.1.1",
     "drizzle-kit": "^0.23.1",
     "drizzle-orm": "^0.32.1",
+    "luxon": "^3.5.0",
     "mysql2": "^3.11.0",
     "next": "15.0.0-rc.0",
     "next-auth": "5.0.0-beta.20",
@@ -28,6 +30,7 @@
     "react-dom": "19.0.0-rc-8269d55d-20240802"
   },
   "devDependencies": {
+    "@types/luxon": "^3.4.2",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
