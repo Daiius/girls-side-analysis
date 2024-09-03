@@ -3,7 +3,8 @@
 import { db } from '@/db';
 import { votes, characters } from '@/db/schema';
 import { 
-  eq, ne, exists, and, max, count, desc, asc
+  eq, ne, exists, and, max, count, desc, asc,
+  lte
 } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/mysql-core';
 
@@ -19,7 +20,8 @@ import { Vote } from '@/types';
  * 出現回数をカウントします
  */
 export const getVotesRelatedToOshi = async (
-  oshi: string
+  oshi: string,
+  maxDate?: Date,
 ) => {
   const t1 = alias(votes, 't1');
   const t2 = alias(votes, 't2');
@@ -54,7 +56,9 @@ export const getVotesRelatedToOshi = async (
             )
         ),
         // 推しキャラ以外のVotesを取り出す操作
-        ne(t1.characterName, oshi)
+        ne(t1.characterName, oshi),
+        // maxDateが指定されている時、それ以前のデータに限定する操作
+        maxDate ? lte(t1.votedTime, maxDate) : undefined,
       )
     )
     .groupBy(t1.characterName)

@@ -26,3 +26,8 @@ export type Vote =
 
 export type TopAnalysisData =
   Awaited<ReturnType<typeof getLatestVotesForAnalysis>>;
+
+export type DataSet = {
+    label: string;
+    data: number[] | { x: string | number; y: number }[];
+  };
