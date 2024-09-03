@@ -6,6 +6,7 @@ import Chart from 'chart.js/auto';
 
 import { DataSet } from '@/types';
 import { useSettings } from '@/providers/SettingsProvider';
+import { useTheme } from 'next-themes';
 
 const LineChartClient: React.FC<
   {
@@ -21,6 +22,8 @@ const LineChartClient: React.FC<
 }) => {
 
   const { mounted } = useSettings();
+  const { theme } = useTheme();
+
   const refCanvas = React.useRef<HTMLCanvasElement>();
   const refChart  = React.useRef<Chart>(); 
 
@@ -33,6 +36,10 @@ const LineChartClient: React.FC<
       if (refCanvas.current == null) {
         throw new Error('line chart container is null...');
       }
+      Chart.defaults.color =
+        theme === 'light' ? '#666' : '#fff';
+      Chart.defaults.borderColor = 
+        theme === 'light' ? '#00000020' : '#ffffff20';
       refChart.current = new Chart(
         refCanvas.current,
         {
@@ -43,7 +50,7 @@ const LineChartClient: React.FC<
               y: { 
                 min: 0,
                 ticks: {
-                  callback: (value, index, ticks) => 
+                  callback: (value, _index, _ticks) => 
                     Number.isInteger(value) ? value : null
                 }
               },
@@ -67,7 +74,7 @@ const LineChartClient: React.FC<
       );
     }
     return () => refChart.current?.destroy();
-  }, [mounted]);
+  }, [mounted, theme]);
 
   return (
     <canvas 

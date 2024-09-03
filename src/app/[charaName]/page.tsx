@@ -1,5 +1,5 @@
 import React from 'react';
-import clsx from 'clsx';
+//import clsx from 'clsx';
 import { DateTime } from 'luxon';
 
 import { notFound } from 'next/navigation';
@@ -49,7 +49,6 @@ export default async function Page({
 
   const today = DateTime.now().endOf('day');
   const ndays = 30;
-
   
   // 累積データを見て表示するキャラ名を判断するので
   // 一度時系列データをすべて変数に保存する
@@ -60,7 +59,6 @@ export default async function Page({
         decodedCharaName, date.toJSDate()
       ))
   );
-  console.log('dataBuffer: ', dataBuffer);
 
   // データに含まれるキャラ名を重複なく取得する
   const allRelatedCharacters = [...new Set(
@@ -68,7 +66,6 @@ export default async function Page({
       periodicData.map(d => d.characterName)
     )
   )];
-  console.log('allRelatedCharacters: ', allRelatedCharacters);
 
   // キャラ毎の推移
   const datasets: DataSet[] = allRelatedCharacters
@@ -87,7 +84,6 @@ export default async function Page({
         })
     }));
 
-  console.log('datasets: ', datasets);
     
   return (
     <div className='flex flex-col items-center w-full'>
@@ -97,10 +93,12 @@ export default async function Page({
         topAnalysisData={analysisData}
         targetCharacterName={decodedCharaName}
       />
-      <LineChartClient
-        className='w-full'
-        datasets={datasets}
-      />
+      {datasets.length > 0 &&
+        <LineChartClient
+          className='w-full'
+          datasets={datasets}
+        />
+      }
     </div>
   );
 }
