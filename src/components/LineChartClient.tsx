@@ -74,7 +74,7 @@ const LineChartClient: React.FC<
       );
     }
     return () => refChart.current?.destroy();
-  }, [mounted, theme]);
+  }, [mounted, theme, datasets]);
 
   return (
     <canvas 
