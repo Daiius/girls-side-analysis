@@ -18,11 +18,19 @@ const Header: React.FC = () => (
   )}>
     {/* ロゴ */}
     <Link href='/'>
-      <span className='hidden sm:block'>
-        💚💙Girl's Side Analysis💗🧡
-      </span>
-      <span className='sm:hidden'>
-        💚💙GS Analysis💗🧡
+      <div className='hidden sm:flex flex-row items-center'>
+        <span className='text-green-400 text-2xl text-shadow-white'>♥</span>
+        <span className='text-blue-600 text-2xl'>♥</span>
+        <span>Girl's Side Analysis</span>
+        <span className='text-pink-400 text-2xl'>♥</span>
+        <span className='text-orange-400 text-2xl'>♥</span>
+      </div>
+      <span className='sm:hidden flex flex-row items-center'>
+        <span className='text-green-400 text-2xl'>♥</span>
+        <span className='text-blue-600 text-2xl'>♥</span>
+        <span>GS Analysis</span>
+        <span className='text-pink-400 text-2xl'>♥</span>
+        <span className='text-orange-400 text-2xl'>♥</span>
       </span>
     </Link>
     <HeaderProfileLink />
