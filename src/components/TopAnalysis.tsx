@@ -5,15 +5,20 @@ import clsx from 'clsx';
 
 import TopAnalysisContent from './TopAnalysisContent';
 
-import { TopAnalysisData } from '@/types';
+import { TopAnalysisData, DataSet } from '@/types';
+import LineChartClient from './LineChartClient';
 
 
 
 const TopAnalysis: React.FC<
-  { topAnalysisData: TopAnalysisData }
+  { 
+    topAnalysisData: TopAnalysisData,
+    timelineDataDict: Record<string, DataSet[]>,
+  }
   & React.ComponentProps<'div'>
 > = ({
   topAnalysisData,
+  timelineDataDict,
   className,
   ...props
 }) => {
@@ -36,12 +41,17 @@ const TopAnalysis: React.FC<
   }, []);
 
   return (
-    <TopAnalysisContent
-      targetCharacterName={targetCharacterName}
-      topAnalysisData={topAnalysisData}
-      className={clsx(className)}
-      {...props}
-    />
+    <div className='w-full'>
+      <TopAnalysisContent
+        targetCharacterName={targetCharacterName}
+        topAnalysisData={topAnalysisData}
+        className={clsx('mb-2', className)}
+        {...props}
+      />
+      <LineChartClient
+        datasets={timelineDataDict[targetCharacterName]}
+      />
+    </div>
   );
 };
 

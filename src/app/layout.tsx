@@ -26,7 +26,7 @@ export default function RootLayout({
       <SettingsProvider>
         <ThemeProvider defaultTheme='system' attribute='class'>
           <body className={clsx(
-            'w-full min-h-screen',
+            'min-h-screen',
             'text-black dark:text-white',
             'bg-gradient-to-b from-sky-100 to-sky-200',
             'dark:from-sky-800 dark:to-sky-900',

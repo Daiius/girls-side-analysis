@@ -27,7 +27,6 @@ const LineChartClient: React.FC<
   const refCanvas = React.useRef<HTMLCanvasElement>();
   const refChart  = React.useRef<Chart>(); 
 
-  console.log('datasets: ', datasets);
 
   React.useEffect(() => {
     if (mounted) {
@@ -74,7 +73,7 @@ const LineChartClient: React.FC<
       );
     }
     return () => refChart.current?.destroy();
-  }, [mounted, theme]);
+  }, [mounted, theme, datasets]);
 
   return (
     <canvas 
