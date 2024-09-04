@@ -8,7 +8,9 @@ import {
 } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/mysql-core';
 
-import { Vote } from '@/types';
+import { Vote, DataSet } from '@/types';
+
+import { DateTime } from 'luxon';
 
 /** 
  * 指定されたキャラと同時に推されるキャラの
@@ -120,12 +122,14 @@ export const insertVotesIfUpdated = async ({
 };
 
 export const getLatestVotesForAnalysis = async () => {
+
   const allCharacters = await db.select()
     .from(characters)
     .orderBy(
       asc(characters.sort), 
       asc(characters.series)
     );
+
   const dataPromise = allCharacters
     .map(async character => {
       const oshiCombinationData =
@@ -144,4 +148,45 @@ export const getLatestVotesForAnalysis = async () => {
     .reduce((acc, curr) => ({ ...acc, ...curr }), {});
   return result;
 };
+
+export const getTimelineData = async (characterName: string) => {
+  const today = DateTime.now().endOf('day');
+  const ndays = 30;
+  
+  // 累積データを見て表示するキャラ名を判断するので
+  // 一度時系列データをすべて変数に保存する
+  const dataBuffer = await Promise.all(
+    [...Array(ndays)]
+      .map((_, iday) => today.minus({ 'day': ndays-iday-1 })) // DateTimeへ
+      .map(async date => await getVotesRelatedToOshi(
+        characterName, date.toJSDate()
+      ))
+  );
+
+  // データに含まれるキャラ名を重複なく取得する
+  const allRelatedCharacters = [...new Set(
+    dataBuffer.flatMap(periodicData =>
+      periodicData.map(d => d.characterName)
+    )
+  )];
+
+  // キャラ毎の推移
+  const datasets: DataSet[] = allRelatedCharacters
+    .map(character => ({
+      label: character,
+      data:
+        dataBuffer.map((periodicData, iperiodicData) => {
+          const x: string = today
+            .minus({ 'day': ndays - iperiodicData - 1})
+            .setLocale('ja')
+            .toLocaleString();
+          const characterData = periodicData.find(d =>
+            d.characterName === character
+          );
+          return { x, y: (characterData?.count ?? 0) };
+        })
+    }));
+
+  return datasets;
+}
 
