@@ -17,7 +17,8 @@ import LineChartClient from '@/components/LineChartClient';
 
 // 5分毎にアップデート
 // NOTE: 今はテスト用にちょっと頻繁にします
-export const revalidate = process.env.NODE_ENV === 'production' ? 300 : 30;
+export const revalidate = 
+  process.env.NODE_ENV === 'production' ? 300 : 30;
 
 /**
  * データベースからキャラクター一覧を取得して
