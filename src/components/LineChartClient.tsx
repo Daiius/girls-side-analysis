@@ -27,7 +27,6 @@ const LineChartClient: React.FC<
   const refCanvas = React.useRef<HTMLCanvasElement>();
   const refChart  = React.useRef<Chart>(); 
 
-  console.log('datasets: ', datasets);
 
   React.useEffect(() => {
     if (mounted) {
