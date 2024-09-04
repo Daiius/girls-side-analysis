@@ -15,10 +15,10 @@ export default async function Home() {
   const data = await getLatestVotesForAnalysis();
 
   return (
-    <div className='w-full h-full flex flex-col items-center gap-2'>
+    <div className='w-full flex flex-col items-center gap-2'>
       <TopCharacterSelect />
       <TopAnalysis
-        className={clsx('w-full h-[calc(100%-6rem)]')}
+        className={clsx('w-full')}
         topAnalysisData={data}
       />
     </div>
