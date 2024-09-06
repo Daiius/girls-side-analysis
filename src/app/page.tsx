@@ -1,4 +1,4 @@
-import clsx from 'clsx';
+//import clsx from 'clsx';
 
 import TopCharacterSelect from '@/components/TopCharacterSelect';
 import TopAnalysis from '@/components/TopAnalysis';
@@ -6,6 +6,7 @@ import {
   getLatestVotesForAnalysis,
   getTimelineData,
 } from '@/lib/votes';
+import HeaderProfileLink from '@/components/HeaderProfileLink';
 
 // トップページは多くの人がアクセスすることを想定し、
 // static renderingにします...
@@ -28,6 +29,7 @@ export default async function Home() {
 
   return (
     <div className='w-full flex flex-col items-center gap-2'>
+      <HeaderProfileLink  className='mt-3 mb-6'/>
       <TopCharacterSelect />
       <TopAnalysis 
         className='w-full' 

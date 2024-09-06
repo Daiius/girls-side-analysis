@@ -1,17 +1,15 @@
 import React from 'react';
 //import clsx from 'clsx';
-import { DateTime } from 'luxon';
 
 import { notFound } from 'next/navigation';
-import { DataSet } from '@/types';
 
 import { getCharacters } from '@/lib/characters'; 
 import { 
   getLatestVotesForAnalysis, 
-  getVotesRelatedToOshi,
   getTimelineData,
 } from '@/lib/votes';
 
+import HeaderProfileLink from '@/components/HeaderProfileLink';
 import TopCharacterSelect from '@/components/TopCharacterSelect';
 import TopAnalysisContent from '@/components/TopAnalysisContent';
 import LineChartClient from '@/components/LineChartClient';
@@ -53,6 +51,7 @@ export default async function Page({
     
   return (
     <div className='flex flex-col items-center w-full'>
+      <HeaderProfileLink className='mt-3 mb-6'/>
       <TopCharacterSelect className='my-5'/>
       <TopAnalysisContent
         className='w-full mb-2'
