@@ -24,7 +24,7 @@ export default function RootLayout({
   return (
     <html lang="jp" suppressHydrationWarning>
       <SettingsProvider>
-        <ThemeProvider defaultTheme='system' attribute='class'>
+        <ThemeProvider defaultTheme='light' attribute='class'>
           <body className={clsx(
             'min-h-screen',
             'text-black dark:text-white',
