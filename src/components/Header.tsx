@@ -12,7 +12,7 @@ import ThemeChanger from './ThemeChanger';
  */
 const Header: React.FC = () => (
   <div className={clsx(
-    'sticky top-0 h-[3rem] w-full bg-sky-500/90 dark:bg-sky-900/90',
+    'sticky top-0 h-12 w-full bg-sky-500/90 dark:bg-sky-900/90',
     'flex flex-row items-center z-10',
     'px-4',
   )}>
@@ -33,7 +33,6 @@ const Header: React.FC = () => (
         <span className='text-orange-400 text-2xl'>♥</span>
       </span>
     </Link>
-    <HeaderProfileLink />
     <ThemeChanger />
   </div>
 );
