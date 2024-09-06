@@ -60,9 +60,8 @@ const AddCharacterSelect: React.FC<
                 c.series === 4 && 'bg-orange-200',
               )}
             >
-              {c.name}
-              {selectedCharaNames.includes(c.name) &&
-                <span> (選択済)</span>
+              {c.name
+                + (selectedCharaNames.includes(c.name) ? '(選択済)' : '')
               }
             </option>
           )}
