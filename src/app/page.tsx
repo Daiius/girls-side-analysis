@@ -7,6 +7,7 @@ import {
   getTimelineData,
 } from '@/lib/votes';
 import HeaderProfileLink from '@/components/HeaderProfileLink';
+import Button from '@/components/Button';
 
 // トップページは多くの人がアクセスすることを想定し、
 // static renderingにします...
@@ -36,6 +37,17 @@ export default async function Home() {
         topAnalysisData={data}
         timelineDataDict={timelineDataDict}
       />
+      <a 
+        className='bottom-5 absolute'
+        href="https://twitter.com/share?ref_src=twsrc%5Etfw" 
+        data-show-count="false"
+        data-url='https://faveo-systema.net/girls-side-analysis'
+        data-text='https://faveo-systema.net/girls-side-analysis'
+      >
+        <Button>
+          X(Twitter)で共有
+        </Button>
+      </a>
     </div>
   );
 }
