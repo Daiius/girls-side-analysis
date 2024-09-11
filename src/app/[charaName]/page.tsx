@@ -14,6 +14,7 @@ import HeaderProfileLink from '@/components/HeaderProfileLink';
 import TopCharacterSelect from '@/components/TopCharacterSelect';
 import TopAnalysisContent from '@/components/TopAnalysisContent';
 import LineChartClient from '@/components/LineChartClient';
+import XShareLink from '@/components/XShareLink';
 
 // 5分毎にアップデート
 // NOTE: 今はテスト用にちょっと頻繁にします
@@ -80,6 +81,13 @@ export default async function Page({
           datasets={datasets}
         />
       }
+      <XShareLink
+        className='absolute bottom-5 right-5'
+        text={`GSシリーズの情報共有・分析サイト「${decodedCharaName}」分析ページ`}
+        url={`https://faveo-systema.net/girls-side-analysis/${encodeURIComponent(decodedCharaName)}`}
+      >
+        <span className='p-2'>X(Twitter)で共有</span>
+      </XShareLink>
     </div>
   );
 }

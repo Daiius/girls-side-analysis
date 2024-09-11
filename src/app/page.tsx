@@ -7,7 +7,7 @@ import {
   getTimelineData,
 } from '@/lib/votes';
 import HeaderProfileLink from '@/components/HeaderProfileLink';
-import Button from '@/components/Button';
+import XShareLink from '@/components/XShareLink';
 
 // トップページは多くの人がアクセスすることを想定し、
 // static renderingにします...
@@ -27,6 +27,10 @@ export default async function Home() {
       )
   )).reduce((acc, curr) => ({ ...acc, ...curr }), {});
 
+  // trailing slashまで付けるとopenGraphImageが表示されるのを確認
+  const text = 'GSシリーズの情報共有・分析サイト\n';
+  const sharedURL = 'https://faveo-systema.net/girls-side-analysis';
+
 
   return (
     <div className='w-full flex flex-col items-center gap-2'>
@@ -37,17 +41,13 @@ export default async function Home() {
         topAnalysisData={data}
         timelineDataDict={timelineDataDict}
       />
-      <a 
-        className='bottom-5 absolute'
-        href="https://twitter.com/share?ref_src=twsrc%5Etfw" 
-        data-show-count="false"
-        data-url='https://faveo-systema.net/girls-side-analysis'
-        data-text='https://faveo-systema.net/girls-side-analysis'
+      <XShareLink
+        className='absolute bottom-5 right-5'
+        text={text}
+        url={sharedURL}
       >
-        <Button>
-          X(Twitter)で共有
-        </Button>
-      </a>
+        <span className='p-2'>X(Twitter)で共有</span>
+      </XShareLink>
     </div>
   );
 }
