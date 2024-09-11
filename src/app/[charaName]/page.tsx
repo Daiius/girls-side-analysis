@@ -1,4 +1,5 @@
 import React from 'react';
+import type { Metadata } from 'next';
 //import clsx from 'clsx';
 
 import { notFound } from 'next/navigation';
@@ -27,6 +28,21 @@ export async function generateStaticParams() {
   const characters = await getCharacters();
   return characters.map(chara => ({ charaName: chara.name }));
 }
+export async function generateMetadata({ params }: { params: { charaName: string } }) {
+  const decodedCharaName = decodeURIComponent(params.charaName);
+  return {
+    title: "Girl's Side Analysis",
+    description: `💚💙 GSシリーズの情報共有・分析サイト ${decodedCharaName}分析ページ❤🧡`,
+    openGraph: {
+      type: 'website',
+      url: `https://faveo-systema.net/girls-side-analysis/${decodedCharaName}`,
+      description: `💚💙 GSシリーズの情報共有・分析サイト ${decodedCharaName}分析ページ❤🧡`,
+      siteName: "Girl's Side Analysis",
+      images: 'https://faveo-systema.net/girls-side-analysis/girls-side-analysis-logo.png',
+    }
+  } satisfies Metadata;
+}
+
 
 /**
  * 各キャラの、同時に推されているキャラ分析ページ
