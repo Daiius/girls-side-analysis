@@ -38,6 +38,7 @@ await db.insert(characters).values([
   { name: '紺野珠美',   series: 1, sort: 15 },
   { name: '尽',         series: 1, sort: 16 },
   { name: '花椿吾郎',   series: 1, sort: 17 },
+  { name: 'ギャリソン伊藤',   series: 1, sort: 18 },
   // GS2
   { name: '佐伯瑛',     series: 2, sort: 1 },
   { name: '志波勝己',   series: 2, sort: 2 },
