@@ -2,9 +2,11 @@ import React from 'react';
 import clsx from 'clsx';
 
 import Link from 'next/link';
+import { Gamja_Flower } from 'next/font/google';
 
-import HeaderProfileLink from './HeaderProfileLink';
 import ThemeChanger from './ThemeChanger';
+
+const gamjaFlower = Gamja_Flower({ weight: "400", subsets: ['latin'] });
 
 /**
  * トップページへのリンク、投票ページへのリンク、
@@ -18,20 +20,32 @@ const Header: React.FC = () => (
   )}>
     {/* ロゴ */}
     <Link href='/'>
-      <div className='hidden sm:flex flex-row items-center'>
+      <div className='sm:flex flex-row items-center'>
         <span className='text-green-400 text-2xl text-shadow-white'>♥</span>
         <span className='text-blue-600 text-2xl'>♥</span>
-        <span>Girl's Side Analysis</span>
+        <span className={clsx(
+          gamjaFlower.className,
+          'text-2xl mx-2',
+        )}>
+          Girl's Side Analysis
+        </span>
         <span className='text-pink-400 text-2xl'>♥</span>
         <span className='text-orange-400 text-2xl'>♥</span>
       </div>
+      {/*
       <span className='sm:hidden flex flex-row items-center'>
         <span className='text-green-400 text-2xl'>♥</span>
         <span className='text-blue-600 text-2xl'>♥</span>
-        <span>GS Analysis</span>
+        <span className={clsx(
+          gamjaFlower.className,
+          'text-2xl',
+        )}>
+          GS Analysis
+        </span>
         <span className='text-pink-400 text-2xl'>♥</span>
         <span className='text-orange-400 text-2xl'>♥</span>
       </span>
+      */}
     </Link>
     <ThemeChanger />
   </div>
