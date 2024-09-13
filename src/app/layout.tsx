@@ -13,7 +13,19 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Girl's Side Analysis",
-  description: "💚💙 GSシリーズの情報共有・分析サイト❤🧡",
+  description: "GSシリーズの情報共有・分析サイト",
+  openGraph: {
+    type: 'website',
+    url: 'https://faveo-systema.net/girls-side-analysis',
+    description: "GSシリーズの情報共有・分析サイト",
+    siteName: "Girl's Side Analysis",
+    images: 'https://faveo-systema.net/girls-side-analysis/girls-side-analysis-logo.png',
+  },
+  icons: [{
+    rel: 'apple-touch-icon',
+    url: 'https://faveo-systema.net/girls-side-analysis/girls-side-analysis-touch-icon.png',
+    sizes: '180x180',
+  }]
 };
 
 export default function RootLayout({
@@ -24,7 +36,7 @@ export default function RootLayout({
   return (
     <html lang="jp" suppressHydrationWarning>
       <SettingsProvider>
-        <ThemeProvider defaultTheme='system' attribute='class'>
+        <ThemeProvider defaultTheme='light' attribute='class'>
           <body className={clsx(
             'min-h-screen',
             'text-black dark:text-white',

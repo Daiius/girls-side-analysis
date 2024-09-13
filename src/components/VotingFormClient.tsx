@@ -20,6 +20,7 @@ import {
 
 import { vote } from '@/actions/voteActions';
 import { useRouter } from 'next/navigation';
+import XShareLink from './XShareLink';
 
 
 /**
@@ -95,52 +96,61 @@ const VotingFormClient: React.FC<
   );
 
   return (
-    <form 
-      className={clsx('flex flex-col', className)}
-      action={formAction}
-      {...props}
-    >
-      {latestUserState.length > 0 && 
-        <div className='font-bold'>あなたの最後の投票内容:</div>
-      }
-      <VotingFormUserStatesClient
-        className='h-auto mb-2'
-        latestUserStateDict={latestUserStateDict}
-        userStatesMaster={userStatesMaster} 
-      />
-      <VotingFormCharactersClient
-        className='flex-1 overflow-auto p-2 mb-2'
-        characters={characters}
-        latestVotes={latestVotes}
-        favorites={favorites}
-        setFavorites={setFavorites}
-      />
-      <div className='sm:hidden'>推し追加：</div>
-      <AddCharacterSelect 
-        className='mb-2 h-[3rem]'
-        characters={characters}
-        selectedCharaNames={favorites}
-        addCharacter={(characterName: string) =>
-          setFavorites([...favorites, characterName])
+    <>
+      <form 
+        className={clsx('flex flex-col', className)}
+        action={formAction}
+        {...props}
+      >
+        {latestUserState.length > 0 && 
+          <div className='font-bold'>あなたの最後の投票内容:</div>
         }
-      />
-      <div className='flex flex-col my-8'>
-        <Button 
-          type='submit'
-          className={clsx(
-            'flex flex-row items-center self-center',
-            'px-2 text-2xl font-bold border-2'
-          )}
-          disabled={isPending}
-        >
-          <span className='mr-2'>投票！</span>
-          <PaperAirplaneIcon className='size-6'/>
-        </Button>
-        {errorMessage &&
-          <div className='self-center'>{errorMessage}</div>
-        }
-      </div>
-    </form>
+        <VotingFormUserStatesClient
+          className='h-auto mb-2'
+          latestUserStateDict={latestUserStateDict}
+          userStatesMaster={userStatesMaster} 
+        />
+        <VotingFormCharactersClient
+          className='flex-1 overflow-auto p-2 mb-2'
+          characters={characters}
+          latestVotes={latestVotes}
+          favorites={favorites}
+          setFavorites={setFavorites}
+        />
+        <div className='sm:hidden'>推し追加：</div>
+        <AddCharacterSelect 
+          className='mb-2 h-[3rem]'
+          characters={characters}
+          selectedCharaNames={favorites}
+          addCharacter={(characterName: string) =>
+            setFavorites([...favorites, characterName])
+          }
+        />
+        <div className='flex flex-col my-8'>
+          <Button 
+            type='submit'
+            className={clsx(
+              'flex flex-row items-center self-center',
+              'px-2 text-2xl font-bold border-2'
+            )}
+            disabled={isPending}
+          >
+            <span className='mr-2'>投票！</span>
+            <PaperAirplaneIcon className='size-6'/>
+          </Button>
+          {errorMessage &&
+            <div className='self-center'>{errorMessage}</div>
+          }
+        </div>
+      </form>
+      <XShareLink
+        className='bottom-5 self-end sticky'
+        text={`私の推しは ${favorites.join('、')} です！`}
+        url='https://faveo-systema.net/girls-side-analysis'
+      >
+        <span className='p-2'>X(Twitter)で共有</span>
+      </XShareLink>
+    </>
   );
 };
 
