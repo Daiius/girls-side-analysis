@@ -40,7 +40,12 @@ export async function generateMetadata({ params }: { params: { charaName: string
       description: ` GSシリーズの情報共有・分析サイト「${decodedCharaName}」分析ページ`,
       siteName: "Girl's Side Analysis",
       images: 'https://faveo-systema.net/girls-side-analysis/girls-side-analysis-logo.png',
-    }
+    },
+    icons: [{
+      rel: 'apple-touch-icon',
+      url: 'https://faveo-systema.net/girls-side-analysis/girls-side-analysis-touch-icon.png',
+      sizes: '180x180',
+    }]
   } satisfies Metadata;
 }
 
@@ -82,7 +87,7 @@ export default async function Page({
         />
       }
       <XShareLink
-        className='absolute bottom-5 right-5'
+        className='bottom-5 self-end sticky'
         text={`GSシリーズの情報共有・分析サイト「${decodedCharaName}」分析ページ`}
         url={`https://faveo-systema.net/girls-side-analysis/${encodeURIComponent(decodedCharaName)}`}
       >

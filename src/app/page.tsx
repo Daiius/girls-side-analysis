@@ -28,21 +28,21 @@ export default async function Home() {
   )).reduce((acc, curr) => ({ ...acc, ...curr }), {});
 
   // trailing slashまで付けるとopenGraphImageが表示されるのを確認
-  const text = 'GSシリーズの情報共有・分析サイト\n';
+  const text = 'GSシリーズの情報共有・分析サイト';
   const sharedURL = 'https://faveo-systema.net/girls-side-analysis';
 
 
   return (
-    <div className='w-full flex flex-col items-center gap-2'>
+    <div className='w-full h-full flex flex-col items-center gap-2'>
       <HeaderProfileLink  className='mt-3 mb-6'/>
       <TopCharacterSelect />
       <TopAnalysis 
-        className='w-full' 
+        className='w-full flex-1' 
         topAnalysisData={data}
         timelineDataDict={timelineDataDict}
       />
       <XShareLink
-        className='absolute bottom-5 right-5'
+        className='bottom-5 self-end sticky'
         text={text}
         url={sharedURL}
       >

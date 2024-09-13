@@ -144,7 +144,7 @@ const VotingFormClient: React.FC<
         </div>
       </form>
       <XShareLink
-        className='absolute bottom-5 right-5'
+        className='bottom-5 self-end sticky'
         text={`私の推しは ${favorites.join('、')} です！`}
         url='https://faveo-systema.net/girls-side-analysis'
       >
