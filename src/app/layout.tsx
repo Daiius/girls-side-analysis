@@ -20,7 +20,12 @@ export const metadata: Metadata = {
     description: "GSシリーズの情報共有・分析サイト",
     siteName: "Girl's Side Analysis",
     images: 'https://faveo-systema.net/girls-side-analysis/girls-side-analysis-logo.png',
-  }
+  },
+  icons: [{
+    rel: 'apple-touch-icon',
+    url: 'https://faveo-systema.net/girls-side-analysis/girls-side-analysis-touch-icon.png',
+    sizes: '180x180',
+  }]
 };
 
 export default function RootLayout({
