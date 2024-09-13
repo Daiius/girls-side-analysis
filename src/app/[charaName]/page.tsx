@@ -1,20 +1,20 @@
 import React from 'react';
+import type { Metadata } from 'next';
 //import clsx from 'clsx';
-import { DateTime } from 'luxon';
 
 import { notFound } from 'next/navigation';
-import { DataSet } from '@/types';
 
 import { getCharacters } from '@/lib/characters'; 
 import { 
   getLatestVotesForAnalysis, 
-  getVotesRelatedToOshi,
   getTimelineData,
 } from '@/lib/votes';
 
+import HeaderProfileLink from '@/components/HeaderProfileLink';
 import TopCharacterSelect from '@/components/TopCharacterSelect';
 import TopAnalysisContent from '@/components/TopAnalysisContent';
 import LineChartClient from '@/components/LineChartClient';
+import XShareLink from '@/components/XShareLink';
 
 // 5分毎にアップデート
 // NOTE: 今はテスト用にちょっと頻繁にします
@@ -29,6 +29,26 @@ export async function generateStaticParams() {
   const characters = await getCharacters();
   return characters.map(chara => ({ charaName: chara.name }));
 }
+export async function generateMetadata({ params }: { params: { charaName: string } }) {
+  const decodedCharaName = decodeURIComponent(params.charaName);
+  return {
+    title: "Girl's Side Analysis",
+    description: ` GSシリーズの情報共有・分析サイト ${decodedCharaName}分析ページ`,
+    openGraph: {
+      type: 'website',
+      url: `https://faveo-systema.net/girls-side-analysis/${decodedCharaName}`,
+      description: ` GSシリーズの情報共有・分析サイト「${decodedCharaName}」分析ページ`,
+      siteName: "Girl's Side Analysis",
+      images: 'https://faveo-systema.net/girls-side-analysis/girls-side-analysis-logo.png',
+    },
+    icons: [{
+      rel: 'apple-touch-icon',
+      url: 'https://faveo-systema.net/girls-side-analysis/girls-side-analysis-touch-icon.png',
+      sizes: '180x180',
+    }]
+  } satisfies Metadata;
+}
+
 
 /**
  * 各キャラの、同時に推されているキャラ分析ページ
@@ -53,6 +73,7 @@ export default async function Page({
     
   return (
     <div className='flex flex-col items-center w-full'>
+      <HeaderProfileLink className='mt-3 mb-6'/>
       <TopCharacterSelect className='my-5'/>
       <TopAnalysisContent
         className='w-full mb-2'
@@ -65,6 +86,13 @@ export default async function Page({
           datasets={datasets}
         />
       }
+      <XShareLink
+        className='bottom-5 self-end sticky'
+        text={`GSシリーズの情報共有・分析サイト「${decodedCharaName}」分析ページ`}
+        url={`https://faveo-systema.net/girls-side-analysis/${encodeURIComponent(decodedCharaName)}`}
+      >
+        <span className='p-2'>X(Twitter)で共有</span>
+      </XShareLink>
     </div>
   );
 }

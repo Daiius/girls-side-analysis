@@ -44,6 +44,12 @@ const TopCharacterSelectClient: React.FC<
   return (
     <div className={clsx(className)} {...props}>
       <Field>
+        <Label className='text-lg font-bold'>表示データの選択：</Label>
+        <Description className={clsx(
+          'text-slate-700 dark:text-slate-300 ml-2'
+        )}>
+          分析結果を表示します...
+        </Description>
         <div className='relative'>
           <Select
             className={clsx(
@@ -79,11 +85,6 @@ const TopCharacterSelectClient: React.FC<
             aria-hidden
           />
         </div>
-        <Description className={clsx(
-          'text-slate-700 dark:text-slate-300 ml-2'
-        )}>
-          分析結果を表示します...
-        </Description>
       </Field>
     </div>
   );
