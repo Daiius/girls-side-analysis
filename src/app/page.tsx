@@ -1,4 +1,4 @@
-//import clsx from 'clsx';
+import clsx from 'clsx';
 
 import TopCharacterSelect from '@/components/TopCharacterSelect';
 import TopAnalysis from '@/components/TopAnalysis';
@@ -34,6 +34,13 @@ export default async function Home() {
 
   return (
     <div className='w-full h-full flex flex-col items-center gap-2'>
+      <div className={clsx(
+        'border border-1 border-slate-500 rounded-lg p-2',
+        'text-sm sm:text-base flex flex-col',
+      )}>
+        <span>"ときめきメモリアル Girl's Side" シリーズのファンサイトです！</span>
+        <span>あなたの推しを教えて下さい！</span>
+      </div>
       <HeaderProfileLink  className='mt-3 mb-6'/>
       <TopCharacterSelect />
       <TopAnalysis 
