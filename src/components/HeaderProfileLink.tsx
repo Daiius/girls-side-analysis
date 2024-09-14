@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 
 import Link from 'next/link';
-import Button from '@/components/Button';
+import GSButton from '@/components/GSButton';
 import { PaperAirplaneIcon } from '@heroicons/react/24/solid';
 
 /**
@@ -10,7 +10,7 @@ import { PaperAirplaneIcon } from '@heroicons/react/24/solid';
  * リンク先では非表示にするため、client componentとしています
  */
 const HeaderProfileLink: React.FC<
-  React.ComponentProps<typeof Button>
+  React.ComponentProps<typeof GSButton>
 > = ({
   className,
   ...props
@@ -19,7 +19,7 @@ const HeaderProfileLink: React.FC<
     className={clsx(className)} 
     href='/profile'
   >
-    <Button 
+    <GSButton 
       className={clsx(
         'relative',
         'text-white h-20 w-20',
@@ -39,7 +39,7 @@ const HeaderProfileLink: React.FC<
           'animate-vote-icon-rotation [transform-origin:center]',
         )}
       />
-    </Button>
+    </GSButton>
   </Link>
 );
 

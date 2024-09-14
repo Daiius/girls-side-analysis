@@ -3,8 +3,9 @@ import clsx from 'clsx';
 import { Session } from 'next-auth';
 import { signOut } from '@/auth';
 
-import Button from '@/components/Button';
+import GSButton from '@/components/GSButton';
 import VotingForm from './VotingForm';
+import { RocketLaunchIcon } from '@heroicons/react/24/solid';
 
 /**
  * ログイン後のプロファイル画面です
@@ -33,12 +34,25 @@ const AfterLoginProfile: React.FC<
         }}
         className='self-center ms-auto'
       >
-        <Button 
-          className='mt-2 p-2 flex flex-row'
+        <GSButton 
+          className='group mt-2 p-2 flex flex-row size-16 relative'
+          variant='system'
           type='submit'
         >
-          ログアウト
-        </Button>
+          <div className={clsx(
+            'absolute text-xs',
+            'top-1 left-1/2 -translate-x-1/2 text-nowrap',
+          )}>
+            ログアウト
+          </div>
+          <RocketLaunchIcon className={clsx(
+            'absolute size-8 top-4 right-2 group-hover:animate-logout-icon-scale',
+          )} />
+          <div className={clsx(
+            'h-[1px] w-[80%] bg-white absolute bottom-2',
+            'left-1/2 -translate-x-1/2',
+          )}/>
+        </GSButton>
       </form>
     </div>
 

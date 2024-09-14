@@ -57,20 +57,8 @@ const TopAnalysisContent: React.FC<
                   characterName.includes('・')
                     ? 'text-left'
                     : 'text-right pr-3'
-                  //'h-[calc(110px+2rem)]',
-                  //characterName.includes('・') 
-                  //  ? 'items-start' : 'items-center',
                 )}  
               >
-                {/*
-                <Image
-                  src='/girls-side-analysis/characters/placeholder.svg'
-                  alt={characterName}
-                  width={100}
-                  height={100}
-                  className='rounded-lg bg-white/5'
-                />
-                */}
                 <div
                   className={clsx(
                     'text-lg font-bold whitespace-nowrap',

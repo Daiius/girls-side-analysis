@@ -6,6 +6,7 @@ import Chart from 'chart.js/auto';
 
 import { DataSet } from '@/types';
 import { useSettings } from '@/providers/SettingsProvider';
+import GSMessage from './GSMessage';
 
 const LineChartClient: React.FC<
   {
@@ -45,7 +46,12 @@ const LineChartClient: React.FC<
                 ticks: {
                   callback: (value, _index, _ticks) => 
                     Number.isInteger(value) ? value : null
-                }
+                },
+                title: { 
+                  display: true, 
+                  text: '票数',
+                  font: { weight: 'bold', size: 15 },
+                },
               },
               x: {
                 ticks: {
@@ -54,7 +60,12 @@ const LineChartClient: React.FC<
                     ? this.getLabelForValue(value as any)
                     : null
                   }
-                }
+                },
+                title: { 
+                  display: true, 
+                  text: '日付',
+                  font: { weight: 'bold', size: 15 },
+                },
               }
             },
           }
@@ -65,12 +76,15 @@ const LineChartClient: React.FC<
   }, [mounted, datasets]);
 
   return (
-    <canvas 
-      id='line-chart'
-      className={clsx(className)}
-      {...props}
-    >
-    </canvas>
+    // {/* <div className='rounded-lg bg-white/80'> */}
+    <GSMessage className='h-auto mt-8' heightFixed={false}>
+      <canvas 
+        id='line-chart'
+        className={clsx('bg-white', className)}
+        {...props}
+      />
+    </GSMessage>
+    // {/* </div> */}
   );
 };
 
