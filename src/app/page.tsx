@@ -34,13 +34,36 @@ export default async function Home() {
 
   return (
     <div className='w-full h-full flex flex-col items-center gap-2'>
-      <div className={clsx(
-        'border border-1 border-slate-500 rounded-lg p-2',
-        'text-sm sm:text-base flex flex-col',
-      )}>
-        <span>"ときめきメモリアル Girl's Side" シリーズのファンサイトです！</span>
-        <span>あなたの推しを教えて下さい！</span>
-      </div>
+        <div className={clsx(
+          'relative mt-4',
+          'border-2 border-slate-300',
+          'rounded-b-lg rounded-tr-lg bg-slate-300',
+          'text-sm sm:text-base flex flex-col',
+          'before:content-[""]',
+          'before:absolute before:bg-slate-300',
+          'before:min-w-24 before:min-h-6 before:-top-6 before:-left-[2px]',
+          'before:rounded-tl-lg',
+          'before:[clip-path:polygon(0_0,_70%_0,_100%_100%,0_100%)]',
+        )}>
+          <div className={clsx(
+            'bg-white/90 rounded-lg px-4 py-1 flex flex-col',
+            'shadow-inner',
+          )}>
+            <div className={clsx(
+              'flex flex-col',
+              '[background-image:linear-gradient(0deg,_lightgray_1px,_transparent_1px)]',
+              '[background-size:100%_1.5rem]',
+              '[line-height:1.5rem]',
+              'h-[4.6rem]',
+              //'[background-position:0_0.2rem]', // 上部に余計な線が出る
+            )}>
+              <span>
+              "ときめきメモリアル Girl's Side" シリーズのファンサイトです！
+              </span>
+              <span>あなたの推しを教えて下さい！</span>
+            </div>
+          </div>
+        </div>
       <HeaderProfileLink  className='mt-3 mb-6'/>
       <TopCharacterSelect />
       <TopAnalysis 
