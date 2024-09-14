@@ -2,7 +2,7 @@ import clsx from 'clsx';
 
 import Link from 'next/link';
 import Button from '@/components/Button';
-import { UserCircleIcon } from '@heroicons/react/24/outline';
+import { PaperAirplaneIcon } from '@heroicons/react/24/solid';
 
 /**
  * プロファイルページへのリンク
@@ -21,15 +21,24 @@ const HeaderProfileLink: React.FC<
   >
     <Button 
       className={clsx(
-        'px-2 flex flex-wrap gap-1 items-center',
-        'text-2xl font-bold',
-        'bg-white/70 text-black',
+        'relative',
+        'text-white h-20 w-20',
       )}
       {...props}
     >
-      <span>投票</span>
-      <span>/あなたのページへ</span>
-      <UserCircleIcon className='size-8' />
+      <div className={clsx(
+        'absolute text-sm top-1 left-1/2 -translate-x-1/2',
+        'text-nowrap',
+      )}>
+        投票！
+      </div>
+      <PaperAirplaneIcon 
+        className={clsx(
+          'absolute size-16',
+          'top-1/2 left-1/2',
+          'animate-vote-icon-rotation [transform-origin:center]',
+        )}
+      />
     </Button>
   </Link>
 );

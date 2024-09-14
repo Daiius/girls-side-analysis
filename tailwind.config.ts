@@ -14,6 +14,15 @@ const config: Config = {
         "gradient-conic":
           "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
       },
+      animation: {
+        'vote-icon-rotation': 'vote-icon-keyframes 0.8s steps(1) infinite',
+      },
+      keyframes: {
+        'vote-icon-keyframes': {
+          '0%' : { transform: 'translate(-50%,-50%) rotate(-15deg)' },
+          '50%': { transform: 'translate(-50%,-50%) rotate(-30deg)' },
+        }
+      }
     },
   },
   plugins: [],

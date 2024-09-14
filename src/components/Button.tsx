@@ -13,11 +13,10 @@ const Button: React.FC<React.ComponentProps<typeof HeadlessButton>> = ({
   <HeadlessButton
     {...props}
     className={clsx(
-      'border border-1 border-slate-800 dark:border-slate-200',
-      'rounded-md',
-      'dark:border-slate-300',
-      'p-1',
-      'hover:bg-white/10',
+      'rounded-md shadow-lg',
+      'bg-gradient-to-b from-sky-400 to-sky-600',
+      'transition ease-in-out delay-150',
+      'hover:scale-110',
       'active:outline active:outline-1 active:outline-slate-400 dark:active:outline-slate-200',
       'focus:outline focus:outline-1 focus:outline-slate-400 dark:focus:outline-slate-200',
       'disabled:hover:bg-transparent disabled:dark:bg-transparent disabled:active:outline-none',
