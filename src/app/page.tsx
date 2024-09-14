@@ -6,7 +6,7 @@ import {
   getLatestVotesForAnalysis,
   getTimelineData,
 } from '@/lib/votes';
-import HeaderProfileLink from '@/components/HeaderProfileLink';
+import VoteLink from '@/components/VoteLink';
 import XShareLink from '@/components/XShareLink';
 import GSMessage from '@/components/GSMessage';
 
@@ -41,7 +41,7 @@ export default async function Home() {
         </span>
         <span>あなたの推しを教えて下さい！</span>
       </GSMessage>
-      <HeaderProfileLink  className='mt-3 mb-6'/>
+      <VoteLink  className='mt-3 mb-6'/>
       <TopCharacterSelect />
       <TopAnalysis 
         className='w-full flex-1' 

@@ -9,7 +9,7 @@ import { PaperAirplaneIcon } from '@heroicons/react/24/solid';
  *
  * リンク先では非表示にするため、client componentとしています
  */
-const HeaderProfileLink: React.FC<
+const VoteLink: React.FC<
   React.ComponentProps<typeof GSButton>
 > = ({
   className,
@@ -43,5 +43,5 @@ const HeaderProfileLink: React.FC<
   </Link>
 );
 
-export default HeaderProfileLink;
+export default VoteLink;
 

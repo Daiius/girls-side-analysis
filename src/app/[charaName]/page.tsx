@@ -10,7 +10,7 @@ import {
   getTimelineData,
 } from '@/lib/votes';
 
-import HeaderProfileLink from '@/components/HeaderProfileLink';
+import VoteLink from '@/components/VoteLink';
 import TopCharacterSelect from '@/components/TopCharacterSelect';
 import TopAnalysisContent from '@/components/TopAnalysisContent';
 import LineChartClient from '@/components/LineChartClient';
@@ -73,7 +73,7 @@ export default async function Page({
     
   return (
     <div className='flex flex-col items-center w-full'>
-      <HeaderProfileLink className='my-3'/>
+      <VoteLink className='my-3'/>
       <TopCharacterSelect className='my-5'/>
       <TopAnalysisContent
         className='w-full mb-2'
