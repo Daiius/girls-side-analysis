@@ -41,20 +41,28 @@ export default async function Home() {
         </span>
         <span>あなたの推しを教えて下さい！</span>
       </GSMessage>
-      <VoteLink  className='mt-3 mb-6'/>
+      <div className='relative w-full h-24'>
+        <VoteLink
+          className={clsx(
+            'absolute left-1/2 -translate-x-1/2',
+            'top-1/2 -translate-y-1/2',
+          )}
+        />
+        <XShareLink
+          className={clsx(
+            'absolute right-0',
+            'top-1/2 -translate-y-1/2',
+          )}
+          text={text}
+          url={sharedURL}
+        />
+      </div>
       <TopCharacterSelect />
       <TopAnalysis 
         className='w-full flex-1' 
         topAnalysisData={data}
         timelineDataDict={timelineDataDict}
       />
-      <XShareLink
-        className='bottom-5 self-end sticky'
-        text={text}
-        url={sharedURL}
-      >
-        <span className='p-2'>X(Twitter)で共有</span>
-      </XShareLink>
     </div>
   );
 }
