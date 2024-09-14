@@ -73,7 +73,7 @@ export default async function Page({
     
   return (
     <div className='flex flex-col items-center w-full'>
-      <HeaderProfileLink className='mt-3 mb-6'/>
+      <HeaderProfileLink className='my-3'/>
       <TopCharacterSelect className='my-5'/>
       <TopAnalysisContent
         className='w-full mb-2'
@@ -81,10 +81,12 @@ export default async function Page({
         targetCharacterName={decodedCharaName}
       />
       {datasets.length > 0 &&
-        <LineChartClient
-          className='w-full'
-          datasets={datasets}
-        />
+        <div className='w-full mb-4'>
+          <LineChartClient
+            className='w-full'
+            datasets={datasets}
+          />
+        </div>
       }
       <XShareLink
         className='bottom-5 self-end sticky'
