@@ -7,7 +7,7 @@ const XShareLink: React.FC<
   {
     text: string;
     url: string;
-    children: React.ReactNode,
+    children?: React.ReactNode,
   } & React.ComponentProps<'a'>
 > = ({
   text,

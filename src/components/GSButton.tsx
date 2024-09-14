@@ -23,7 +23,7 @@ const GSButton: React.FC<
       variant === 'system'
         && 'bg-gradient-to-b from-amber-400 to-amber-600',
       variant === 'date'
-        && 'bg-gradient-to-b from-ping-400 to-ping-600',
+        && 'bg-gradient-to-b from-pink-400 to-pink-600',
       'transition ease-in-out delay-150',
       'hover:scale-110',
       className,
