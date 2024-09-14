@@ -4,7 +4,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 
 import clsx from 'clsx';
-import { ThemeProvider } from 'next-themes';
 
 import Header from '@/components/Header';
 import SettingsProvider from '@/providers/SettingsProvider';
@@ -36,23 +35,21 @@ export default function RootLayout({
   return (
     <html lang="jp" suppressHydrationWarning>
       <SettingsProvider>
-        <ThemeProvider defaultTheme='light' attribute='class'>
-          <body className={clsx(
-            'min-h-screen',
-            'text-black dark:text-white',
-            'bg-gradient-to-b from-sky-100 to-sky-200',
-            'dark:from-sky-800 dark:to-sky-900',
-            inter.className
+        <body className={clsx(
+          'min-h-screen',
+          'text-black dark:text-white',
+          'bg-gradient-to-b from-sky-100 to-sky-200',
+          'dark:from-sky-800 dark:to-sky-900',
+          inter.className
+        )}>
+          <Header />
+          <main className={clsx(
+            'flex flex-col items-center',
+            'p-5 md:p-24'
           )}>
-            <Header />
-            <main className={clsx(
-              'flex flex-col items-center',
-              'p-5 md:p-24'
-            )}>
-              {children}
-            </main>
-          </body>
-        </ThemeProvider>
+            {children}
+          </main>
+        </body>
       </SettingsProvider>
     </html>
   );
