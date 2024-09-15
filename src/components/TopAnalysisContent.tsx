@@ -3,6 +3,7 @@ import clsx from 'clsx';
 
 
 import { TopAnalysisData } from '@/types';
+import { StarIcon } from '@heroicons/react/24/solid';
 
 const TopAnalysisContent: React.FC<
   { 
@@ -40,6 +41,28 @@ const TopAnalysisContent: React.FC<
           'overflow-y-auto',
         )}
       >
+        {topAnalysisData[targetCharacterName] &&
+          <div className='grid grid-cols-[150px_auto] items-center'>
+            <div></div>
+            <div className='h-2 relative'>
+              <StarIcon className={clsx(
+                'size-2 text-yellow-600',
+                'absolute left-1/2 -translate-x-1/2',
+                '-top-3',
+              )}/>
+              <StarIcon className={clsx(
+                'size-2 text-yellow-600',
+                'absolute right-0 translate-x-1/2',
+                '-top-4',
+              )}/>
+              <StarIcon className={clsx(
+                'size-2 text-yellow-600',
+                'absolute right-0 translate-x-1/2',
+                '-top-2',
+              )}/>
+            </div>
+          </div>
+        }
         {Object.entries(topAnalysisData[targetCharacterName] ?? {})
           .map(([characterName, count]) =>
             <div 
@@ -82,19 +105,26 @@ const TopAnalysisContent: React.FC<
               <div className='relative'>
                 <div className={clsx(
                   'absolute top-0 -translate-y-1/2 left-0',
-                  'bg-slate-300 w-full h-10',
+                  'w-full h-10 rounded-md',
+                  'bg-gray-400 shadow-inner',
+                  'outline outline-[1px]', 
                 )}>
                 </div>
                 <div
                   className={clsx(
                     'absolute top-0 -translate-y-1/2 left-0', 
-                    'bg-sky-500 rounded-md text-lg p-2 text-white',
+                    'bg-sky-400 rounded-md text-lg p-2 text-white',
                     'h-10',
                   )}
                   style={{ width: `calc(${count/maxCount*100}%)`}}
                 >
                   {count}票
                 </div>
+                <div className={clsx(
+                  'h-10 w-[0.5px] bg-white/50',
+                  'absolute left-1/2 -translate-x-1/2', 
+                  'top-1/2 -translate-y-1/2',
+                )}/>
               </div>
 
             </div>
