@@ -30,7 +30,9 @@ const GSMessage: React.FC<
     {...props}
   >
     <div className={clsx(
-      'bg-white/90 rounded-lg px-4 py-1 flex flex-col',
+      'bg-white/90 rounded-lg', 
+      'flex flex-col',
+      heightFixed ? 'px-4 py-1' : 'p-0',
       'shadow-inner',
     )}>
       <div 

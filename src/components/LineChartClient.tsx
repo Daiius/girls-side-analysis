@@ -56,6 +56,7 @@ const LineChartClient: React.FC<
               x: {
                 ticks: {
                   callback: function(value, index, ticks) {
+                    // 7日毎に日付を表示する、今日の日付も含める
                     return (ticks.length - index - 1) % 7 === 0
                     ? this.getLabelForValue(value as any)
                     : null
@@ -80,7 +81,7 @@ const LineChartClient: React.FC<
     <GSMessage className='h-auto mt-8' heightFixed={false}>
       <canvas 
         id='line-chart'
-        className={clsx('bg-white', className)}
+        className={clsx('bg-white rounded-md', className)}
         {...props}
       />
     </GSMessage>
