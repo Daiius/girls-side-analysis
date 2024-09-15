@@ -15,7 +15,7 @@ const GSMessage: React.FC<
 }) => (
   <div
     className={clsx(
-      'relative mt-4',
+      'relative mt-4 shadow',
       'border-2 border-slate-300',
       'rounded-b-lg rounded-tr-lg bg-slate-300',
       'text-sm sm:text-base flex flex-col',

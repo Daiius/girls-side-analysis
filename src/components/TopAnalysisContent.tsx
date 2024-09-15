@@ -35,7 +35,7 @@ const TopAnalysisContent: React.FC<
       </div>
       <div 
         className={clsx(
-          'border border-1 border-black dark:border-white',
+          'bg-sky-200 shadow',
           'rounded-lg p-4 max-h-[calc(100%-3rem)]',
           'overflow-y-auto',
         )}
@@ -79,12 +79,24 @@ const TopAnalysisContent: React.FC<
                   }
                 </div>
               </div>
-              <div
-                className='bg-sky-500 rounded-md text-lg p-2 text-white'
-                style={{ width: `calc(${count/maxCount*100}%)`}}
-              >
-                {count}票
+              <div className='relative'>
+                <div className={clsx(
+                  'absolute top-0 -translate-y-1/2 left-0',
+                  'bg-slate-300 w-full h-10',
+                )}>
+                </div>
+                <div
+                  className={clsx(
+                    'absolute top-0 -translate-y-1/2 left-0', 
+                    'bg-sky-500 rounded-md text-lg p-2 text-white',
+                    'h-10',
+                  )}
+                  style={{ width: `calc(${count/maxCount*100}%)`}}
+                >
+                  {count}票
+                </div>
               </div>
+
             </div>
           )
         }
