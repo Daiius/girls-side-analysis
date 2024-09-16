@@ -3,8 +3,12 @@ import clsx from 'clsx';
 import { signIn } from '@/auth';
 import DataUsageDialog from '@/components/DataUsageDialog';
 import Button from '@/components/Button';
+import GSButton from '@/components/GSButton';
+import XIcon from '@/components/XIcon';
 
 import { ArrowLeftEndOnRectangleIcon } from '@heroicons/react/24/outline';
+import GSMessage from './GSMessage';
+import { RocketLaunchIcon } from '@heroicons/react/24/solid';
 
 const BeforeLoginProfile: React.FC<
   React.ComponentProps<'div'>
@@ -22,16 +26,13 @@ const BeforeLoginProfile: React.FC<
       <div className='text-lg font-bold'>
         Twitterアカウント連携について：
       </div>
-      <div className='flex flex-col gap-1'>
-        <ul className='list-disc pl-5'>
+      <GSMessage>
+        <ul className='list-disc pl-4'>
           <li>投票データは匿名で保存されます</li>
-          <li>
-            あなたの投票データは、あなただけが確認できます<br/>
-            (全体の集計結果は誰でも閲覧できます)
-          </li>
-          <li>あなたのX(Twitter)の情報は、あなた自身しかアクセスできません</li>
+          <li className='before:-ml-2'>「シェア」しなければ投票内容は非公開です</li>
+          <li>X(Twitter)閲覧・投稿は自動ではしません</li>
         </ul>
-      </div>
+      </GSMessage>
       <div className='self-end flex flex-row items-center gap-2'>
         詳細: <DataUsageDialog/>
       </div>
@@ -42,13 +43,25 @@ const BeforeLoginProfile: React.FC<
         }}
         className='self-center'
       >
-        <Button 
-          className='mt-2 p-2 flex flex-row'
+        <GSButton 
+          className='size-20 relative group'
           type='submit'
         >
-          X (Twitter) でログイン
-          <ArrowLeftEndOnRectangleIcon className='size-6 ml-2'/>
-        </Button>
+          <div className={clsx(
+            'absolute top-1 left-1/2 -translate-x-1/2 text-nowrap',
+            'text-sm',
+          )}>
+            ログイン
+          </div>
+          <XIcon 
+            className='absolute top-6 right-1'
+            width={28}
+            height={29}
+          />
+          <RocketLaunchIcon className={clsx(
+            'absolute size-9 bottom-1 left-3 group-hover:animate-logout-icon-scale' 
+          )}/>
+        </GSButton>
       </form>
   </div>
 );

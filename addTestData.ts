@@ -22,7 +22,7 @@ const db = drizzle(connection);
 await db.insert(characters).values([
   // GS1
   { name: '葉月珪',     series: 1, sort: 1 },
-  { name: '森村桜弥',   series: 1, sort: 2 },
+  { name: '守村桜弥',   series: 1, sort: 2 },
   { name: '三原色',     series: 1, sort: 3 },
   { name: '姫条まどか', series: 1, sort: 4 },
   { name: '鈴鹿和馬',   series: 1, sort: 5 },

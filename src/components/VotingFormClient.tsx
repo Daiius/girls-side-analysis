@@ -3,13 +3,12 @@
 import React from 'react';
 import clsx from 'clsx';
 
-import Button from '@/components/Button';
-import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import VotingFormUserStatesClient, {
   gsSeries
 } from '@/components/VotingFormUserStatesClient';
 import VotingFormCharactersClient from './VotingFormCharactersClient';
 import AddCharacterSelect from '@/components/AddCharacterSelect';
+import VoteButton from '@/components/VoteButton';
 
 import {
   UserStatesMaster,
@@ -117,7 +116,7 @@ const VotingFormClient: React.FC<
           favorites={favorites}
           setFavorites={setFavorites}
         />
-        <div className='sm:hidden'>推し追加：</div>
+        <div className='sm:hidden'>推しを選んで追加：</div>
         <AddCharacterSelect 
           className='mb-2 h-[3rem]'
           characters={characters}
@@ -126,30 +125,29 @@ const VotingFormClient: React.FC<
             setFavorites([...favorites, characterName])
           }
         />
-        <div className='flex flex-col my-8'>
-          <Button 
-            type='submit'
+        <div className='relative w-full h-24'>
+          <VoteButton
             className={clsx(
-              'flex flex-row items-center self-center',
-              'px-2 text-2xl font-bold border-2'
+              'absolute left-1/2 -translate-x-1/2',
+              'top-1/2 -translate-y-1/2',
             )}
+            variant='date'
+            type='submit'
             disabled={isPending}
-          >
-            <span className='mr-2'>投票！</span>
-            <PaperAirplaneIcon className='size-6'/>
-          </Button>
-          {errorMessage &&
-            <div className='self-center'>{errorMessage}</div>
-          }
+          />
+          <XShareLink
+            className={clsx(
+              'absolute right-0',
+              'top-1/2 -translate-y-1/2',
+            )}
+            text={`私の推しは ${favorites.join('、')} です！`}
+            url='https://faveo-systema.net/girls-side-analysis'
+          />
         </div>
+        {errorMessage &&
+          <div className='self-center'>{errorMessage}</div>
+        }
       </form>
-      <XShareLink
-        className='bottom-5 self-end sticky'
-        text={`私の推しは ${favorites.join('、')} です！`}
-        url='https://faveo-systema.net/girls-side-analysis'
-      >
-        <span className='p-2'>X(Twitter)で共有</span>
-      </XShareLink>
     </>
   );
 };
