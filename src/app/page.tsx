@@ -34,7 +34,7 @@ export default async function Home() {
 
 
   return (
-    <div className='w-full h-full flex flex-col items-center gap-2'>
+    <div className='w-full flex flex-col items-center gap-2'>
       <GSMessage>
         <span>
         "ときめきメモリアル Girl's Side" シリーズのファンサイトです！
