@@ -78,13 +78,13 @@ const LineChartClient: React.FC<
 
   return (
     // {/* <div className='rounded-lg bg-white/80'> */}
-    <GSMessage className='h-auto mt-8' heightFixed={false}>
+    //<GSMessage className='h-auto mt-8' heightFixed={false}>
       <canvas 
         id='line-chart'
-        className={clsx('bg-white rounded-md', className)}
+        className={clsx('bg-sky-200 shadow rounded-md', className)}
         {...props}
       />
-    </GSMessage>
+    //</GSMessage>
     // {/* </div> */}
   );
 };

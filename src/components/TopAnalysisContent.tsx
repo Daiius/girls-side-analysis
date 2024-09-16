@@ -42,21 +42,21 @@ const TopAnalysisContent: React.FC<
         )}
       >
         {topAnalysisData[targetCharacterName] &&
-          <div className='grid grid-cols-[150px_auto] items-center'>
+          <div className='h-2 grid grid-cols-[150px_auto] items-center'>
             <div></div>
             <div className='h-2 relative'>
               <StarIcon className={clsx(
-                'size-2 text-yellow-600',
+                'size-2 text-yellow-500',
                 'absolute left-1/2 -translate-x-1/2',
                 '-top-3',
               )}/>
               <StarIcon className={clsx(
-                'size-2 text-yellow-600',
+                'size-2 text-yellow-500',
                 'absolute right-0 translate-x-1/2',
                 '-top-4',
               )}/>
               <StarIcon className={clsx(
-                'size-2 text-yellow-600',
+                'size-2 text-yellow-500',
                 'absolute right-0 translate-x-1/2',
                 '-top-2',
               )}/>
