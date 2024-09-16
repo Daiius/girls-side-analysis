@@ -116,7 +116,7 @@ const VotingFormClient: React.FC<
           favorites={favorites}
           setFavorites={setFavorites}
         />
-        <div className='sm:hidden'>推し追加：</div>
+        <div className='sm:hidden'>推しを選んで追加：</div>
         <AddCharacterSelect 
           className='mb-2 h-[3rem]'
           characters={characters}
