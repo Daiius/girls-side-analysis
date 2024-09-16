@@ -38,7 +38,7 @@ export default function RootLayout({
         <body className={clsx(
           'min-h-screen',
           'text-black dark:text-white',
-          'bg-gradient-to-b from-sky-100 to-sky-200',
+          'bg-sky-100',
           'dark:from-sky-800 dark:to-sky-900',
           inter.className
         )}>
