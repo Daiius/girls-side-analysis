@@ -6,7 +6,7 @@ import Chart from 'chart.js/auto';
 
 import { DataSet } from '@/types';
 import { useSettings } from '@/providers/SettingsProvider';
-import { useTheme } from 'next-themes';
+import GSMessage from './GSMessage';
 
 const LineChartClient: React.FC<
   {
@@ -22,7 +22,6 @@ const LineChartClient: React.FC<
 }) => {
 
   const { mounted } = useSettings();
-  const { theme } = useTheme();
 
   const refCanvas = React.useRef<HTMLCanvasElement>();
   const refChart  = React.useRef<Chart>(); 
@@ -35,10 +34,6 @@ const LineChartClient: React.FC<
       if (refCanvas.current == null) {
         throw new Error('line chart container is null...');
       }
-      Chart.defaults.color =
-        theme === 'light' ? '#666' : '#fff';
-      Chart.defaults.borderColor = 
-        theme === 'light' ? '#00000020' : '#ffffff20';
       refChart.current = new Chart(
         refCanvas.current,
         {
@@ -51,37 +46,46 @@ const LineChartClient: React.FC<
                 ticks: {
                   callback: (value, _index, _ticks) => 
                     Number.isInteger(value) ? value : null
-                }
+                },
+                title: { 
+                  display: true, 
+                  text: '票数',
+                  font: { weight: 'bold', size: 15 },
+                },
               },
               x: {
                 ticks: {
                   callback: function(value, index, ticks) {
+                    // 7日毎に日付を表示する、今日の日付も含める
                     return (ticks.length - index - 1) % 7 === 0
                     ? this.getLabelForValue(value as any)
                     : null
                   }
-                }
+                },
+                title: { 
+                  display: true, 
+                  text: '日付',
+                  font: { weight: 'bold', size: 15 },
+                },
               }
             },
-            //plugins: {
-            //  legend: {
-            //    position: 'right',
-            //  }
-            //}
           }
         }
       );
     }
     return () => refChart.current?.destroy();
-  }, [mounted, theme, datasets]);
+  }, [mounted, datasets]);
 
   return (
-    <canvas 
-      id='line-chart'
-      className={clsx(className)}
-      {...props}
-    >
-    </canvas>
+    // {/* <div className='rounded-lg bg-white/80'> */}
+    //<GSMessage className='h-auto mt-8' heightFixed={false}>
+      <canvas 
+        id='line-chart'
+        className={clsx('bg-sky-200 shadow rounded-md', className)}
+        {...props}
+      />
+    //</GSMessage>
+    // {/* </div> */}
   );
 };
 

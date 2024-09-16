@@ -4,8 +4,6 @@ import clsx from 'clsx';
 import Link from 'next/link';
 import { Gamja_Flower } from 'next/font/google';
 
-import ThemeChanger from './ThemeChanger';
-
 const gamjaFlower = Gamja_Flower({ weight: "400", subsets: ['latin'] });
 
 /**
@@ -32,22 +30,7 @@ const Header: React.FC = () => (
         <span className='text-pink-400 text-2xl'>♥</span>
         <span className='text-orange-400 text-2xl'>♥</span>
       </div>
-      {/*
-      <span className='sm:hidden flex flex-row items-center'>
-        <span className='text-green-400 text-2xl'>♥</span>
-        <span className='text-blue-600 text-2xl'>♥</span>
-        <span className={clsx(
-          gamjaFlower.className,
-          'text-2xl',
-        )}>
-          GS Analysis
-        </span>
-        <span className='text-pink-400 text-2xl'>♥</span>
-        <span className='text-orange-400 text-2xl'>♥</span>
-      </span>
-      */}
     </Link>
-    <ThemeChanger />
   </div>
 );
 

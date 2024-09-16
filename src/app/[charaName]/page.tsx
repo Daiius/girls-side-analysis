@@ -1,6 +1,7 @@
 import React from 'react';
+import clsx from 'clsx';
+
 import type { Metadata } from 'next';
-//import clsx from 'clsx';
 
 import { notFound } from 'next/navigation';
 
@@ -10,7 +11,7 @@ import {
   getTimelineData,
 } from '@/lib/votes';
 
-import HeaderProfileLink from '@/components/HeaderProfileLink';
+import VoteLink from '@/components/VoteLink';
 import TopCharacterSelect from '@/components/TopCharacterSelect';
 import TopAnalysisContent from '@/components/TopAnalysisContent';
 import LineChartClient from '@/components/LineChartClient';
@@ -73,7 +74,22 @@ export default async function Page({
     
   return (
     <div className='flex flex-col items-center w-full'>
-      <HeaderProfileLink className='mt-3 mb-6'/>
+      <div className='relative w-full h-24'>
+        <VoteLink
+          className={clsx(
+            'absolute left-1/2 -translate-x-1/2',
+            'top-1/2 -translate-y-1/2',
+          )}
+        />
+        <XShareLink
+          className={clsx(
+            'absolute right-0',
+            'top-1/2 -translate-y-1/2',
+          )}
+          text={`GSシリーズの情報共有・分析サイト「${decodedCharaName}」分析ページ`}
+          url={`https://faveo-systema.net/girls-side-analysis/${encodeURIComponent(decodedCharaName)}`}
+        />
+      </div>
       <TopCharacterSelect className='my-5'/>
       <TopAnalysisContent
         className='w-full mb-2'
@@ -81,18 +97,13 @@ export default async function Page({
         targetCharacterName={decodedCharaName}
       />
       {datasets.length > 0 &&
-        <LineChartClient
-          className='w-full'
-          datasets={datasets}
-        />
+        <div className='w-full mb-4'>
+          <LineChartClient
+            className='w-full'
+            datasets={datasets}
+          />
+        </div>
       }
-      <XShareLink
-        className='bottom-5 self-end sticky'
-        text={`GSシリーズの情報共有・分析サイト「${decodedCharaName}」分析ページ`}
-        url={`https://faveo-systema.net/girls-side-analysis/${encodeURIComponent(decodedCharaName)}`}
-      >
-        <span className='p-2'>X(Twitter)で共有</span>
-      </XShareLink>
     </div>
   );
 }

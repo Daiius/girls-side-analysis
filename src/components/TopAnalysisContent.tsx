@@ -3,6 +3,7 @@ import clsx from 'clsx';
 
 
 import { TopAnalysisData } from '@/types';
+import { StarIcon } from '@heroicons/react/24/solid';
 
 const TopAnalysisContent: React.FC<
   { 
@@ -35,11 +36,33 @@ const TopAnalysisContent: React.FC<
       </div>
       <div 
         className={clsx(
-          'border border-1 border-black dark:border-white',
+          'bg-sky-200 shadow',
           'rounded-lg p-4 max-h-[calc(100%-3rem)]',
           'overflow-y-auto',
         )}
       >
+        {topAnalysisData[targetCharacterName] &&
+          <div className='h-2 grid grid-cols-[150px_auto] items-center'>
+            <div></div>
+            <div className='h-2 relative'>
+              <StarIcon className={clsx(
+                'size-2 text-yellow-500',
+                'absolute left-1/2 -translate-x-1/2',
+                '-top-3',
+              )}/>
+              <StarIcon className={clsx(
+                'size-2 text-yellow-500',
+                'absolute right-0 translate-x-1/2',
+                '-top-4',
+              )}/>
+              <StarIcon className={clsx(
+                'size-2 text-yellow-500',
+                'absolute right-0 translate-x-1/2',
+                '-top-2',
+              )}/>
+            </div>
+          </div>
+        }
         {Object.entries(topAnalysisData[targetCharacterName] ?? {})
           .map(([characterName, count]) =>
             <div 
@@ -57,20 +80,8 @@ const TopAnalysisContent: React.FC<
                   characterName.includes('・')
                     ? 'text-left'
                     : 'text-right pr-3'
-                  //'h-[calc(110px+2rem)]',
-                  //characterName.includes('・') 
-                  //  ? 'items-start' : 'items-center',
                 )}  
               >
-                {/*
-                <Image
-                  src='/girls-side-analysis/characters/placeholder.svg'
-                  alt={characterName}
-                  width={100}
-                  height={100}
-                  className='rounded-lg bg-white/5'
-                />
-                */}
                 <div
                   className={clsx(
                     'text-lg font-bold whitespace-nowrap',
@@ -91,12 +102,31 @@ const TopAnalysisContent: React.FC<
                   }
                 </div>
               </div>
-              <div
-                className='bg-sky-500 rounded-md text-lg p-2 text-white'
-                style={{ width: `calc(${count/maxCount*100}%)`}}
-              >
-                {count}票
+              <div className='relative'>
+                <div className={clsx(
+                  'absolute top-0 -translate-y-1/2 left-0',
+                  'w-full h-10 rounded-md',
+                  'bg-gray-400 shadow-inner',
+                  'outline outline-[1px]', 
+                )}>
+                </div>
+                <div
+                  className={clsx(
+                    'absolute top-0 -translate-y-1/2 left-0', 
+                    'bg-sky-400 rounded-md text-lg p-2 text-white',
+                    'h-10',
+                  )}
+                  style={{ width: `calc(${count/maxCount*100}%)`}}
+                >
+                  {count}票
+                </div>
+                <div className={clsx(
+                  'h-10 w-[0.5px] bg-white/50',
+                  'absolute left-1/2 -translate-x-1/2', 
+                  'top-1/2 -translate-y-1/2',
+                )}/>
               </div>
+
             </div>
           )
         }

@@ -6,8 +6,9 @@ import {
   getLatestVotesForAnalysis,
   getTimelineData,
 } from '@/lib/votes';
-import HeaderProfileLink from '@/components/HeaderProfileLink';
+import VoteLink from '@/components/VoteLink';
 import XShareLink from '@/components/XShareLink';
+import GSMessage from '@/components/GSMessage';
 
 // トップページは多くの人がアクセスすることを想定し、
 // static renderingにします...
@@ -34,27 +35,34 @@ export default async function Home() {
 
   return (
     <div className='w-full h-full flex flex-col items-center gap-2'>
-      <div className={clsx(
-        'border border-1 border-slate-500 rounded-lg p-2',
-        'text-sm sm:text-base flex flex-col',
-      )}>
-        <span>"ときめきメモリアル Girl's Side" シリーズのファンサイトです！</span>
+      <GSMessage>
+        <span>
+        "ときめきメモリアル Girl's Side" シリーズのファンサイトです！
+        </span>
         <span>あなたの推しを教えて下さい！</span>
+      </GSMessage>
+      <div className='relative w-full h-24'>
+        <VoteLink
+          className={clsx(
+            'absolute left-1/2 -translate-x-1/2',
+            'top-1/2 -translate-y-1/2',
+          )}
+        />
+        <XShareLink
+          className={clsx(
+            'absolute right-0',
+            'top-1/2 -translate-y-1/2',
+          )}
+          text={text}
+          url={sharedURL}
+        />
       </div>
-      <HeaderProfileLink  className='mt-3 mb-6'/>
       <TopCharacterSelect />
       <TopAnalysis 
         className='w-full flex-1' 
         topAnalysisData={data}
         timelineDataDict={timelineDataDict}
       />
-      <XShareLink
-        className='bottom-5 self-end sticky'
-        text={text}
-        url={sharedURL}
-      >
-        <span className='p-2'>X(Twitter)で共有</span>
-      </XShareLink>
     </div>
   );
 }

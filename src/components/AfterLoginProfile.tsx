@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import { Session } from 'next-auth';
 import { signOut } from '@/auth';
 
-import Button from '@/components/Button';
+import LogoutButton from './LogoutButton';
 import VotingForm from './VotingForm';
 
 /**
@@ -33,12 +33,7 @@ const AfterLoginProfile: React.FC<
         }}
         className='self-center ms-auto'
       >
-        <Button 
-          className='mt-2 p-2 flex flex-row'
-          type='submit'
-        >
-          ログアウト
-        </Button>
+      <LogoutButton />
       </form>
     </div>
 
