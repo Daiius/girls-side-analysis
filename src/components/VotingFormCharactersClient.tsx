@@ -29,6 +29,7 @@ import {
 } from '@/types';
 
 import CharacterStrip from './CharacterStrip';
+import HandIndexIcon from './HandIndexIcon';
 
 
 const SortableCharacterStrip: React.FC<
@@ -117,44 +118,76 @@ const VotingFormCharactersClient: React.FC<
       className={clsx(
         'dark:bg-white/10 bg-black/5',
         'border border-1 border-slate-500',
-        'rounded-lg',
+        'rounded-lg relative',
         className
       )}
       {...props}
     >
-        <div className='flex flex-col gap-2'>
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
+      <div className='flex flex-col gap-2'>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={favorites}
+            strategy={verticalListSortingStrategy}
           >
-            <SortableContext
-              items={favorites}
-              strategy={verticalListSortingStrategy}
-            >
-              {favorites.length === 0 &&
-                <div>推しを選択、追加しましょう！</div>
-              }
-              {favorites.length > 0 &&
-                favorites
-                  .map((c, ic) =>
-                    <SortableCharacterStrip
-                      className={clsx(
-                        'w-[13rem] h-[3rem]',
-                      )}
-                      key={c}
-                      characterName={c}
-                      level={ic}
-                      onDelete={() => setFavorites(items =>
-                        items
-                          .filter(characterName => characterName !== c)
-                      )}
-                    />
-                  )
+            {favorites.length === 0 &&
+              <div>推しを選択、追加しましょう！</div>
+            }
+            {favorites.length > 0 &&
+              favorites
+                .map((c, ic) =>
+                  <SortableCharacterStrip
+                    className={clsx(
+                      'w-[13rem] h-[3rem]',
+                    )}
+                    key={c}
+                    characterName={c}
+                    level={ic}
+                    onDelete={() => setFavorites(items =>
+                      items
+                        .filter(characterName => characterName !== c)
+                    )}
+                  />
+                )
               }
           </SortableContext>
         </DndContext>
       </div>
+      {favorites.length >= 2 &&
+        <div 
+          className={clsx(
+            'absolute right-0 h-full w-20 bg-slate-500/20 top-0',
+            'rounded-md',
+            'text-white',
+          )}
+        >
+          <div className={clsx(
+            'absolute',
+            'border-2 border-white rounded-md w-10 h-4',
+            'top-1/2 left-2',
+            'animate-swipe-1',
+          )}/>
+          <div className={clsx(
+            'absolute',
+            'border-2 border-white rounded-md w-10 h-4',
+            'top-1/2 left-2',
+            'animate-swipe-2',
+          )}/>
+          <HandIndexIcon
+            width='2rem' height='2rem'
+            rotate='90'
+            className={clsx(
+              'absolute',
+              'rotate-90 -scale-y-100',
+              'top-1/2 left-1/2 -translate-x-1/2',
+              'animate-swipe-1-hand',
+            )}
+          />
+        </div>
+      }
     </div>
   );
 };
