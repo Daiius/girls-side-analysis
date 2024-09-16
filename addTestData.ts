@@ -74,7 +74,7 @@ await db.insert(characters).values([
   // GS4
   { name: '風真玲太',   series: 4, sort: 1 },
   { name: '颯砂希',     series: 4, sort: 2 },
-  { name: '本田行',     series: 4, sort: 3 },
+  { name: '本多行',     series: 4, sort: 3 },
   { name: '七ツ森実',   series: 4, sort: 4 },
   { name: '柊夜ノ介',   series: 4, sort: 5 },
   { name: '氷室一紀',   series: 4, sort: 6 },
