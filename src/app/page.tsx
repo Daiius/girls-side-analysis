@@ -34,12 +34,16 @@ export default async function Home() {
 
 
   return (
-    <div className='w-full h-full flex flex-col items-center gap-2'>
+    <div className='w-full flex flex-col items-center gap-2'>
       <GSMessage>
+        <div>
+          <span>"ときめきメモリアル Girl's Side" シリーズの</span>
+          <span className='whitespace-nowrap'>非公式</span>
+          <span>ファンサイトです！</span>
+        </div>
         <span>
-        "ときめきメモリアル Girl's Side" シリーズのファンサイトです！
+          あなたの推しを教えて下さい！
         </span>
-        <span>あなたの推しを教えて下さい！</span>
       </GSMessage>
       <div className='relative w-full h-24'>
         <VoteLink

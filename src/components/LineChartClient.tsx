@@ -40,6 +40,7 @@ const LineChartClient: React.FC<
           type: 'line',
           data: { datasets: datasets as any},
           options: {
+            maintainAspectRatio: false,
             scales: {
               y: { 
                 min: 0,
@@ -69,6 +70,11 @@ const LineChartClient: React.FC<
                 },
               }
             },
+            //plugins: {
+            //  legend: {
+            //    maxHeight: 25,
+            //  }
+            //}
           }
         }
       );
@@ -79,11 +85,13 @@ const LineChartClient: React.FC<
   return (
     // {/* <div className='rounded-lg bg-white/80'> */}
     //<GSMessage className='h-auto mt-8' heightFixed={false}>
+    <div style={{ height: `${datasets.length * 10 + 200}px`}}>
       <canvas 
         id='line-chart'
         className={clsx('bg-sky-200 shadow rounded-md', className)}
         {...props}
       />
+    </div>
     //</GSMessage>
     // {/* </div> */}
   );
