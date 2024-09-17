@@ -20,6 +20,7 @@ import {
 import { vote } from '@/actions/voteActions';
 import { useRouter } from 'next/navigation';
 import XShareLink from './XShareLink';
+import GSMessage from './GSMessage';
 
 
 /**
@@ -147,6 +148,13 @@ const VotingFormClient: React.FC<
         {errorMessage &&
           <div className='self-center'>{errorMessage}</div>
         }
+        <GSMessage>
+          <span>
+            何度でも投票できます！
+            新しい推しが出来たら、また投票を！
+          </span>
+          <span>何人でもお気軽に推してください！</span>
+        </GSMessage>
       </form>
     </>
   );
