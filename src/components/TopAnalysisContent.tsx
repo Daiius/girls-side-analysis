@@ -113,11 +113,15 @@ const TopAnalysisContent: React.FC<
                 <div
                   className={clsx(
                     'absolute top-0 -translate-y-1/2 left-0', 
-                    'bg-sky-400 rounded-md text-lg p-2 text-white',
+                    'bg-sky-400 rounded-md text-lg text-white',
                     'h-10',
                   )}
                   style={{ width: `calc(${count/maxCount*100}%)`}}
-                >
+                />
+                <div className={clsx(
+                  'absolute top-1/2 -translate-y-1/2 left-2',
+                  'text-white',
+                )}>
                   {count}票
                 </div>
                 <div className={clsx(
