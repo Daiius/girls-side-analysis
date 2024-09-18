@@ -46,8 +46,10 @@ export default function RootLayout({
         )}>
           <Header />
           <main className={clsx(
-            'flex flex-col items-center',
-            'p-5 md:px-24 md:py-5 flex-1'
+            'flex flex-col items-center self-center',
+            'p-5', 
+            'md:min-w-[40rem] max-w-full lg:max-w-[55rem] flex-1',
+            'w-full'
           )}>
             {children}
           </main>

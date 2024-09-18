@@ -13,7 +13,8 @@ export $(cat .env.production .env.local | grep -v '^#' | sed 's/#.*//' | xargs)
 docker build \
   --network host \
   -t girls-side-analysis-nextjs \
-  -f Dockerfile.nextjs.prod .
+  -f Dockerfile.nextjs.prod \
+  $@ .
 
 echo Build done!
 
