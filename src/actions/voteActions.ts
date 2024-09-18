@@ -48,7 +48,13 @@ export const vote = async (
     data: userVotes,
   });
 
-  revalidatePath('/');
-  revalidatePath('/[charaName]');
+  // 投票ごとにトップページの内容をすぐに更新準備
+  // 負荷が高めなのでピークアクセス時にはちょっと弱小サーバだとつらいかも
+  //revalidatePath('/');
+  // 投票ごとにキャラクターごとの内容をすぐに更新準備
+  // dynamic path はもう少しパラメータを追加してやらないと
+  // （というかそもそもパス指定方法が間違っている？）
+  // 正しく適応されないらしい
+  //revalidatePath('/[charaName]');
 };
 
