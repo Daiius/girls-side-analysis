@@ -41,6 +41,7 @@ const LineChartClient: React.FC<
           data: { datasets: datasets as any},
           options: {
             //maintainAspectRatio: false,
+            aspectRatio: 1,
             elements: {
               point: {
                 hitRadius: 16, // default: 1, increased value for mobile touch devices
