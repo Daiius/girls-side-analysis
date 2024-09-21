@@ -25,11 +25,13 @@ declare module 'next-auth/jwt' {
   }
 }
 
+
 export const { auth, handlers, signIn, signOut } = NextAuth({
   trustHost: true,
   session: { strategy: 'jwt' },
   providers: [Twitter],
   debug: process.env.NODE_ENV !== 'production',
+  basePath: '/girls-side-analysis/api/auth',
   callbacks: {
     async jwt({ token, account, profile }) {
       if (account && profile) {
@@ -44,18 +46,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         session.user.username = token.username;
       }
       return session;
-    },
-    async authorized({ auth, request: { nextUrl }}) {
-      const isLoggedIn = !!auth?.user;
-      const isOnRoot = nextUrl.pathname === '/girls-side-analysis';
-      const isOnProfile = nextUrl.pathname === '/girls-side-analysis/profile';
-      if (!isLoggedIn) {
-        if (!isOnProfile && !isOnRoot) {
-          return Response.redirect(new URL('/girls-side-analysis', nextUrl));
-        }
-        return true;
-      }
-      return true;
     },
   }
 });

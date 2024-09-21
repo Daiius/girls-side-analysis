@@ -7,7 +7,7 @@ export default async function Page() {
   const session = await auth();
   return (
     <>
-      {session
+      {session?.user?.name
         ? <AfterLoginProfile 
             className='h-full'
             session={session}
