@@ -7,7 +7,6 @@ import { NextRequest } from 'next/server';
 export async function GET(
   req: NextRequest
 ): Promise<Response> {
-  console.log('auth api handler, req: ', req);
   const forwardedHost = req.headers.get('x-forwarded-host');
   const forwardedProto = req.headers.get('x-forwarded-proto');
   if (forwardedHost && forwardedProto) {
@@ -17,7 +16,6 @@ export async function GET(
       method: req.method,
       body: req.body,
     });
-    console.log('auth newReq: ', newReq);
     return await handlers.GET(newReq);
   } else {
     return await handlers.GET(req);
