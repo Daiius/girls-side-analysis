@@ -13,8 +13,10 @@ export default async function Page({
     searchParams?.error === 'OAuthCallbackError'
       ? 'X(Twitter)認証がキャンセルされました' :
     searchParams?.error === 'UnknownAction'
-      ? 'アクションをパース出来ませんでした'
-      : `不明なエラー: ${searchParams?.error}`;
+      ? 'アクションをパース出来ませんでした' :
+    searchParams?.error
+      ? `不明なエラー: ${searchParams?.error}` :
+    undefined;
       
   console.log('searchParams: ', searchParams);
   return (
@@ -26,17 +28,8 @@ export default async function Page({
           />
         : <BeforeLoginProfile 
             className='h-full'
+            errorMessage={errorMessage}
           />
-      }
-      {searchParams?.error &&
-        <div>
-          <div>
-            直前のX(Twitter)認証が上手くいかなかった様です...
-          </div>
-          <div className='text-slate-500'>
-            エラー情報: {errorMessage}
-          </div>
-        </div>
       }
     </>
   );

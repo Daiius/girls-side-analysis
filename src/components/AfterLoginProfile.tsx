@@ -10,7 +10,7 @@ import VotingForm from './VotingForm';
  * ログイン後のプロファイル画面です
  */
 const AfterLoginProfile: React.FC<
-  { session: Session }
+  { session: Session; } 
   & React.ComponentProps<'div'>
 > = async ({
    session,
@@ -38,7 +38,6 @@ const AfterLoginProfile: React.FC<
     </div>
 
     <VotingForm className='flex-1' />
-
   </div>
 );
 

@@ -1,10 +1,5 @@
-'use client'
-
 import React from 'react';
 import clsx from 'clsx';
-
-import { useRouter } from 'next/navigation';
-import { signOut } from '@/auth';
 
 import { RocketLaunchIcon } from '@heroicons/react/24/solid';
 
@@ -15,18 +10,11 @@ const LogoutButton: React.FC<
 > = ({
   ...props
 }) => {
-
-  const router = useRouter();
-
   return (
     <GSButton 
       className='group mt-2 p-2 flex flex-row size-16 relative'
       variant='system'
       type='submit'
-      onClick={async () => {
-        await signOut();
-        router.refresh();
-      }}
       {...props}
     >
       <div className={clsx(
