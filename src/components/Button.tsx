@@ -11,6 +11,7 @@ const Button: React.FC<React.ComponentProps<typeof HeadlessButton>> = ({
   ...props
 }) => (
   <HeadlessButton
+    type='button'
     {...props}
     className={clsx(
       'border border-1 border-slate-800 dark:border-slate-200',
