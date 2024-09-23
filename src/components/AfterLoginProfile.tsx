@@ -26,15 +26,7 @@ const AfterLoginProfile: React.FC<
   >
     <div className='flex flex-row items-center mb-2'>
       <div>ようこそ {session.user.name} さん!</div>
-      <form
-        action={async () => {
-          'use server'
-          await signOut();
-        }}
-        className='self-center ms-auto'
-      >
-      <LogoutButton />
-      </form>
+      <LogoutButton className='self-center ms-auto'/>
     </div>
 
     <VotingForm className='flex-1' />
