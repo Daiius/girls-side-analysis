@@ -1,16 +1,12 @@
-import  { auth } from '@/auth';
-import { 
-  NextApiRequest, 
-  NextApiResponse,
-} from 'next';
 
 import { NextRequest, NextResponse } from 'next/server';
 
-
-export async function middleware(req: NextRequest) {
-  // 何もしないmiddleware
+export async function middleware(
+  req: NextRequest, 
+): Promise<Response> {
   return NextResponse.next();
 }
+
 
 export const config = {
   matcher: ['/profile'],
