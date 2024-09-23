@@ -32,6 +32,11 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
   providers: [Twitter],
   debug: process.env.NODE_ENV !== 'production',
   basePath: '/girls-side-analysis/api/auth',
+  pages: {
+    error: '/girls-side-analysis/profile',
+    signIn: '/girls-side-analysis/profile',
+    signOut: '/girls-side-analysis/profile',
+  },
   callbacks: {
     async jwt({ token, account, profile }) {
       if (account && profile) {
