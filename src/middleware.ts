@@ -1,17 +1,16 @@
 import  { auth } from '@/auth';
-import { NextApiRequest, NextApiResponse } from 'next';
+import { 
+  NextApiRequest, 
+  NextApiResponse,
+} from 'next';
 
-export async function middleware(
-  req: NextApiRequest, 
-  res: NextApiResponse
-) {
-  req.headers['x-forwarded-host'] =
-    'http://local.test/girls-side-analysis/api/auth';
-  console.log('middleware, req: ', req);
-  console.log('middleware, res: ', res);
-  return auth(req, res);
+import { NextRequest, NextResponse } from 'next/server';
+
+
+export async function middleware(req: NextRequest) {
+  // 何もしないmiddleware
+  return NextResponse.next();
 }
-
 
 export const config = {
   matcher: ['/profile'],
