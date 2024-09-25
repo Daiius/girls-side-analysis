@@ -34,6 +34,8 @@ services:
 
   database-preparation:
     image: node:20
+    #build:
+    #  dockerfile: ./Dockerfile.database-preparation
     container_name: girls-side-analysis-database-preparation
     env_file:
       - .env.development
@@ -52,7 +54,7 @@ services:
           --user=$$MYSQL_USER \
           --password=$$MYSQL_PASSWORD \
           --database=$$MYSQL_DATABASE; \
-        pnpx tsx addTestData.ts
+        pnpm tsx addTestData.ts
       '
     depends_on:
       database:
