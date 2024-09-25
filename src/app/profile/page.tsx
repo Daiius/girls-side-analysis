@@ -8,7 +8,6 @@ export default async function Page({
 }: { 
   searchParams?: { error?: string } 
 }) {
-  console.log('### /profile page access!! ###');
   const session = await auth();
   const errorMessage =
     searchParams?.error === 'OAuthCallbackError'
