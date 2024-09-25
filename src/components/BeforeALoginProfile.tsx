@@ -2,17 +2,17 @@ import clsx from 'clsx';
 
 import { signIn } from '@/auth';
 import DataUsageDialog from '@/components/DataUsageDialog';
-import Button from '@/components/Button';
 import GSButton from '@/components/GSButton';
 import XIcon from '@/components/XIcon';
 
-import { ArrowLeftEndOnRectangleIcon } from '@heroicons/react/24/outline';
 import GSMessage from './GSMessage';
 import { RocketLaunchIcon } from '@heroicons/react/24/solid';
 
 const BeforeLoginProfile: React.FC<
-  React.ComponentProps<'div'>
+  { errorMessage?: string; }
+  & React.ComponentProps<'div'>
 > = ({
+  errorMessage,
   className,
   ...props
 }) => (
@@ -63,6 +63,16 @@ const BeforeLoginProfile: React.FC<
           )}/>
         </GSButton>
       </form>
+    {errorMessage != null &&
+      <div>
+        <div>
+          直前のX(Twitter)認証が上手くいかなかった様です...
+        </div>
+        <div className='text-slate-500'>
+          エラー情報: {errorMessage}
+        </div>
+      </div>
+    }
   </div>
 );
 

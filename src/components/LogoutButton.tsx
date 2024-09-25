@@ -3,8 +3,9 @@
 import React from 'react';
 import clsx from 'clsx';
 
+import { signOut } from '@/actions/authActions';
 import { useRouter } from 'next/navigation';
-import { signOut } from '@/auth';
+
 
 import { RocketLaunchIcon } from '@heroicons/react/24/solid';
 
@@ -13,16 +14,17 @@ import GSButton from '@/components/GSButton';
 const LogoutButton: React.FC<
   React.ComponentProps<typeof GSButton>
 > = ({
+  className,
   ...props
 }) => {
-
   const router = useRouter();
-
   return (
     <GSButton 
-      className='group mt-2 p-2 flex flex-row size-16 relative'
+      className={clsx(
+        'group mt-2 p-2 flex flex-row size-16 relative',
+        className,
+      )}
       variant='system'
-      type='submit'
       onClick={async () => {
         await signOut();
         router.refresh();
