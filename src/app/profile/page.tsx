@@ -6,18 +6,19 @@ import BeforeLoginProfile from '@/components/BeforeALoginProfile';
 export default async function Page({ 
   searchParams
 }: { 
-  searchParams?: { error?: string } 
+  searchParams: Promise<{ error?: string }> 
 }) {
   const session = await auth();
+  const { error } = await searchParams;
   const errorMessage =
-    searchParams?.error === 'OAuthCallbackError'
+    error === 'OAuthCallbackError'
       ? 'X(Twitter)認証がキャンセルされました' :
-    searchParams?.error === 'UnknownAction'
+    error === 'UnknownAction'
       ? 'アクションをパース出来ませんでした' :
-    searchParams?.error === 'Configuration' 
+    error === 'Configuration' 
       ? 'タイムアウト、または設定エラーです' :
-    searchParams?.error
-      ? `不明なエラー: ${searchParams?.error}` :
+    error
+      ? `不明なエラー: ${error}` :
     undefined;
       
   console.log('searchParams: ', searchParams);
