@@ -30,6 +30,13 @@ const GSMessage: React.FC<
     {...props}
   >
     <div className={clsx(
+      'absolute',
+      '-translate-y-full translate-x-2',
+      'text-sm',
+    )}>
+      {title}
+    </div>
+    <div className={clsx(
       'bg-white/90 rounded-lg', 
       'flex flex-col',
       heightFixed ? 'px-4 py-1' : 'p-0',
