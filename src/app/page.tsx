@@ -13,8 +13,7 @@ import GSMessage from '@/components/GSMessage';
 // トップページは多くの人がアクセスすることを想定し、
 // static renderingにします...
 export const dynamic = 'force-static';
-export const revalidate =
-  process.env.NODE_ENV === 'production' ? 300 : 30;
+export const revalidate = 300;
 
 export default async function Home() {
 
