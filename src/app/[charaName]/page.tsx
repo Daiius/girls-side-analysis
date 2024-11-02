@@ -19,8 +19,7 @@ import XShareLink from '@/components/XShareLink';
 
 // 5分毎にアップデート
 // NOTE: 今はテスト用にちょっと頻繁にします
-export const revalidate = 
-  process.env.NODE_ENV === 'production' ? 300 : 30;
+export const revalidate = 300;
 
 /**
  * データベースからキャラクター一覧を取得して
@@ -30,8 +29,9 @@ export async function generateStaticParams() {
   const characters = await getCharacters();
   return characters.map(chara => ({ charaName: chara.name }));
 }
-export async function generateMetadata({ params }: { params: { charaName: string } }) {
-  const decodedCharaName = decodeURIComponent(params.charaName);
+export async function generateMetadata({ params }: { params: Promise<{ charaName: string }> }) {
+  const { charaName } = await params;
+  const decodedCharaName = decodeURIComponent(charaName);
   return {
     title: "Girl's Side Analysis",
     description: ` GSシリーズの情報共有・分析サイト ${decodedCharaName}分析ページ`,
@@ -60,8 +60,9 @@ export async function generateMetadata({ params }: { params: { charaName: string
  */
 export default async function Page({
   params
-}: { params: { charaName: string }}) {
-  const decodedCharaName = decodeURIComponent(params.charaName)
+}: { params: Promise<{ charaName: string }>}) {
+  const { charaName } = await params;
+  const decodedCharaName = decodeURIComponent(charaName)
 
   const characters = await getCharacters();
   if (!characters.map(c => c.name).includes(decodedCharaName)) {
