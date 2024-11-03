@@ -1,4 +1,5 @@
-/** @type {import('next').NextConfig} */
+import type { NextConfig } from 'next';
+
 const nextConfig = {
   basePath: '/girls-side-analysis',
   //assetPrefix: '/girls-side-analysis',
@@ -10,6 +11,8 @@ const nextConfig = {
   //  optimization: { minimize: false }
   //}),
   output: 'standalone',
-};
+  serverExternalPackages: ['mysql2'],
+} satisfies NextConfig;
 
 export default nextConfig;
+
