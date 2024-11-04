@@ -23,8 +23,6 @@ services:
     environment:
       TZ: 'Asia/Tokyo'
       LANG: 'ja_JP.UTF-8'
-    volumes:
-      - ./init_db:/docker-entrypoint-initdb.d
     cap_add:
       - SYS_NICE
     healthcheck:
@@ -34,33 +32,33 @@ services:
       retries: 3
       start_period: 5s
 
-        #database-preparation:
-        #  image: node:20
-        #  #build:
-        #  #  dockerfile: ./Dockerfile.database-preparation
-        #  container_name: girls-side-analysis-database-preparation
-        #  env_file:
-        #    - .env.development
-        #  environment:
-        #    NODE_ENV: 'development'
-        #  volumes:
-        #    - ./:/app:ro
-        #  working_dir: /app
-        #  command: >
-        #    bash -c '
-        #      npm install -g pnpm \
-        #      && pnpm drizzle-kit push \
-        #        --dialect=mysql \
-        #        --schema=./src/db/schema.ts \
-        #        --host=$$DB_HOST \
-        #        --user=$$MYSQL_USER \
-        #        --password=$$MYSQL_PASSWORD \
-        #        --database=$$MYSQL_DATABASE; \
-        #      pnpm tsx addTestData.ts
-        #    '
-        #  depends_on:
-        #    database:
-        #      condition: service_healthy
+  database-preparation:
+    image: node:20
+    #build:
+    #  dockerfile: ./Dockerfile.database-preparation
+    container_name: girls-side-analysis-database-preparation
+    env_file:
+      - .env.development
+    environment:
+      NODE_ENV: 'development'
+    volumes:
+      - ./:/app:ro
+    working_dir: /app
+    command: >
+      bash -c '
+        npm install -g pnpm \
+        && pnpm drizzle-kit push \
+          --dialect=mysql \
+          --schema=./src/db/schema.ts \
+          --host=$$DB_HOST \
+          --user=$$MYSQL_USER \
+          --password=$$MYSQL_PASSWORD \
+          --database=$$MYSQL_DATABASE; \
+        pnpm tsx addTestData.ts
+      '
+    depends_on:
+      database:
+        condition: service_healthy
     
   webserver:
     image: nginx
