@@ -144,27 +144,20 @@ twitterIDとtimestampを組みにして全ての新規追加・更新を同じ�
 ```
 ...みたいなSQL文で時系列分析も出来るような気がする
 
-```plantuml
-@startuml
-hide circle
-skinparam linetype ortho
-entity Characters {
-    *series: number <<登場シリーズ番号>>
-    *sort: number <<公式サイト等での紹介順>>
-    --
-    *name: varchar <<キャラ名>>
-}
-entity Votes {
-    *twitterID
-    *voteTime
-    *charaName: <<キャラ名>> <<FK>>
-    --
-    *level: <<推しレベル≒順位>>
-}
-
-Characters ||-o{ Votes
-
-@enduml
+```mermaid
+erDiagram
+  Characters {
+      number series PK "登場シリーズ番号"
+      number sort   PK "公式サイト等での紹介順"
+      varchar charaName "キャラ名"
+  }
+  Votes {
+      varchar twitterId PK "X(Twitter)アカウントID"
+      timestamp votedTime PK "投票時間"
+      varchar charaName PK "キャラ名"
+      number level "推しレベル"
+  }
+  Characters ||--o{ Votes : charaName
 ```
 
 ## データベース構成の再検討
@@ -351,6 +344,8 @@ group by
 
 ## X (Twitter) アカウント使用方法についての説明
 絵に出来たらもっと良いかもなのですが...
+<details>
+<summary>以前のPlantUMLの図</summary>
 
 ```plantuml
 @startuml
@@ -383,6 +378,36 @@ database x<- stranger: 投票データは開発者以外は閲覧出来ません
 database x<- stranger: 開発者も含め他の人は\nあなたのユーザ番号を知らないので\n誰が投票したか分かりません
 twitter x<- stranger: あなたの\nアカウントも\n分かりません
 @enduml
+```
+
+</details>
+
+### アカウント情報使用方法
+```mermaid
+sequenceDiagram
+    actor user as あなた
+    participant database as 投票データ
+    participant analysis as 分析結果
+    participant twitter as X(Twitter)
+    actor stranger as 誰か
+
+    Note over user,stranger : データの使用方法について
+
+    user ->> twitter : 1. アクセスを許可してもらえると
+    twitter -->> user : 2. ユーザ名、ユーザ番号を教えてもらえます
+    Note over user : ようこそ"ユーザ名"さん!
+
+    user ->> database : 3. 押しキャラ投票時、<br/>ユーザ番号も記録します<br/>（ユーザ名は記録しません）
+    user ->> database : 4. あなたが使うとき、<br/>あなたのユーザ番号は分かるので...
+    database -->> user : 5. 過去のあなたの投票を確認できます!
+    database ->> analysis : 集計・分析
+    analysis ->> user : 6. 投票データの分析結果の<br/>閲覧ができます
+    analysis ->> stranger : あなた以外の人も<br/>分析結果は閲覧可能です  
+    Note over user,stranger : その他のアクセス方法への対策
+
+    stranger -x database : 投票データは開発者しか閲覧できません
+    stranger -x database : 開発者も含め、あなた以外の人は<br/>あなたのユーザ番号を知りませんので、<br/>誰がなんの投票をしたかは分かりません
+    stranger -x twitter : あなたのアカウントを<br/>特定することは出来ません
 ```
 
 
