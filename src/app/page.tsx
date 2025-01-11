@@ -20,12 +20,19 @@ export default async function Home() {
   const data = await getLatestVotesForAnalysis();
 
   const relatedCharacters = Object.keys(data) as string[];
-  const timelineDataDict = (await Promise.all(
-    relatedCharacters
-      .map(async c => 
-        ({ [c]: await getTimelineData(c) })
-      )
-  )).reduce((acc, curr) => ({ ...acc, ...curr }), {});
+  const timelineDataDict: {
+    [key: string]: Awaited<ReturnType<typeof getTimelineData>>
+  } = {};
+  for (const relatedCharacter of relatedCharacters) {
+    timelineDataDict[relatedCharacter] 
+      = await getTimelineData(relatedCharacter);
+  }
+  //const timelineDataDict = (await Promise.all(
+  //  relatedCharacters
+  //    .map(async c => 
+  //      ({ [c]: await getTimelineData(c) })
+  //    )
+  //)).reduce((acc, curr) => ({ ...acc, ...curr }), {});
 
   // trailing slashまで付けるとopenGraphImageが表示されるのを確認
   const text = 'GSシリーズの情報共有・分析サイト';
