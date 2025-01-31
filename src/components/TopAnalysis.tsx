@@ -6,19 +6,19 @@ import clsx from 'clsx';
 import TopAnalysisContent from './TopAnalysisContent';
 
 import { TopAnalysisData, DataSet } from '@/types';
-import LineChartClient from './LineChartClient';
+//import LineChartClient from './LineChartClient';
 
 
 
 const TopAnalysis: React.FC<
   { 
     topAnalysisData: TopAnalysisData,
-    timelineDataDict: Record<string, DataSet[]>,
+    //timelineDataDict: Record<string, DataSet[]>,
   }
   & React.ComponentProps<'div'>
 > = ({
   topAnalysisData,
-  timelineDataDict,
+  //timelineDataDict,
   className,
   ...props
 }) => {
@@ -48,9 +48,11 @@ const TopAnalysis: React.FC<
         className={clsx('mb-2', className)}
         {...props}
       />
+      {/*
       <LineChartClient
         datasets={timelineDataDict[targetCharacterName]}
       />
+      */}
     </div>
   );
 };
