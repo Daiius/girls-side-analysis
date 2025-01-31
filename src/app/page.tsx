@@ -71,7 +71,7 @@ export default async function Home() {
       <TopAnalysis 
         className='w-full flex-1' 
         topAnalysisData={data}
-        timelineDataDict={timelineDataDict}
+        //timelineDataDict={timelineDataDict}
       />
     </div>
   );
