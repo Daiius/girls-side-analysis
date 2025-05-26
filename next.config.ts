@@ -12,6 +12,7 @@ const nextConfig = {
   //}),
   output: 'standalone',
   serverExternalPackages: ['mysql2'],
+  allowedDevOrigins: ['local.test'], 
 } satisfies NextConfig;
 
 export default nextConfig;
