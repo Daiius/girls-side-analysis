@@ -12,7 +12,7 @@ const gamjaFlower = Gamja_Flower({ weight: "400", subsets: ['latin'] });
  */
 const Header: React.FC = () => (
   <div className={clsx(
-    'sticky top-0 h-12 w-full bg-sky-500/90 dark:bg-sky-900/90',
+    'sticky top-0 h-12 w-full bg-sky-500/90',
     'flex flex-row items-center z-10',
     'px-4',
   )}>

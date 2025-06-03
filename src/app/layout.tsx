@@ -40,9 +40,8 @@ export default function RootLayout({
       <SettingsProvider>
         <body className={clsx(
           'min-h-screen',
-          'text-black dark:text-white',
+          'text-black',
           'bg-sky-100',
-          'dark:from-sky-800 dark:to-sky-900',
           'flex flex-col',
           inter.className
         )}>

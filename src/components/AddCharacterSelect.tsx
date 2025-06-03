@@ -41,7 +41,7 @@ const AddCharacterSelect: React.FC<
         <Select
           className={clsx(
             'block w-full h-full appearance-none rounded-lg border-none',
-            'bg-black/5 dark:bg-white/5',
+            'bg-black/5',
             'py-1.5 pl-3 pr-8 text-sm/6'
           )}
           value={selectedName}
@@ -69,7 +69,7 @@ const AddCharacterSelect: React.FC<
         <ChevronDownIcon
           className={clsx(
             'group pointer-events-none absolute top-1/2 -translate-y-1/2 right-2.5 size-4',
-            'fill-black/60 dark:fill-white/60'
+            'fill-black/60'
           )}
           aria-hidden
         />
