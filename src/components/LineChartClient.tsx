@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react';
+import { useRef, useEffect } from 'react';
 import clsx from 'clsx';
 import Chart from 'chart.js/auto';
 
@@ -23,11 +23,11 @@ const LineChartClient: React.FC<
 
   const { mounted } = useSettings();
 
-  const refCanvas = React.useRef<HTMLCanvasElement>();
-  const refChart  = React.useRef<Chart>(); 
+  const refCanvas = useRef<HTMLCanvasElement>(null);
+  const refChart  = useRef<Chart>(null); 
 
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (mounted) {
       refCanvas.current = 
         document.getElementById('line-chart') as HTMLCanvasElement;
