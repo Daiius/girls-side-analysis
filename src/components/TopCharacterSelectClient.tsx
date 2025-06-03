@@ -46,7 +46,7 @@ const TopCharacterSelectClient: React.FC<
       <Field>
         <Label className='text-lg font-bold'>表示データの選択：</Label>
         <Description className={clsx(
-          'text-slate-700 dark:text-slate-300 ml-2'
+          'text-slate-700 ml-2'
         )}>
           分析結果を表示します...
         </Description>
@@ -54,7 +54,7 @@ const TopCharacterSelectClient: React.FC<
           <Select
             className={clsx(
               'block w-full appearance-none rounded-lg border-none',
-              'bg-black/5 dark:bg-white/5',
+              'bg-black/5 ',
               'py-1.5 pl-3 pr-8 text-sm/6',
             )}
             onChange={e => handleSelect(e.target.value)}
@@ -80,7 +80,7 @@ const TopCharacterSelectClient: React.FC<
           <ChevronDownIcon
             className={clsx(
               'group pointer-events-none absolute top-2.5 right-2.5 size-4',
-              'fill-black/60 dark:fill-white/60'
+              'fill-black/60'
             )}
             aria-hidden
           />

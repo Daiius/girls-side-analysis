@@ -40,7 +40,7 @@ const DataUsageDialog: React.FC = () => {
               >
                 <DialogPanel
                   onClick={onClose}
-                  className='w-full max-w-4/5 rounded-xl bg-slate-300 dark:bg-slate-600 py-2 px-5 backdrop-blur-2xl'
+                  className='w-full max-w-4/5 rounded-xl bg-slate-300 py-2 px-5 backdrop-blur-2xl'
                 >
                   <DialogTitle className='my-1 font-bold'>
                     <div>データの使用方法：</div>
