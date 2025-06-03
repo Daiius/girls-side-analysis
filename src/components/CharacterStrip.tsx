@@ -23,7 +23,7 @@ const CharacterStrip: React.FC<
 }) => (
   <div 
     className={clsx(
-      'border border-1 border-slate-800 dark:border-slate-200 rounded-md',
+      'border border-1 border-slate-800 rounded-md',
       'py-3 px-2',
       'flex flex-row  items-center gap-2',
       characterName.includes('・') && 'text-xs',
