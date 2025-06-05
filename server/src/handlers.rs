@@ -4,14 +4,25 @@ use crate::dto::{
     CharacterDto,
     UserStateDto,
 };
-use sea_orm::DatabaseConnection;
+use sea_orm::{
+    DatabaseConnection,
+    EntityTrait,
+    ColumnTrait,
+    QueryFilter,
+    QueryOrder,
+};
+use sea_orm::*;
+use sea_orm::sea_query::{ Query };
 use axum:: {
     response::Json,
     extract::{ State, Path },
 };
-use crate::entity::characters;
-use sea_orm::{ EntityTrait, QueryOrder };
+use crate::entity::{
+    characters,
+    user_states,
+};
 
+/// DBに記録されたキャラクター一覧を取得
 #[utoipa::path(
     get,
     path = "/characters",
@@ -42,6 +53,9 @@ pub struct UserPath {
     pub id: String
 }
 
+/// ユーザの最新のプレイ状況を取得します
+///
+/// NOTE DBにはユーザの過去のプレイ状況変化が蓄積されています
 #[utoipa::path(
     get, path = "/users/{id}",
     params(UserPath),
@@ -51,6 +65,45 @@ pub struct UserPath {
 )]
 pub async fn get_user_state(
     Path(UserPath { id }): Path<UserPath>,
-    State(state): State<DatabaseConnection>,
-) -> Json<UserStateDto> {
+    State(db): State<DatabaseConnection>,
+) -> Json<Vec<UserStateDto>> {
+
+    println!("id: {:?}", &id);
+
+    // NOTE ORM的なEntity::findと、sqlx的なQuery::select()と2通りある
+    // サブクエリはよりプリミティブになるためか、後者の定義が必要
+
+    //let subquery = user_states::Entity::find()
+    //    .select_only()
+    //    .filter(user_states::Column::TwitterId.eq(&id))
+    //    .column_as(user_states::Column::RecordedTime.max(), "latest_recorded_time")
+    //    .into_query();
+    let subquery = Query::select()
+        .expr(user_states::Column::RecordedTime.max())
+        .from(user_states::Entity)
+        .and_where(user_states::Column::TwitterId.eq(&id))
+        .to_owned();
+    let mainquery = user_states::Entity::find()
+        .filter(
+            user_states::Column::TwitterId.eq(&id)
+            .and(
+                // TODO サブクエリ結果は1件のはずなのでinでなく=を使いたい
+                // できないっぽい...??
+                user_states::Column::RecordedTime.in_subquery(subquery)
+            )
+        );
+    println!("mainquery: {:?}", &mainquery.build(DbBackend::MySql).to_string());
+
+    let result = mainquery
+        .all(&db)
+        .await
+        .unwrap_or_default();
+
+    let json = result
+        .into_iter()
+        .map(UserStateDto::from)
+        .collect();
+
+    Json(json)
 }
+
