@@ -4,6 +4,7 @@ use utoipa::ToSchema;
 use crate::entity::{
     characters,
     user_states,
+    user_states_master,
 };
 
 #[derive(Serialize, ToSchema)]
@@ -41,3 +42,18 @@ impl From<user_states::Model> for UserStateDto {
         }
     }
 }
+#[derive(Serialize, ToSchema)]
+pub struct UserStatesMasterDto {
+    state: String,
+    sort: u8,
+}
+
+impl From<user_states_master::Model> for UserStatesMasterDto {
+    fn from(model: user_states_master::Model) -> Self {
+        Self {
+            state: model.state,
+            sort: model.sort,
+        }
+    }
+}
+
