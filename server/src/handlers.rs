@@ -3,6 +3,7 @@ use utoipa::IntoParams;
 use crate::dto::{
     CharacterDto,
     UserStateDto,
+    UserStatesMasterDto,
 };
 use sea_orm::{
     DatabaseConnection,
@@ -19,12 +20,15 @@ use axum:: {
 use crate::entity::{
     characters,
     user_states,
+    user_states_master,
 };
 use crate::errors::AppError;
 
 /// DBに記録されたキャラクター一覧を取得
 #[axum::debug_handler]
 #[utoipa::path(
+    operation_id = "getCharacters",
+    tags = ["Characters"],
     get,
     path = "/characters",
     responses(
@@ -58,6 +62,8 @@ pub struct UserPath {
 /// NOTE DBにはユーザの過去のプレイ状況変化が蓄積されています
 #[axum::debug_handler]
 #[utoipa::path(
+    operation_id = "getUser",
+    tags = ["Users"],
     get, path = "/users/{id}",
     params(UserPath),
     responses(
@@ -102,6 +108,35 @@ pub async fn get_user_state(
     let json = result
         .into_iter()
         .map(UserStateDto::from)
+        .collect();
+
+    Ok(Json(json))
+}
+
+
+/// ユーザのプレイ状況のパターン一覧を取得します
+#[axum::debug_handler]
+#[utoipa::path(
+    operation_id = "getUserStatuses",
+    tags = ["Users"],
+    get, path = "/user-statuses",
+    responses(
+        (
+            status = 200, 
+            description = "ユーザ状態パターン一覧取得成功", 
+            body = [UserStatesMasterDto]
+        )
+    ),
+)]
+pub async fn get_user_statuses(
+    State(db): State<DatabaseConnection>,
+) -> Result<Json<Vec<UserStatesMasterDto>>, AppError> {
+    let result = user_states_master::Entity::find()
+        .all(&db)
+        .await?;
+    let json = result
+        .into_iter()
+        .map(UserStatesMasterDto::from)
         .collect();
 
     Ok(Json(json))
