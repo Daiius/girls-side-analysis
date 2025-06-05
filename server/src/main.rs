@@ -3,17 +3,12 @@ use axum::{
     Router,
 };
 use utoipa_swagger_ui::SwaggerUi;
-mod db;
-mod entity;
-mod dto;
-mod handlers;
-use handlers::{
+use server::handlers::{
     get_characters,
     get_user_state,
 };
 use utoipa::OpenApi;
-mod openapi;
-use openapi::ApiDoc;
+use server::openapi::ApiDoc;
 
 
 #[tokio::main]
@@ -22,7 +17,7 @@ async fn main() {
 
     dotenvy::dotenv().ok();
 
-    let db = db::init().await.expect("cannot connect to db...");
+    let db = server::db::init().await.expect("cannot connect to db...");
 
     let app = Router::new()
         .route("/", get(|| async { "Hello, axum!" }))
