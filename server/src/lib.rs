@@ -1,6 +1,5 @@
 pub mod openapi;
 pub mod dto;
 pub mod handlers;
-pub mod entity;
-pub mod db;
-pub mod errors;
+mod entity;
+mod errors;
