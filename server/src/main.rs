@@ -10,6 +10,7 @@ use server::handlers::{
 use utoipa::OpenApi;
 use server::openapi::ApiDoc;
 
+mod db;
 
 #[tokio::main]
 async fn main() {
@@ -17,7 +18,7 @@ async fn main() {
 
     dotenvy::dotenv().ok();
 
-    let db = server::db::init().await.expect("cannot connect to db...");
+    let db = db::init().await.expect("cannot connect to db...");
 
     let app = Router::new()
         .route("/", get(|| async { "Hello, axum!" }))

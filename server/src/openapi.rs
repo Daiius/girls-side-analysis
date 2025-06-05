@@ -1,16 +1,23 @@
 
 use utoipa::OpenApi;
-use crate::dto::CharacterDto;
+use crate::dto::{
+    CharacterDto,
+    UserStateDto,
+};
 
-use crate::handlers;
+use crate::handlers::*;
 
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        handlers::get_characters,
+        get_characters,
+        get_user_state,
     ),
     components(
-        schemas(CharacterDto),
+        schemas(
+            CharacterDto,
+            UserStateDto,
+        ),
     ),
     tags(
         (name = "Gril's side analysis APIs", description="ときめきメモリアルGirl's side分析ファンサイト用APIエンドポイント"),
