@@ -11,7 +11,6 @@ use sea_orm::{
     QueryFilter,
     QueryOrder,
 };
-use sea_orm::*;
 use sea_orm::sea_query::{ Query };
 use axum:: {
     response::Json,
@@ -21,8 +20,10 @@ use crate::entity::{
     characters,
     user_states,
 };
+use crate::errors::AppError;
 
 /// DBに記録されたキャラクター一覧を取得
+#[axum::debug_handler]
 #[utoipa::path(
     get,
     path = "/characters",
@@ -32,20 +33,19 @@ use crate::entity::{
 )]
 pub async fn get_characters(
     State(db): State<DatabaseConnection>,
-) -> Json<Vec<CharacterDto>> {
+) -> Result<Json<Vec<CharacterDto>>, AppError> {
     let result = characters::Entity::find()
         .order_by_asc(characters::Column::Series)
         .order_by_asc(characters::Column::Sort)
         .all(&db)
-        .await
-        .unwrap_or_default();
+        .await?;
 
     let json = result
         .into_iter()
         .map(CharacterDto::from)
         .collect();
 
-    Json(json)
+    Ok(Json(json))
 }
 
 #[derive(Deserialize, IntoParams)]
@@ -56,6 +56,7 @@ pub struct UserPath {
 /// ユーザの最新のプレイ状況を取得します
 ///
 /// NOTE DBにはユーザの過去のプレイ状況変化が蓄積されています
+#[axum::debug_handler]
 #[utoipa::path(
     get, path = "/users/{id}",
     params(UserPath),
@@ -66,9 +67,9 @@ pub struct UserPath {
 pub async fn get_user_state(
     Path(UserPath { id }): Path<UserPath>,
     State(db): State<DatabaseConnection>,
-) -> Json<Vec<UserStateDto>> {
+) -> Result<Json<Vec<UserStateDto>>, AppError> {
 
-    println!("id: {:?}", &id);
+    //println!("id: {:?}", &id);
 
     // NOTE ORM的なEntity::findと、sqlx的なQuery::select()と2通りある
     // サブクエリはよりプリミティブになるためか、後者の定義が必要
@@ -92,18 +93,17 @@ pub async fn get_user_state(
                 user_states::Column::RecordedTime.in_subquery(subquery)
             )
         );
-    println!("mainquery: {:?}", &mainquery.build(DbBackend::MySql).to_string());
+    //println!("mainquery: {:?}", &mainquery.build(DbBackend::MySql).to_string());
 
     let result = mainquery
         .all(&db)
-        .await
-        .unwrap_or_default();
+        .await?;
 
     let json = result
         .into_iter()
         .map(UserStateDto::from)
         .collect();
 
-    Json(json)
+    Ok(Json(json))
 }
 
