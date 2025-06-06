@@ -1,10 +1,6 @@
 
 use utoipa::OpenApi;
-use crate::dto::{
-    CharacterDto,
-    UserStateDto,
-    UserStatesMasterDto,
-};
+use crate::dto;
 
 use crate::handlers;
 
@@ -13,13 +9,15 @@ use crate::handlers;
     paths(
         handlers::get_characters,
         handlers::get_user_state,
+        handlers::post_user_state,
         handlers::get_user_statuses,
     ),
     components(
         schemas(
-            CharacterDto,
-            UserStateDto,
-            UserStatesMasterDto,
+            dto::CharacterDto,
+            dto::UserStateDto,
+            dto::UserStatesMasterDto,
+            dto::PostUserStatusPayload,
         ),
     ),
     tags(

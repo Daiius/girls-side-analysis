@@ -4,25 +4,16 @@ use crate::dto::{
     CharacterDto,
     UserStateDto,
     UserStatesMasterDto,
+    PostUserStatusPayload,
 };
-use sea_orm::{
-    DatabaseConnection,
-    EntityTrait,
-    ColumnTrait,
-    QueryFilter,
-    QueryOrder,
-};
-use sea_orm::sea_query::{ Query };
+use sea_orm::DatabaseConnection;
 use axum:: {
     response::Json,
     extract::{ State, Path },
 };
-use crate::entity::{
-    characters,
-    user_states,
-    user_states_master,
-};
 use crate::errors::AppError;
+use crate::repositories;
+use crate::services;
 
 /// DBに記録されたキャラクター一覧を取得
 #[axum::debug_handler]
@@ -38,13 +29,9 @@ use crate::errors::AppError;
 pub async fn get_characters(
     State(db): State<DatabaseConnection>,
 ) -> Result<Json<Vec<CharacterDto>>, AppError> {
-    let result = characters::Entity::find()
-        .order_by_asc(characters::Column::Series)
-        .order_by_asc(characters::Column::Sort)
-        .all(&db)
-        .await?;
 
-    let json = result
+    let json = repositories::get_characters(&db)
+        .await?
         .into_iter()
         .map(CharacterDto::from)
         .collect();
@@ -75,37 +62,8 @@ pub async fn get_user_state(
     State(db): State<DatabaseConnection>,
 ) -> Result<Json<Vec<UserStateDto>>, AppError> {
 
-    //println!("id: {:?}", &id);
-
-    // NOTE ORM的なEntity::findと、sqlx的なQuery::select()と2通りある
-    // サブクエリはよりプリミティブになるためか、後者の定義が必要
-
-    //let subquery = user_states::Entity::find()
-    //    .select_only()
-    //    .filter(user_states::Column::TwitterId.eq(&id))
-    //    .column_as(user_states::Column::RecordedTime.max(), "latest_recorded_time")
-    //    .into_query();
-    let subquery = Query::select()
-        .expr(user_states::Column::RecordedTime.max())
-        .from(user_states::Entity)
-        .and_where(user_states::Column::TwitterId.eq(&id))
-        .to_owned();
-    let mainquery = user_states::Entity::find()
-        .filter(
-            user_states::Column::TwitterId.eq(&id)
-            .and(
-                // TODO サブクエリ結果は1件のはずなのでinでなく=を使いたい
-                // できないっぽい...??
-                user_states::Column::RecordedTime.in_subquery(subquery)
-            )
-        );
-    //println!("mainquery: {:?}", &mainquery.build(DbBackend::MySql).to_string());
-
-    let result = mainquery
-        .all(&db)
-        .await?;
-
-    let json = result
+    let json = repositories::get_latest_user_state(&id, &db)
+        .await?
         .into_iter()
         .map(UserStateDto::from)
         .collect();
@@ -131,14 +89,41 @@ pub async fn get_user_state(
 pub async fn get_user_statuses(
     State(db): State<DatabaseConnection>,
 ) -> Result<Json<Vec<UserStatesMasterDto>>, AppError> {
-    let result = user_states_master::Entity::find()
-        .all(&db)
-        .await?;
-    let json = result
+    let json = repositories::get_user_states(&db)
+        .await?
         .into_iter()
         .map(UserStatesMasterDto::from)
         .collect();
 
     Ok(Json(json))
+}
+
+/// ユーザの最新のプレイ状況を登録します
+///
+/// プレイ状況が変化していない場合、DB変更は行われません
+#[axum::debug_handler]
+#[utoipa::path(
+    operation_id = "postUserStatus",
+    tags = ["Users"],
+    post, path = "/users/{id}",
+    params(UserPath),
+    request_body = PostUserStatusPayload,
+    responses(
+        (status = 200, description = "ユーザ状態記録成功")
+    ),
+)]
+pub async fn post_user_state(
+    Path(UserPath { id }): Path<UserPath>,
+    State(db): State<DatabaseConnection>,
+    Json(payload): Json<Vec<PostUserStatusPayload>>,
+) -> Result<(), AppError> {
+    // TODO 最新データとpayloadの差を比較するロジックは分けたいところ
+    let latest = repositories::get_latest_user_state(&id, &db)
+        .await?;
+    if !services::is_same_state(&latest, &payload) { 
+        repositories::insert_user_state(&id, payload, &db).await?;
+    }
+    
+    Ok(())
 }
 

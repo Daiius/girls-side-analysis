@@ -1,5 +1,8 @@
 
-use serde::Serialize;
+use serde::{
+    Serialize,
+    Deserialize,
+};
 use utoipa::ToSchema;
 use crate::entity::{
     characters,
@@ -55,5 +58,17 @@ impl From<user_states_master::Model> for UserStatesMasterDto {
             sort: model.sort,
         }
     }
+}
+
+/// ユーザのプレイ状況を記録する際のリクエストボディ
+///
+/// recorded_timeはサーバ側で現在時刻を取得するので、
+/// それ以外のフィールドを取得します
+///
+/// Clone and pub fields for services::is_same_state
+#[derive(Debug, Deserialize, ToSchema, Clone)]
+pub struct PostUserStatusPayload {
+    pub status: String,
+    pub series: u8,
 }
 
