@@ -1,5 +1,3 @@
-use serde::Deserialize;
-use utoipa::IntoParams;
 use crate::dto::{
     CharacterDto,
     UserStateDto,
@@ -9,11 +7,13 @@ use crate::dto::{
 use sea_orm::DatabaseConnection;
 use axum:: {
     response::Json,
-    extract::{ State, Path },
+    extract::{ State },
 };
 use crate::errors::AppError;
 use crate::repositories;
 use crate::services;
+
+use crate::auth::AuthenticatedUser;
 
 /// DBに記録されたキャラクター一覧を取得
 #[axum::debug_handler]
@@ -39,11 +39,6 @@ pub async fn get_characters(
     Ok(Json(json))
 }
 
-#[derive(Deserialize, IntoParams)]
-pub struct UserPath {
-    pub id: String
-}
-
 /// ユーザの最新のプレイ状況を取得します
 ///
 /// NOTE DBにはユーザの過去のプレイ状況変化が蓄積されています
@@ -51,18 +46,19 @@ pub struct UserPath {
 #[utoipa::path(
     operation_id = "getUser",
     tags = ["Users"],
-    get, path = "/users/{id}",
-    params(UserPath),
+    get, path = "/users",
+    params(
+        ("Authorization" = String, Header, description = "JWT"),
+    ),
     responses(
         (status = 200, description = "ユーザ情報取得成功", body = [UserStateDto])
     ),
 )]
 pub async fn get_user_state(
-    Path(UserPath { id }): Path<UserPath>,
+    user: AuthenticatedUser,
     State(db): State<DatabaseConnection>,
 ) -> Result<Json<Vec<UserStateDto>>, AppError> {
-
-    let json = repositories::get_latest_user_state(&id, &db)
+    let json = repositories::get_latest_user_state(&user.twitter_id, &db)
         .await?
         .into_iter()
         .map(UserStateDto::from)
@@ -105,23 +101,25 @@ pub async fn get_user_statuses(
 #[utoipa::path(
     operation_id = "postUserStatus",
     tags = ["Users"],
-    post, path = "/users/{id}",
-    params(UserPath),
+    post, path = "/users",
+    params(
+        ("Authorization" = String, Header, description = "JWT"),
+    ),
     request_body = PostUserStatusPayload,
     responses(
         (status = 200, description = "ユーザ状態記録成功")
     ),
 )]
 pub async fn post_user_state(
-    Path(UserPath { id }): Path<UserPath>,
+    user: AuthenticatedUser,
     State(db): State<DatabaseConnection>,
     Json(payload): Json<Vec<PostUserStatusPayload>>,
 ) -> Result<(), AppError> {
     // TODO 最新データとpayloadの差を比較するロジックは分けたいところ
-    let latest = repositories::get_latest_user_state(&id, &db)
+    let latest = repositories::get_latest_user_state(&user.twitter_id, &db)
         .await?;
     if !services::is_same_state(&latest, &payload) { 
-        repositories::insert_user_state(&id, payload, &db).await?;
+        repositories::insert_user_state(&user.twitter_id, payload, &db).await?;
     }
     
     Ok(())

@@ -5,3 +5,4 @@ mod entity;
 mod errors;
 mod repositories;
 mod services;
+mod auth;
