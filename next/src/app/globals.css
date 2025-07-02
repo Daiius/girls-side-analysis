@@ -1,11 +1,11 @@
 @import 'tailwindcss';
 
 @theme {
-  --animate-vote-icon-rotation: vote-icon-keyframes 0.8s steps(1) infinite;
-  --animate-logout-icon-scale: logout-icon-keyframes 0.8s steps(2) infinite;
-  --animate-swipe-1: swipe-1-hand-keyframes 3s infinite;
-  --animate-swipe-1-hand: swipe-1-hand-keyframes 3s infinite;
-  --animate-swipe-2: swipe-2-keyframes 3s infinite;
+  --animate-vote-icon-rotation: vote-icon-keyframes    0.8s steps(1) infinite;
+  --animate-logout-icon-scale:  logout-icon-keyframes  0.8s steps(2) infinite;
+  --animate-swipe-1:            swipe-1-keyframes      3s infinite;
+  --animate-swipe-1-hand:       swipe-1-hand-keyframes 3s infinite;
+  --animate-swipe-2:            swipe-2-keyframes      3s infinite;
 
   @keyframes vote-icon-keyframes {
     0%  { transform: translate(-50%,-50%) rotate(-15deg) }
