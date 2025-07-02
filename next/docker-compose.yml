@@ -8,12 +8,12 @@ services:
     volumes:
       - .env.development:/app/.env
       - .:/app
+      - /app/node_modules
     tmpfs:
       - /app/.next
 
   database:
-    build:
-      dockerfile: ./Dockerfile.mysql
+    image: daiius/private-registry:mysql-utf8
     container_name: girls-side-analysis-database
     env_file:
       - .env.development
@@ -28,28 +28,24 @@ services:
     healthcheck:
       test: mysql -u $$MYSQL_USER -p$$MYSQL_PASSWORD $$MYSQL_DATABASE -e "select 1;"
       interval: 5s
-      timeout: 20s
-      retries: 3
+      timeout: 30s
+      retries: 4
       start_period: 5s
 
   database-preparation:
-    image: node:20
-    #build:
-    #  dockerfile: ./Dockerfile.database-preparation
+    build:
+      dockerfile: ./Dockerfile.database-preparation
     container_name: girls-side-analysis-database-preparation
     env_file:
       - .env.development
     environment:
       NODE_ENV: 'development'
-    volumes:
-      - ./:/app:ro
     working_dir: /app
     command: >
       bash -c '
-        npm install -g pnpm \
-        && pnpm drizzle-kit push \
+        pnpm drizzle-kit push \
           --dialect=mysql \
-          --schema=./src/db/schema.ts \
+          --schema=/app/src/db/schema.ts \
           --host=$$DB_HOST \
           --user=$$MYSQL_USER \
           --password=$$MYSQL_PASSWORD \
