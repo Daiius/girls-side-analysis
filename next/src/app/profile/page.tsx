@@ -1,7 +1,7 @@
 import { auth } from '@/auth';
 
 import AfterLoginProfile from '@/components/AfterLoginProfile';
-import BeforeLoginProfile from '@/components/BeforeALoginProfile';
+import BeforeLoginProfile from '@/components/BeforeLoginProfile';
 
 export default async function Page({ 
   searchParams
