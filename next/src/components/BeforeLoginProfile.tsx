@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 
 import { signIn } from '@/auth';
-import DataUsageDialog from '@/components/DataUsageDialog';
+import {  DataUsageDialog } from '@/components/DataUsageDialog';
 import GSButton from '@/components/GSButton';
 import XIcon from '@/components/XIcon';
 
