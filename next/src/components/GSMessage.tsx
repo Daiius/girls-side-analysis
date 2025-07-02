@@ -11,7 +11,7 @@ const GSMessage = ({
   className,
 }: {
   /** メッセージ左上に表示されるタイトル */
-  title?: string;
+  title?: ReactNode;
   /** 高さを固定値にして、内容をスクロールします(default: true) */
   heightFixed?: boolean;
   /** メッセージ内容 */
@@ -36,7 +36,7 @@ const GSMessage = ({
         'w-fit min-w-20 min-h-6',
         'bg-slate-300 border-none outline-none',
         'rounded-tl-lg',
-        'text-sm',
+        //'text-sm',
         'pl-2'
       )}>
         {title}
