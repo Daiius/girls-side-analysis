@@ -1,0 +1,15 @@
+FROM node:20-slim
+
+WORKDIR /app
+
+RUN npm install -g pnpm
+RUN pnpm install \
+  drizzle-orm \
+  drizzle-kit \
+  mysql2 \
+  tsx
+
+COPY ./package.json ./tsconfig.json ./addTestData.ts  ./
+COPY ./src/db/ ./src/db/
+
+CMD ["drizzle-kit"]

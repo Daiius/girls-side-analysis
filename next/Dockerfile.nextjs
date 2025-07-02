@@ -4,5 +4,8 @@ WORKDIR /app
 
 RUN npm install -g pnpm
 
-CMD ["pnpm", "run", "dev"]
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install
+
+CMD ["pnpm", "dev"]
 
