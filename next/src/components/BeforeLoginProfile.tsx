@@ -8,26 +8,24 @@ import XIcon from '@/components/XIcon';
 import GSMessage from './GSMessage';
 import { RocketLaunchIcon } from '@heroicons/react/24/solid';
 
-const BeforeLoginProfile: React.FC<
-  { errorMessage?: string; }
-  & React.ComponentProps<'div'>
-> = ({
+const BeforeLoginProfile  = ({
   errorMessage,
   className,
-  ...props
+}: { 
+  errorMessage?: string; 
+  className?: string;
 }) => (
   <div 
     className={clsx(
       'flex flex-col gap-2',
       className,
     )}
-    {...props}
   >
       <div className='text-lg font-bold'>
         Twitterアカウント連携について：
       </div>
-      <GSMessage>
-        <ul className='list-disc pl-4'>
+      <GSMessage heightFixed={false}>
+        <ul className='list-disc pl-4 text-sm sm:text-base'>
           <li>投票データは匿名で保存されます</li>
           <li className='before:-ml-2'>「シェア」しなければ投票内容は非公開です</li>
           <li>X(Twitter)閲覧・投稿は自動ではしません</li>
