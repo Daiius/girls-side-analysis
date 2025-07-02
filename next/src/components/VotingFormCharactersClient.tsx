@@ -178,10 +178,10 @@ const VotingFormCharactersClient: React.FC<
           )}/>
           <HandIndexIcon
             width='2rem' height='2rem'
-            rotate='90'
+            //rotate='90'
             className={clsx(
               'absolute',
-              'rotate-90 -scale-y-100',
+              //'rotate-90 -scale-y-100',
               'top-1/2 left-1/2 -translate-x-1/2',
               'animate-swipe-1-hand',
             )}
