@@ -1,0 +1,26 @@
+{
+  "name": "server-ts",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.17.1",
+    "@hono/zod-validator": "^0.7.2",
+    "drizzle-orm": "^0.44.4",
+    "hono": "^4.8.10",
+    "luxon": "^3.7.1",
+    "mysql2": "^3.14.3",
+    "zod": "^4.0.14"
+  },
+  "devDependencies": {
+    "@types/luxon": "^3.7.1",
+    "@types/node": "^20.11.17",
+    "drizzle-kit": "^0.31.4",
+    "esbuild": "^0.25.8",
+    "tsx": "^4.7.1",
+    "typescript": "^5.8.3"
+  }
+}
