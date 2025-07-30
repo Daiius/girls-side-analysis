@@ -2,27 +2,27 @@ import React from 'react';
 import clsx from 'clsx';
 
 
-import { TopAnalysisData } from '@/types';
+import { AnalysisData } from '@/types';
 import { StarIcon } from '@heroicons/react/24/solid';
 
 const TopAnalysisContent: React.FC<
   { 
-    topAnalysisData: TopAnalysisData;
+    analysisData: AnalysisData;
     targetCharacterName: string;
   } & React.ComponentProps<'div'>
 > = ({
-  topAnalysisData,
+  analysisData,
   targetCharacterName,
   className,
   ...props
 }) => {
-  const totalCount = Object.values(
-    topAnalysisData[targetCharacterName] ?? 0
-  ).reduce((total, curr)=> total + curr, 0);
+  // キャラの投票数を直接扱うと、ただの人気投票になってしまうので......
+  //const totalCount = Object.values(
+  //  topAnalysisData[targetCharacterName] ?? 0
+  //).reduce((total, curr)=> total + curr, 0);
 
-  const maxCount = Object.values(
-    topAnalysisData[targetCharacterName] ?? 0
-  ).reduce((max, curr) => max < curr ? curr : max, 0);
+  const maxCount = Object.values( analysisData ?? 0)
+    .reduce((max, curr) => max < curr ? curr : max, 0);
   return (
     <div
       className={clsx('flex flex-col', className)}
@@ -41,7 +41,7 @@ const TopAnalysisContent: React.FC<
           'overflow-y-auto',
         )}
       >
-        {topAnalysisData[targetCharacterName] &&
+        {analysisData &&
           <div className='h-2 grid grid-cols-[150px_auto] items-center'>
             <div></div>
             <div className='h-2 relative'>
@@ -63,7 +63,7 @@ const TopAnalysisContent: React.FC<
             </div>
           </div>
         }
-        {Object.entries(topAnalysisData[targetCharacterName] ?? {})
+        {Object.entries(analysisData ?? {})
           .map(([characterName, count]) =>
             <div 
               key={characterName}
@@ -107,7 +107,7 @@ const TopAnalysisContent: React.FC<
                   'absolute top-0 -translate-y-1/2 left-0',
                   'w-full h-10 rounded-md',
                   'bg-gray-400 shadow-inner',
-                  'outline outline-[1px]', 
+                  'outline-[1px]', 
                 )}>
                 </div>
                 <div
@@ -133,8 +133,8 @@ const TopAnalysisContent: React.FC<
 
             </div>
           )
-        }
-        {topAnalysisData[targetCharacterName] == null &&
+        } 
+        {Object.keys(analysisData).length === 0 &&
           <div>
             <span>データがまだ有りません... </span>
             <span>推しの方は投票をお願いします！</span>
