@@ -5,7 +5,7 @@ import clsx from 'clsx';
 
 import TopAnalysisContent from './TopAnalysisContent';
 
-import { TopAnalysisData, DataSet } from '@/types';
+import { TopAnalysisData, } from '@/types';
 //import LineChartClient from './LineChartClient';
 
 
@@ -44,7 +44,7 @@ const TopAnalysis: React.FC<
     <div className='w-full'>
       <TopAnalysisContent
         targetCharacterName={targetCharacterName}
-        topAnalysisData={topAnalysisData}
+        analysisData={topAnalysisData[targetCharacterName]}
         className={clsx('mb-2', className)}
         {...props}
       />

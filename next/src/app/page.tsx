@@ -3,41 +3,25 @@ import clsx from 'clsx';
 import TopCharacterSelect from '@/components/TopCharacterSelect';
 import TopAnalysis from '@/components/TopAnalysis';
 import { 
-  getLatestVotesForAnalysis,
-  getTimelineData,
+  getLatestVotesForAnalysisAll,
 } from '@/lib/votes';
 import VoteLink from '@/components/VoteLink';
 import XShareLink from '@/components/XShareLink';
 import GSMessage from '@/components/GSMessage';
 
-// トップページは多くの人がアクセスすることを想定し、
-// static renderingにします...
-export const dynamic = 'force-static';
-export const revalidate = 3600;
+// トップページは多くの人がアクセスすることを想定し、SSGにします
+
+const hostUrl = process.env.HOST_URL 
+  ?? (() => { throw new Error(`process.env.HOST_URL is null`) })();
 
 export default async function Home() {
 
-  const data = await getLatestVotesForAnalysis();
-
-  const relatedCharacters = Object.keys(data) as string[];
-  const timelineDataDict: {
-    [key: string]: Awaited<ReturnType<typeof getTimelineData>>
-  } = {};
-  for (const relatedCharacter of relatedCharacters) {
-    timelineDataDict[relatedCharacter] 
-      = await getTimelineData(relatedCharacter);
-  }
-  //const timelineDataDict = (await Promise.all(
-  //  relatedCharacters
-  //    .map(async c => 
-  //      ({ [c]: await getTimelineData(c) })
-  //    )
-  //)).reduce((acc, curr) => ({ ...acc, ...curr }), {});
+  const data = await getLatestVotesForAnalysisAll();
 
   // trailing slashまで付けるとopenGraphImageが表示されるのを確認
+  // TODO 本当？確認する
   const text = 'GSシリーズの情報共有・分析サイト';
-  const sharedURL = 'https://faveo-systema.net/girls-side-analysis';
-
+  const sharedURL = `${hostUrl}`;
 
   return (
     <div className='w-full flex flex-col items-center gap-2'>
@@ -71,7 +55,6 @@ export default async function Home() {
       <TopAnalysis 
         className='w-full flex-1' 
         topAnalysisData={data}
-        //timelineDataDict={timelineDataDict}
       />
     </div>
   );

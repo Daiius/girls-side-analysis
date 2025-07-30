@@ -1,7 +1,6 @@
 import clsx from 'clsx';
 
 import { Session } from 'next-auth';
-import { signOut } from '@/auth';
 
 import LogoutButton from './LogoutButton';
 import VotingForm from './VotingForm';
