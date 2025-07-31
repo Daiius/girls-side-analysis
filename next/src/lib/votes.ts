@@ -1,9 +1,6 @@
-import type { AppType } from '../../../server-ts/src/index'
-import { hc } from 'hono/client'
-
+import { client } from './apiClient'
 import { Vote } from '@/types';
 
-const client = hc<AppType>(process.env.API_URL!)
 
 /**
  * 指定されたtwitterIDに紐づけられた投票のうち、
@@ -43,7 +40,6 @@ export const getLatestVotesForAnalysisAll = async () => {
 };
 
 export const getLatestVotesForAnalysis = async (charaName: string) => {
-  const client = hc<AppType>(process.env.API_URL!)
   const res = await client.analysis[':charaName'].$get({ param: charaName }) 
   if (res.ok) {
     return await res.json()
@@ -52,7 +48,6 @@ export const getLatestVotesForAnalysis = async (charaName: string) => {
 }
 
 export const getTimelineData = async (charaName: string) => {
-  const client = hc<AppType>(process.env.API_URL!)
   const res = await client.timeline[':charaName'].$get({ param: charaName })
   if (res.ok) {
     return await res.json()

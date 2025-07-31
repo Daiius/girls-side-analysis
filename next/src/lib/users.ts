@@ -1,8 +1,4 @@
-
-import type { AppType } from '../../../server-ts/src/index'
-import { hc } from 'hono/client'
-
-const client = hc<AppType>(process.env.API_URL!)
+import { client } from './apiClient'
 
 /**
  * 最新のユーザ状況データを取得します

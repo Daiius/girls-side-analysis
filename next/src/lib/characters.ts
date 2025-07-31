@@ -1,11 +1,9 @@
-import type { AppType } from '../../../server-ts/src/index'
-import { hc } from 'hono/client'
+import { client } from './apiClient'
 
 /**
  * キャラデータの一覧を取得します
  */
 export const getCharacters = async () => {
-  const client = hc<AppType>(process.env.API_URL!)
   const res = await client.characters.$get()
   if (res.ok) {
     return await res.json()
