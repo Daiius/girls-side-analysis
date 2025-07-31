@@ -4,7 +4,7 @@ import { client } from './apiClient'
  * 最新のユーザ状況データを取得します
  */
 export const getLatestUserState = async (twitterId: string) => {
-  const res = await client.users[':id'].$get({ param: twitterId })
+  const res = await client.users[':id'].$get({ param: { id: twitterId }})
   if (res.ok) {
     return await res.json()
   }
@@ -33,7 +33,7 @@ export const insertUserStatesIfUpdated = async ({
   data: { series: number; state: string; }[];
 }) => {
   const res = await client.users[':id'].$post({ 
-    param: twitterID,
+    param: { id: twitterID },
     json: data,
   })
   if (!res.ok) {
