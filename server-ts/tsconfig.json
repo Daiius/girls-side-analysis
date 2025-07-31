@@ -11,7 +11,8 @@
     ],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "preserveWatchOutput": true
   },
   "exclude": ["node_modules"]
 }
