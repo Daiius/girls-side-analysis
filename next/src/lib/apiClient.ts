@@ -11,7 +11,7 @@ const customedFetch: typeof fetch = async (
   requestInit?: RequestInit,
 ) => {
   const headers = new Headers(requestInit?.headers)
-  headers.set('Authorization', `Bearer: ${apiKey}`)
+  headers.set('Authorization', `Bearer ${apiKey}`)
   return await fetch(input, { ...requestInit, headers })
 }
 
