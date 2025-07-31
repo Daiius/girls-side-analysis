@@ -1,3 +1,4 @@
+'use server'
 import { client } from './apiClient'
 import { Vote } from '@/types';
 
@@ -31,8 +32,13 @@ export const insertVotesIfUpdated = async ({
     throw new Error(`cannot fetch POST /votes/${twitterID} ${res.status} ${res.statusText}`)
   }
   const { updatedCharaNames } = await res.json()
+  console.log(`updatingPages for: ${updatedCharaNames.join(',')}`)
+  // ロジックミス、実際には関連するキャラが含まれる全部のページを更新しなければならない
+  // ある人の投票に葉月珪が追加された時、
+  // 更新が必要なのは葉月珪のページだけでなく、全キャラ
   for (const charaName of updatedCharaNames) {
-    revalidatePath(`/${charaName}`)
+    //revalidatePath(`/${charaName}`)
+    revalidatePath(`/${encodeURIComponent(charaName)}`)
   }
 };
 
