@@ -16,8 +16,6 @@ import {
   getUserStatesMaster,
   insertUserStatesIfUpdated,
 } from './lib/users'
-import type { Vote } from './types'
-
 
 const apiKey = process.env.API_KEY ??
   (() => { throw new Error('process.env.API_KEY is not defined!') })()
