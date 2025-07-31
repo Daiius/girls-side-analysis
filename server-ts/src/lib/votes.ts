@@ -100,7 +100,7 @@ export const insertVotesIfUpdated = async ({
 }: {
   twitterID: string;
   data: Vote[];
-}) => {
+}): Promise<{ updatedCharaNames: string[] }> => {
   const latestVotes = await getLatestVotes(twitterID);
   const isSame: boolean = 
     // 長さが異なればそもそも再投票の対象
@@ -114,12 +114,24 @@ export const insertVotesIfUpdated = async ({
         )
        );
     if (!isSame) {
+      // 以前と投票内容が異なるのでDB更新
       await db
         .insert(votes)
         .values(
           data.map(d => ({ ...d, twitterID }))
         );
+      const currentCharaNames = data.map(vote => vote.characterName)
+      const lastCharaNames = latestVotes.map(lv => lv.characterName)
+
+      // 新しく追加されたキャラ名は、前の投票にはいないが今の投票にいるキャラ
+      const newCharaNames = currentCharaNames.filter(cc => !lastCharaNames.includes(cc))
+      // 削除されたキャラは、前の投票にはいるが今の投票にはいないキャラ
+      const removedCharaNames = lastCharaNames.filter(lc => !currentCharaNames.includes(lc))
+
+      return { updatedCharaNames: [...newCharaNames, ...removedCharaNames] }
     }
+
+    return { updatedCharaNames: [] }
 };
 
 /**
