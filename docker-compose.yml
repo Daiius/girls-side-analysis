@@ -1,22 +1,45 @@
 services:
-  girls-side-analysis-nextjs:
+  nextjs:
     build:
       dockerfile: ./Dockerfile.nextjs
+      context: ./next
     container_name: girls-side-analysis-nextjs-dev
     environment:
       TZ: 'Asia/Tokyo'
     volumes:
-      - .env.development:/app/.env
-      - .:/app
+      - ./next/.env.development:/app/.env
+      - ./next:/app
       - /app/node_modules
     tmpfs:
       - /app/.next
+    ports:
+      - 3000:3000
+    depends_on:
+      database-preparation:
+        condition: service_completed_successfully
+
+  server:
+    build:
+      dockerfile: ./Dockerfile.server
+      context: ./server-ts
+    container_name: girls-side-analysis-server
+    env_file:
+      - ./server-ts/.env.development
+    environment:
+      TZ: 'Asia/Tokyo'
+    working_dir: /app
+    ports:
+      - 4000:3000
+    volumes:
+      - ./server-ts/.env.development:/app/.env
+      - ./server-ts:/app
+      - /app/node_modules
 
   database:
-    image: daiius/private-registry:mysql-utf8
+    image: daiius/mysql-utf8mb4
     container_name: girls-side-analysis-database
     env_file:
-      - .env.development
+      - ./server-ts/.env.development
     # 注. テスト用、データは永続しない
     tmpfs:
       - /var/lib/mysql
@@ -34,12 +57,11 @@ services:
 
   database-preparation:
     build:
-      dockerfile: ./Dockerfile.database-preparation
-    container_name: girls-side-analysis-database-preparation
+      dockerfile: ./Dockerfile.seed
+      context: ./server-ts
+    container_name: girls-side-analysis-database-seed
     env_file:
-      - .env.development
-    environment:
-      NODE_ENV: 'development'
+      - server-ts/.env.development
     working_dir: /app
     command: >
       bash -c '
@@ -56,14 +78,6 @@ services:
       database:
         condition: service_healthy
     
-  webserver:
-    image: nginx
-    container_name: girls-side-analysis-webserver
-    ports:
-      - 80:80
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-
 networks:
   default:
     name: girls-side-analysis-network

@@ -12,7 +12,7 @@ export const DataUsageDialog =  () => (
     <img
       className='bg-white/80 ml-auto mr-auto rounded-lg'
       alt='データ使用方法' 
-      src='/girls-side-analysis/data_usage.svg'
+      src='/data_usage.svg'
     />
   </DialogButton>
 )

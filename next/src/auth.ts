@@ -31,11 +31,11 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
   session: { strategy: 'jwt' },
   providers: [Twitter],
   debug: process.env.NODE_ENV !== 'production',
-  basePath: '/girls-side-analysis/api/auth',
+  basePath: '/api/auth',
   pages: {
-    error: '/girls-side-analysis/profile',
-    signIn: '/girls-side-analysis/profile',
-    signOut: '/girls-side-analysis/profile',
+    error: '/profile',
+    signIn: '/profile',
+    signOut: '/profile',
   },
   callbacks: {
     async jwt({ token, account, profile }) {

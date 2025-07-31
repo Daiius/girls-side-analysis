@@ -3,8 +3,6 @@ import clsx from 'clsx';
 
 import type { Metadata } from 'next';
 
-import { notFound } from 'next/navigation';
-
 import { getCharacters } from '@/lib/characters'; 
 import { 
   getLatestVotesForAnalysis, 
@@ -17,9 +15,15 @@ import TopAnalysisContent from '@/components/TopAnalysisContent';
 import LineChartClient from '@/components/LineChartClient';
 import XShareLink from '@/components/XShareLink';
 
-// 5分毎にアップデート
-// NOTE: 今はテスト用にちょっと頻繁にします
-export const revalidate = 300;
+// 投票が無ければアップデートは x1日1回 oしない
+// SSGされる
+// export const revalidate = 86400;
+
+// generateStaticParamsで生成した以外のパラメータを404とする
+export const dynamicParams = false;
+
+const hostUrl = process.env.HOST_URL 
+  ?? (() => { throw new Error(`process.env.HOST_URL is null`) })();
 
 /**
  * データベースからキャラクター一覧を取得して
@@ -29,6 +33,7 @@ export async function generateStaticParams() {
   const characters = await getCharacters();
   return characters.map(chara => ({ charaName: chara.name }));
 }
+
 export async function generateMetadata({ params }: { params: Promise<{ charaName: string }> }) {
   const { charaName } = await params;
   const decodedCharaName = decodeURIComponent(charaName);
@@ -37,14 +42,14 @@ export async function generateMetadata({ params }: { params: Promise<{ charaName
     description: ` GSシリーズの情報共有・分析サイト ${decodedCharaName}分析ページ`,
     openGraph: {
       type: 'website',
-      url: `https://faveo-systema.net/girls-side-analysis/${decodedCharaName}`,
+      url: `${hostUrl}/${decodedCharaName}`,
       description: ` GSシリーズの情報共有・分析サイト「${decodedCharaName}」分析ページ`,
       siteName: "Girl's Side Analysis",
-      images: 'https://faveo-systema.net/girls-side-analysis/girls-side-analysis-logo.png',
+      images: `${hostUrl}/girls-side-analysis-logo.png`,
     },
     icons: [{
       rel: 'apple-touch-icon',
-      url: 'https://faveo-systema.net/girls-side-analysis/girls-side-analysis-touch-icon.png',
+      url: `${hostUrl}/girls-side-analysis-touch-icon.png`,
       sizes: '180x180',
     }]
   } satisfies Metadata;
@@ -61,17 +66,13 @@ export async function generateMetadata({ params }: { params: Promise<{ charaName
 export default async function Page({
   params
 }: { params: Promise<{ charaName: string }>}) {
+
   const { charaName } = await params;
-  const decodedCharaName = decodeURIComponent(charaName)
 
-  const characters = await getCharacters();
-  if (!characters.map(c => c.name).includes(decodedCharaName)) {
-    notFound();
-  }
-
-  const analysisData = await getLatestVotesForAnalysis();
-
+  const decodedCharaName = decodeURIComponent(charaName);
+  const analysisData = await getLatestVotesForAnalysis(decodedCharaName);
   const datasets = await getTimelineData(decodedCharaName);
+
     
   return (
     <div className='flex flex-col items-center w-full'>
@@ -88,13 +89,13 @@ export default async function Page({
             'top-1/2 -translate-y-1/2',
           )}
           text={`GSシリーズの情報共有・分析サイト「${decodedCharaName}」分析ページ`}
-          url={`https://faveo-systema.net/girls-side-analysis/${encodeURIComponent(decodedCharaName)}`}
+          url={`${hostUrl}/${encodeURIComponent(decodedCharaName)}`}
         />
       </div>
       <TopCharacterSelect className='my-5'/>
       <TopAnalysisContent
         className='w-full mb-2'
-        topAnalysisData={analysisData}
+        analysisData={analysisData}
         targetCharacterName={decodedCharaName}
       />
       {datasets.length > 0 &&
