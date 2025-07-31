@@ -1,7 +1,7 @@
 services:
   nextjs:
     build:
-      dockerfile: ./Dockerfile.nextjs
+      dockerfile: ./next/Dockerfile.nextjs
       context: ./next
     container_name: girls-side-analysis-nextjs-dev
     environment:
@@ -17,21 +17,24 @@ services:
 
   server:
     build:
-      dockerfile: .Dockerfile.server
+      dockerfile: ./Dockerfile.server
       context: ./server-ts
     container_name: girls-side-analysis-server
+    env_file:
+      - ./server-ts/.env.development
     environment:
       TZ: 'Asia/Tokyo'
     working_dir: /app
     volumes:
-      - ./server/.env.development:/app/.env
-      - ./server:/app
+      - ./server-ts/.env.development:/app/.env
+      - ./server-ts:/app
+      - /app/node_modules
 
   database:
     image: daiius/mysql-utf8mb4
     container_name: girls-side-analysis-database
     env_file:
-      - .env.development
+      - ./server-ts/.env.development
     # 注. テスト用、データは永続しない
     tmpfs:
       - /var/lib/mysql
