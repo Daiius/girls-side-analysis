@@ -7,7 +7,7 @@ import { StarIcon } from '@heroicons/react/24/solid';
 
 const TopAnalysisContent: React.FC<
   { 
-    analysisData: AnalysisData;
+    analysisData: AnalysisData | undefined;
     targetCharacterName: string;
   } & React.ComponentProps<'div'>
 > = ({
@@ -134,7 +134,7 @@ const TopAnalysisContent: React.FC<
             </div>
           )
         } 
-        {Object.keys(analysisData).length === 0 &&
+        {analysisData == null || Object.keys(analysisData).length === 0 &&
           <div>
             <span>データがまだ有りません... </span>
             <span>推しの方は投票をお願いします！</span>
