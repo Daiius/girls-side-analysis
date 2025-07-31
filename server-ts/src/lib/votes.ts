@@ -123,12 +123,20 @@ export const insertVotesIfUpdated = async ({
       const currentCharaNames = data.map(vote => vote.characterName)
       const lastCharaNames = latestVotes.map(lv => lv.characterName)
 
-      // 新しく追加されたキャラ名は、前の投票にはいないが今の投票にいるキャラ
-      const newCharaNames = currentCharaNames.filter(cc => !lastCharaNames.includes(cc))
       // 削除されたキャラは、前の投票にはいるが今の投票にはいないキャラ
       const removedCharaNames = lastCharaNames.filter(lc => !currentCharaNames.includes(lc))
 
-      return { updatedCharaNames: [...newCharaNames, ...removedCharaNames] }
+      // 投票ページを更新するべきは、
+      // 1. 今の投票にいる全キャラクター
+      // 2. 前の投票にいたキャラクター
+      // の両方を含む必要がある
+
+      return { 
+        updatedCharaNames: [
+          ...data.map(vote => vote.characterName), 
+          ...removedCharaNames,
+        ],
+      }
     }
 
     return { updatedCharaNames: [] }
