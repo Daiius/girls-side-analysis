@@ -1,7 +1,7 @@
 services:
   nextjs:
     build:
-      dockerfile: ./next/Dockerfile.nextjs
+      dockerfile: ./Dockerfile.nextjs
       context: ./next
     container_name: girls-side-analysis-nextjs-dev
     environment:
@@ -9,8 +9,11 @@ services:
     volumes:
       - ./next/.env.development:/app/.env
       - ./next:/app
+      - /app/node_modules
     tmpfs:
       - /app/.next
+    ports:
+      - 3000:3000
     depends_on:
       database-preparation:
         condition: service_completed_successfully
@@ -25,6 +28,8 @@ services:
     environment:
       TZ: 'Asia/Tokyo'
     working_dir: /app
+    ports:
+      - 4000:3000
     volumes:
       - ./server-ts/.env.development:/app/.env
       - ./server-ts:/app
@@ -73,14 +78,6 @@ services:
       database:
         condition: service_healthy
     
-  webserver:
-    image: nginx
-    container_name: girls-side-analysis-webserver
-    ports:
-      - 80:80
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-
 networks:
   default:
     name: girls-side-analysis-network
