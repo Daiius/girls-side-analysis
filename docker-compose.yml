@@ -1,19 +1,34 @@
 services:
-  girls-side-analysis-nextjs:
+  nextjs:
     build:
       dockerfile: ./Dockerfile.nextjs
+      context: ./next
     container_name: girls-side-analysis-nextjs-dev
     environment:
       TZ: 'Asia/Tokyo'
     volumes:
-      - .env.development:/app/.env
-      - .:/app
-      - /app/node_modules
+      - ./next/.env.development:/app/.env
+      - ./next:/app
     tmpfs:
       - /app/.next
+    depends_on:
+      database-preparation:
+        condition: service_completed_successfully
+
+  server:
+    build:
+      dockerfile: .Dockerfile.server
+      context: ./server-ts
+    container_name: girls-side-analysis-server
+    environment:
+      TZ: 'Asia/Tokyo'
+    working_dir: /app
+    volumes:
+      - ./server/.env.development:/app/.env
+      - ./server:/app
 
   database:
-    image: daiius/private-registry:mysql-utf8
+    image: daiius/mysql-utf8mb4
     container_name: girls-side-analysis-database
     env_file:
       - .env.development
@@ -34,12 +49,11 @@ services:
 
   database-preparation:
     build:
-      dockerfile: ./Dockerfile.database-preparation
-    container_name: girls-side-analysis-database-preparation
+      dockerfile: ./Dockerfile.seed
+      context: ./server-ts
+    container_name: girls-side-analysis-database-seed
     env_file:
-      - .env.development
-    environment:
-      NODE_ENV: 'development'
+      - server-ts/.env.development
     working_dir: /app
     command: >
       bash -c '
