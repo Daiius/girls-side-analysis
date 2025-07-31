@@ -123,7 +123,7 @@ const route = app
     },
   )
   .post(
-    '/votes/:id',
+    '/votes/:id', // ユーザの投票を受け付け、前回と変更があれば反映します
     zValidator('param', z.string()),
     zValidator('json', z.array(z.object({
       characterName: z.string(),
@@ -145,8 +145,7 @@ const route = app
     },
   )
     
-    
-
+// RPC用の型情報
 export type AppType = typeof route
 
 serve({
