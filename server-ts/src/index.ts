@@ -159,6 +159,8 @@ const route = app
 // RPC用の型情報
 export type AppType = typeof route
 
+export { hc } from 'hono/client'
+
 serve({
   fetch: app.fetch,
   port: 3000
