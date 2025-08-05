@@ -1,5 +1,5 @@
 {
-  "name": "girls-side-analysis",
+  "name": "@daiius/girls-side-analysis-nextjs",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -19,7 +19,6 @@
     "@heroicons/react": "^2.2.0",
     "chart.js": "^4.4.6",
     "clsx": "^2.1.1",
-    "hono": "^4.8.10",
     "luxon": "^3.6.1",
     "next": "15.4.5",
     "next-auth": "5.0.0-beta.22",
@@ -27,9 +26,10 @@
     "react-dom": "19.1.0"
   },
   "devDependencies": {
+    "@daiius/girls-side-analysis-server-ts": "workspace:*",
     "@tailwindcss/postcss": "^4.1.7",
     "@types/luxon": "^3.6.2",
-    "@types/node": "^22.15.21",
+    "@types/node": "^24.2.0",
     "@types/react": "^19.1.5",
     "@types/react-dom": "^19.1.5",
     "postcss": "^8.5.3",

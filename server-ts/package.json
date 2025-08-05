@@ -1,10 +1,15 @@
 {
-  "name": "server-ts",
+  "name": "@daiius/girls-side-analysis-server-ts",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsx esbuild.config.ts",
     "start": "node dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./src/app.ts"
+    }
   },
   "dependencies": {
     "@hono/node-server": "^1.17.1",
