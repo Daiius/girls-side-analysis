@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "NODE_OPTIONS='--inspect' next dev",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "prod-local": "next build && next start",
@@ -19,11 +19,9 @@
     "@heroicons/react": "^2.2.0",
     "chart.js": "^4.4.6",
     "clsx": "^2.1.1",
-    "drizzle-kit": "^0.31.1",
-    "drizzle-orm": "^0.43.1",
+    "hono": "^4.8.10",
     "luxon": "^3.6.1",
-    "mysql2": "^3.14.1",
-    "next": "15.3.2",
+    "next": "15.4.5",
     "next-auth": "5.0.0-beta.22",
     "react": "19.1.0",
     "react-dom": "19.1.0"

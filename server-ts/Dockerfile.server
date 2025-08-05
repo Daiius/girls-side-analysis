@@ -7,5 +7,6 @@ RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install
 
-CMD ["pnpm", "dev"]
+COPY . .
 
+CMD ["pnpm", "dev"]
