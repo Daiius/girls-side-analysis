@@ -9,7 +9,9 @@ import VoteLink from '@/components/VoteLink';
 import XShareLink from '@/components/XShareLink';
 import GSMessage from '@/components/GSMessage';
 
-// トップページは多くの人がアクセスすることを想定し、SSGにします
+// 1日1回更新
+// On-demand ISRも投票時に行われる
+export const revalidate = 86400;
 
 const hostUrl = process.env.HOST_URL 
   ?? (() => { throw new Error(`process.env.HOST_URL is null`) })();

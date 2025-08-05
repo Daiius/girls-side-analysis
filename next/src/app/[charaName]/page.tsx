@@ -1,4 +1,3 @@
-import React from 'react';
 import clsx from 'clsx';
 
 import type { Metadata } from 'next';
@@ -14,13 +13,21 @@ import TopCharacterSelect from '@/components/TopCharacterSelect';
 import TopAnalysisContent from '@/components/TopAnalysisContent';
 import LineChartClient from '@/components/LineChartClient';
 import XShareLink from '@/components/XShareLink';
+import { notFound } from 'next/navigation';
 
-// 投票が無ければアップデートは x1日1回 oしない
-// SSGされる
-// export const revalidate = 86400;
+// On-demand ISR設定をし
+// 投票が無くとも、アップデートは1日1回
+// NOTE: これが有っても無くてもdynamicParams=false時の不自然な挙動は止まらない
+export const revalidate = 86400;
 
 // generateStaticParamsで生成した以外のパラメータを404とする
-export const dynamicParams = false;
+// TODO falseにするとrevalidatePathによる再生成に失敗する？？
+// → 失敗する、dynamicParamsは「キャッシュが存在しないページを生成するか」のフラグで、
+//   「generateStaticParamsで生成したページ以外を404にする」というのは厳密には間違っている
+//   generateStaticParamsで生成したキャッシュをrevalidatePathなどで無効化すると、
+//   それ以降のアクセスで「キャッシュにないページにアクセスした」ことになり、
+//   dynamicParams = false だと404エラーになってしまう！
+export const dynamicParams = true;
 
 const hostUrl = process.env.HOST_URL 
   ?? (() => { throw new Error(`process.env.HOST_URL is null`) })();
@@ -68,8 +75,15 @@ export default async function Page({
 }: { params: Promise<{ charaName: string }>}) {
 
   const { charaName } = await params;
-
   const decodedCharaName = decodeURIComponent(charaName);
+  
+  // キャラクター一覧を取得し、charaNameが含まれるかここでチェックするしかない
+  // getCharacters は適切な時間間隔でのキャッシュを行うこと
+  const characters = await getCharacters();
+  if (!characters.map(c => c.name).includes(decodedCharaName)) {
+    return notFound();
+  }
+ 
   const analysisData = await getLatestVotesForAnalysis(decodedCharaName);
   const datasets = await getTimelineData(decodedCharaName);
 

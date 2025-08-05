@@ -21,7 +21,6 @@ export default async function Page({
       ? `不明なエラー: ${error}` :
     undefined;
       
-  console.log('searchParams: ', searchParams);
   return (
     <>
       {session?.user?.name
