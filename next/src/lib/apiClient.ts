@@ -6,14 +6,18 @@ const apiKey = process.env.API_KEY
 const apiUrl = process.env.API_URL
   ?? (() => { throw new Error('process.env.API_URL is not defined') })()
 
-const customedFetch: typeof fetch = async (
+const createCustomedFetch = (
+  options?: NextFetchRequestConfig
+): typeof fetch => async (
   input: RequestInfo | URL,
   requestInit?: RequestInit,
 ) => {
   const headers = new Headers(requestInit?.headers)
   headers.set('Authorization', `Bearer ${apiKey}`)
-  return await fetch(input, { ...requestInit, headers })
+  return await fetch(input, { ...requestInit, headers, next: options })
 }
 
-export const client = hc<AppType>(apiUrl, { fetch: customedFetch })
+export const client = (
+  options?: NextFetchRequestConfig
+) => hc<AppType>(apiUrl, { fetch: createCustomedFetch(options) })
 
