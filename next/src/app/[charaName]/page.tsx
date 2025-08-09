@@ -32,6 +32,9 @@ const hostUrl = process.env.HOST_URL
 // NOTE: これが有っても無くてもdynamicParams=false時の不自然な挙動は止まらない
 export const revalidate = 86400;
 
+// TODO: 原因がわからないがdynamic renderingになるので設定
+export const dynamic = 'force-static';
+
 // generateStaticParamsで生成した以外のパラメータを404とする
 // TODO falseにするとrevalidatePathによる再生成に失敗する？？
 // → 失敗する、dynamicParamsは「キャッシュが存在しないページを生成するか」のフラグで、
