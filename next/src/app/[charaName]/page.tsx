@@ -31,7 +31,9 @@ const hostUrl = process.env.HOST_URL
 // 投票が無くとも、アップデートは1日1回
 // NOTE: これが有っても無くてもdynamicParams=false時の不自然な挙動は止まらない
 export const revalidate = 86400;
-export const dynamic = 'error';
+
+// TODO: 原因がわからないがdynamic renderingになるので設定
+export const dynamic = 'force-static';
 
 // generateStaticParamsで生成した以外のパラメータを404とする
 // TODO falseにするとrevalidatePathによる再生成に失敗する？？
