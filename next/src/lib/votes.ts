@@ -47,7 +47,7 @@ export const insertVotesIfUpdated = async ({
 };
 
 export const getLatestVotesForAnalysisAll = async () => {
-  const res = await client({ revalidate: 86400 }).analysis.$get() 
+  const res = await client().analysis.$get() 
   if (res.ok) {
     return await res.json()
   }
