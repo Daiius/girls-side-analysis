@@ -15,6 +15,18 @@ import LineChartClient from '@/components/LineChartClient';
 import XShareLink from '@/components/XShareLink';
 import { notFound } from 'next/navigation';
 
+const hostUrl = process.env.HOST_URL 
+  ?? (() => { throw new Error(`process.env.HOST_URL is null`) })();
+
+// NOTE:
+// generateStaticParamsによるビルド時のキャッシュ生成をしていましたが、
+// revalidatePath や dynamicParams を組み合わせて
+// 「ビルド時に生成したページ以外は拒否 + On-demand ISR 更新」を実現しようとして 
+// 上手くいかないことに気付きました
+// 
+// そもそもビルド時に全てのページを生成するとDBに負荷がかかるので
+// 最初の試みとして残るようにコメントアウトして、generateStaticParamsは止める事にします
+
 // On-demand ISR設定をし
 // 投票が無くとも、アップデートは1日1回
 // NOTE: これが有っても無くてもdynamicParams=false時の不自然な挙動は止まらない
@@ -27,19 +39,16 @@ export const revalidate = 86400;
 //   generateStaticParamsで生成したキャッシュをrevalidatePathなどで無効化すると、
 //   それ以降のアクセスで「キャッシュにないページにアクセスした」ことになり、
 //   dynamicParams = false だと404エラーになってしまう！
-export const dynamicParams = true;
-
-const hostUrl = process.env.HOST_URL 
-  ?? (() => { throw new Error(`process.env.HOST_URL is null`) })();
+//export const dynamicParams = true;
 
 /**
  * データベースからキャラクター一覧を取得して
  * 対応する分析ページを事前に生成出来るようにします
  */
-export async function generateStaticParams() {
-  const characters = await getCharacters();
-  return characters.map(chara => ({ charaName: chara.name }));
-}
+//export async function generateStaticParams() {
+//  const characters = await getCharacters();
+//  return characters.map(chara => ({ charaName: chara.name }));
+//}
 
 export async function generateMetadata({ params }: { params: Promise<{ charaName: string }> }) {
   const { charaName } = await params;
@@ -86,7 +95,6 @@ export default async function Page({
  
   const analysisData = await getLatestVotesForAnalysis(decodedCharaName);
   const datasets = await getTimelineData(decodedCharaName);
-
     
   return (
     <div className='flex flex-col items-center w-full'>
