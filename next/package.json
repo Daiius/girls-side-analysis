@@ -19,6 +19,7 @@
     "@heroicons/react": "^2.2.0",
     "chart.js": "^4.4.6",
     "clsx": "^2.1.1",
+    "debug": "^4.4.1",
     "luxon": "^3.6.1",
     "next": "15.4.5",
     "next-auth": "5.0.0-beta.22",
@@ -28,6 +29,7 @@
   "devDependencies": {
     "@daiius/girls-side-analysis-server-ts": "workspace:*",
     "@tailwindcss/postcss": "^4.1.7",
+    "@types/debug": "^4.1.12",
     "@types/luxon": "^3.6.2",
     "@types/node": "^24.2.0",
     "@types/react": "^19.1.5",
