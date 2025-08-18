@@ -9,6 +9,8 @@ import VoteLink from '@/components/VoteLink';
 import XShareLink from '@/components/XShareLink';
 import GSMessage from '@/components/GSMessage';
 
+import { debug } from '@/lib/logger'
+
 // 1日1回更新
 // On-demand ISRも投票時に行われる
 export const revalidate = 86400;
@@ -18,7 +20,11 @@ const hostUrl = process.env.HOST_URL
 
 export default async function Home() {
 
+  debug('rendering... /')
+
+  debug('retrieving analysis data...')
   const data = await getLatestVotesForAnalysisAll();
+  debug('done! %O', data)
 
   // trailing slashまで付けるとopenGraphImageが表示されるのを確認
   // TODO 本当？確認する
