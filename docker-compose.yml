@@ -5,6 +5,9 @@ services:
     container_name: girls-side-analysis-nextjs-dev
     environment:
       TZ: 'Asia/Tokyo'
+    env_file:
+      - next/.env.development
+      - next/.env.local
     volumes:
       - ./next:/workspace/next
       - /workspace/next/node_modules
@@ -12,7 +15,7 @@ services:
       - /workspace/server-ts/node_modules
       - /workspace/node_modules
     tmpfs:
-      - /app/.next
+      - /workspace/next/.next
     ports:
       - 3000:3000
     depends_on:
