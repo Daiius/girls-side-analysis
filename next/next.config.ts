@@ -1,9 +1,5 @@
-import type { NextConfig } from 'next';
+import type { NextConfig } from 'next'
 
-const nextConfig = {
-  output: 'standalone',
-  allowedDevOrigins: ['local.test'], 
-} satisfies NextConfig;
-
-export default nextConfig;
+const nextConfig = { } satisfies NextConfig
+export default nextConfig
 

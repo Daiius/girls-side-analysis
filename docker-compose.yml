@@ -1,17 +1,21 @@
 services:
   nextjs:
     build:
-      dockerfile: ./Dockerfile.nextjs
-      context: ./next
+      dockerfile: ./next/Dockerfile.nextjs
     container_name: girls-side-analysis-nextjs-dev
     environment:
       TZ: 'Asia/Tokyo'
+    env_file:
+      - next/.env.development
+      - next/.env.local
     volumes:
-      - ./next/.env.development:/app/.env
-      - ./next:/app
-      - /app/node_modules
+      - ./next:/workspace/next
+      - /workspace/next/node_modules
+      - ./server-ts:/workspace/server-ts
+      - /workspace/server-ts/node_modules
+      - /workspace/node_modules
     tmpfs:
-      - /app/.next
+      - /workspace/next/.next
     ports:
       - 3000:3000
     depends_on:
@@ -20,23 +24,22 @@ services:
 
   server:
     build:
-      dockerfile: ./Dockerfile.server
-      context: ./server-ts
+      dockerfile: ./server-ts/Dockerfile.server
     container_name: girls-side-analysis-server
     env_file:
       - ./server-ts/.env.development
     environment:
       TZ: 'Asia/Tokyo'
-    working_dir: /app
+    working_dir: /workspace/server-ts
     ports:
       - 4000:3000
     volumes:
-      - ./server-ts/.env.development:/app/.env
-      - ./server-ts:/app
-      - /app/node_modules
+      - ./server-ts:/workspace/server-ts
+      - /workspace/server-ts/node_modules
+      - /workspace/node_modules
 
   database:
-    image: daiius/mysql-utf8mb4
+    image: mysql:8.4
     container_name: girls-side-analysis-database
     env_file:
       - ./server-ts/.env.development
@@ -71,7 +74,7 @@ services:
           --host=$$DB_HOST \
           --user=$$MYSQL_USER \
           --password=$$MYSQL_PASSWORD \
-          --database=$$MYSQL_DATABASE; \
+          --database=$$MYSQL_DATABASE && \
         pnpm tsx addTestData.ts
       '
     depends_on:
