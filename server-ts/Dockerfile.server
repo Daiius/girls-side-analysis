@@ -1,12 +1,14 @@
 FROM node:20-slim
 
-WORKDIR /app
+WORKDIR /workspace/server-ts
 
 RUN npm install -g pnpm
 
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install
+# monorepo root
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
+# monorepo server-ts
+COPY server-ts/package.json server-ts/tsconfig.json /workspace/server-ts/
 
-COPY . .
+RUN pnpm install
 
 CMD ["pnpm", "dev"]
