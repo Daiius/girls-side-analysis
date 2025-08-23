@@ -1,3 +1,5 @@
+'use client'
+
 import React from 'react';
 import clsx from 'clsx';
 
@@ -43,9 +45,11 @@ const TopAnalysisContent: React.FC<
         )}
       >
         {analysisData &&
-          <div className={clsx(
-            'h-2 grid grid-cols-[150px_auto] items-center p-2',
-          )}>
+          <div 
+            className={clsx(
+              'h-2 grid grid-cols-[150px_auto] items-center p-2',
+            )}
+          >
             <div></div>
             <div className='h-2 relative'>
               <StarIcon className={clsx(
@@ -106,7 +110,7 @@ const TopAnalysisContent: React.FC<
                 </div>
               </div>
               <AnimatedVoteBar 
-                key={`${characterName}-${Date.now()}`}
+                key={Date.now()}
                 count={count} 
                 maxCount={maxCount} 
               />
