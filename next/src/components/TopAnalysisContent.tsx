@@ -106,7 +106,7 @@ const TopAnalysisContent: React.FC<
                 </div>
               </div>
               <AnimatedVoteBar 
-                key={`${characterName}-${count}-${maxCount}`} 
+                key={`${characterName}-${Date.now()}`}
                 count={count} 
                 maxCount={maxCount} 
               />

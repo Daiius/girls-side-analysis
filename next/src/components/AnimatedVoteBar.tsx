@@ -13,12 +13,9 @@ export const AnimatedVoteBar = ({
   maxCount,
 }: AnimatedVoteBarProps) => {
   const [widthStyle, setWidthStyle] = useState<string>('0%')
-  //useEffect(() => {
-  //  setWidthStyle(`${(count / maxCount) * 100}%`) 
-  //}, [count, maxCount]);
   useEffect(() => {
     setWidthStyle(`${(count / maxCount) * 100}%`) 
-  });
+  }, [count, maxCount]);
   return (
     <div className='relative'>
       <div className={clsx(
