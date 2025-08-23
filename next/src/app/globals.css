@@ -6,6 +6,7 @@
   --animate-swipe-1:            swipe-1-keyframes      3s infinite;
   --animate-swipe-1-hand:       swipe-1-hand-keyframes 3s infinite;
   --animate-swipe-2:            swipe-2-keyframes      3s infinite;
+  --animate-bounce-once: bounce-custom 1s 3;
 
   @keyframes vote-icon-keyframes {
     0%  { transform: translate(-50%,-50%) rotate(-15deg) }
@@ -27,5 +28,15 @@
   @keyframes swipe-2-keyframes {
     0%,30%,100%  { transform: translate(0%, 1rem) }
     50%,80%      { transform: translate(0%,-1rem) }
+  }
+  @keyframes bounce-custom {
+    0%, 100% {
+      transform: none;
+      animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    }
+    50% {
+      transform: translateY(-25%);
+      animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+    }
   }
 }

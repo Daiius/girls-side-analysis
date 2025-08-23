@@ -43,6 +43,7 @@ const TopAnalysis: React.FC<
   return (
     <div className='w-full'>
       <TopAnalysisContent
+        key={Date.now()}
         targetCharacterName={targetCharacterName}
         analysisData={topAnalysisData[targetCharacterName]}
         className={clsx('mb-2', className)}
