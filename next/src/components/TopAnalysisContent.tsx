@@ -4,6 +4,7 @@ import clsx from 'clsx';
 
 import { AnalysisData } from '@/types';
 import { StarIcon } from '@heroicons/react/24/solid';
+import { AnimatedVoteBar } from '@/components/AnimatedVoteBar';
 
 const TopAnalysisContent: React.FC<
   { 
@@ -28,11 +29,11 @@ const TopAnalysisContent: React.FC<
       className={clsx('flex flex-col', className)}
       {...props}
     >
-      <div>
-        <span className='text-lg font-bold'>
+      <div className='flex flex-row items-baseline gap-1'>
+        <div key={targetCharacterName} className='text-lg font-bold animate-bounce-once'>
           {targetCharacterName}
-        </span>
-        <span> 推しの人が同時に推すのは、</span>
+        </div>
+        <span>推しの人が同時に推すのは、</span>
       </div>
       <div 
         className={clsx(
@@ -42,23 +43,25 @@ const TopAnalysisContent: React.FC<
         )}
       >
         {analysisData &&
-          <div className='h-2 grid grid-cols-[150px_auto] items-center'>
+          <div className={clsx(
+            'h-2 grid grid-cols-[150px_auto] items-center p-2',
+          )}>
             <div></div>
             <div className='h-2 relative'>
               <StarIcon className={clsx(
-                'size-2 text-yellow-500',
+                'size-3 text-yellow-500',
                 'absolute left-1/2 -translate-x-1/2',
-                '-top-3',
+                '-top-[18px]',
               )}/>
               <StarIcon className={clsx(
-                'size-2 text-yellow-500',
+                'size-3 text-yellow-500',
                 'absolute right-0 translate-x-1/2',
-                '-top-4',
+                '-top-[23px]',
               )}/>
               <StarIcon className={clsx(
-                'size-2 text-yellow-500',
+                'size-3 text-yellow-500',
                 'absolute right-0 translate-x-1/2',
-                '-top-2',
+                '-top-[13px]',
               )}/>
             </div>
           </div>
@@ -102,35 +105,11 @@ const TopAnalysisContent: React.FC<
                   }
                 </div>
               </div>
-              <div className='relative'>
-                <div className={clsx(
-                  'absolute top-0 -translate-y-1/2 left-0',
-                  'w-full h-10 rounded-md',
-                  'bg-gray-400 shadow-inner',
-                  'outline-[1px]', 
-                )}>
-                </div>
-                <div
-                  className={clsx(
-                    'absolute top-0 -translate-y-1/2 left-0', 
-                    'bg-sky-400 rounded-md text-lg text-white',
-                    'h-10',
-                  )}
-                  style={{ width: `calc(${count/maxCount*100}%)`}}
-                />
-                <div className={clsx(
-                  'absolute top-1/2 -translate-y-1/2 left-2',
-                  'text-white',
-                )}>
-                  {count}票
-                </div>
-                <div className={clsx(
-                  'h-10 w-[0.5px] bg-white/50',
-                  'absolute left-1/2 -translate-x-1/2', 
-                  'top-1/2 -translate-y-1/2',
-                )}/>
-              </div>
-
+              <AnimatedVoteBar 
+                key={`${characterName}-${count}-${maxCount}`} 
+                count={count} 
+                maxCount={maxCount} 
+              />
             </div>
           )
         } 
