@@ -21,10 +21,10 @@
     "clsx": "^2.1.1",
     "debug": "^4.4.1",
     "luxon": "^3.6.1",
-    "next": "15.4.5",
+    "next": "16.0.7",
     "next-auth": "5.0.0-beta.22",
-    "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react": "19.2.1",
+    "react-dom": "19.2.1"
   },
   "devDependencies": {
     "@daiius/girls-side-analysis-server-ts": "workspace:*",
@@ -32,8 +32,8 @@
     "@types/debug": "^4.1.12",
     "@types/luxon": "^3.6.2",
     "@types/node": "^24.2.0",
-    "@types/react": "^19.1.5",
-    "@types/react-dom": "^19.1.5",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.1.7",
     "tsx": "^4.19.4",
