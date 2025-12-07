@@ -22,7 +22,7 @@
     "debug": "^4.4.1",
     "luxon": "^3.6.1",
     "next": "16.0.7",
-    "next-auth": "5.0.0-beta.22",
+    "next-auth": "5.0.0-beta.30",
     "react": "19.2.1",
     "react-dom": "19.2.1"
   },
