@@ -1,22 +1,23 @@
-FROM node:20-slim AS build
+FROM node:22-slim AS build
 
-WORKDIR /app
+WORKDIR /workdir/app
 
 RUN npm install -g pnpm
 
-COPY package.json pnpm-lock.yaml esbuild.config.ts ./
-RUN pnpm install
+COPY package.json pnpm-lock.yaml /workdir
+COPY ./server-ts/package.json ./server-ts/esbuild.config.ts /workdir/app
+RUN pnpm install --filter @daiius/girls-side-analysis-server-ts
 
-COPY ./src/ ./src/
+COPY ./server-ts/src/ /workdir/app/src/
 
 RUN pnpm build
 
 
-FROM gcr.io/distroless/nodejs20:debug
+FROM gcr.io/distroless/nodejs22:debug
 
 WORKDIR /app
 
-COPY ./package.json ./
-COPY --from=build /app/dist/index.js /app/index.js
+COPY ./server-ts/package.json /app
+COPY --from=build /workdir/app/dist/index.js /app/index.js
 CMD ["index.js"]
 
