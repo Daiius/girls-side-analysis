@@ -8,7 +8,7 @@ import {
 import { drizzle } from 'drizzle-orm/mysql2';
 import { createConnection } from 'mysql2/promise';
 
-const connection = await createConnection({
+const client = await createConnection({
   host: process.env.DB_HOST,
   user: process.env.MYSQL_USER,
   password: process.env.MYSQL_PASSWORD,
@@ -16,7 +16,7 @@ const connection = await createConnection({
 });
 
 
-const db = drizzle(connection);
+const db = drizzle({ client });
 
 
 await db.insert(characters).values([
@@ -177,7 +177,7 @@ await db.insert(votes).values([
   },
 ]);
 
-await connection.end();
+await client.end();
 
 console.log('addTestData.ts done!')
 
