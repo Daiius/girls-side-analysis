@@ -1,21 +1,23 @@
+'use client'
+
 import clsx from 'clsx';
 
-import { signIn } from '@/auth';
-import {  DataUsageDialog } from '@/components/DataUsageDialog';
+import { authClient } from '@/lib/auth-client';
+import { DataUsageDialog } from '@/components/DataUsageDialog';
 import GSButton from '@/components/GSButton';
 import XIcon from '@/components/XIcon';
 
 import GSMessage from './GSMessage';
 import { RocketLaunchIcon } from '@heroicons/react/24/solid';
 
-const BeforeLoginProfile  = ({
+const BeforeLoginProfile = ({
   errorMessage,
   className,
-}: { 
-  errorMessage?: string; 
+}: {
+  errorMessage?: string;
   className?: string;
 }) => (
-  <div 
+  <div
     className={clsx(
       'flex flex-col gap-2',
       className,
@@ -34,16 +36,16 @@ const BeforeLoginProfile  = ({
       <div className='self-end flex flex-row items-center gap-2'>
         詳細: <DataUsageDialog/>
       </div>
-      <form
-        action={async () => {
-          'use server'
-          await signIn('twitter');
-        }}
-        className='self-center'
-      >
-        <GSButton 
+      <div className='self-center'>
+        <GSButton
           className='size-20 relative group'
-          type='submit'
+          type='button'
+          onClick={async () => {
+            await authClient.signIn.social({
+              provider: 'twitter',
+              callbackURL: '/profile',
+            });
+          }}
         >
           <div className={clsx(
             'absolute top-1 left-1/2 -translate-x-1/2 text-nowrap',
@@ -51,16 +53,16 @@ const BeforeLoginProfile  = ({
           )}>
             ログイン
           </div>
-          <XIcon 
+          <XIcon
             className='absolute top-6 right-1'
             width={28}
             height={29}
           />
           <RocketLaunchIcon className={clsx(
-            'absolute size-9 bottom-1 left-3 group-hover:animate-logout-icon-scale' 
+            'absolute size-9 bottom-1 left-3 group-hover:animate-logout-icon-scale'
           )}/>
         </GSButton>
-      </form>
+      </div>
     {errorMessage != null &&
       <div>
         <div>
@@ -75,4 +77,3 @@ const BeforeLoginProfile  = ({
 );
 
 export default BeforeLoginProfile;
-

@@ -1,34 +1,25 @@
-import { auth } from '@/auth';
+import { getSession } from '@/lib/auth-session';
 
 import AfterLoginProfile from '@/components/AfterLoginProfile';
 import BeforeLoginProfile from '@/components/BeforeLoginProfile';
 
-export default async function Page({ 
+export default async function Page({
   searchParams
-}: { 
-  searchParams: Promise<{ error?: string }> 
+}: {
+  searchParams: Promise<{ error?: string }>
 }) {
-  const session = await auth();
+  const session = await getSession();
   const { error } = await searchParams;
-  const errorMessage =
-    error === 'OAuthCallbackError'
-      ? 'X(Twitter)認証がキャンセルされました' :
-    error === 'UnknownAction'
-      ? 'アクションをパース出来ませんでした' :
-    error === 'Configuration' 
-      ? 'タイムアウト、または設定エラーです' :
-    error
-      ? `不明なエラー: ${error}` :
-    undefined;
-      
+  const errorMessage = error ? `認証エラー: ${error}` : undefined;
+
   return (
     <>
       {session?.user?.name
-        ? <AfterLoginProfile 
+        ? <AfterLoginProfile
             className='h-full'
             session={session}
           />
-        : <BeforeLoginProfile 
+        : <BeforeLoginProfile
             className='h-full'
             errorMessage={errorMessage}
           />
@@ -36,4 +27,3 @@ export default async function Page({
     </>
   );
 }
-

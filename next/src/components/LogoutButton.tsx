@@ -3,7 +3,7 @@
 import React from 'react';
 import clsx from 'clsx';
 
-import { signOut } from '@/actions/authActions';
+import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
 
 
@@ -19,14 +19,14 @@ const LogoutButton: React.FC<
 }) => {
   const router = useRouter();
   return (
-    <GSButton 
+    <GSButton
       className={clsx(
         'group mt-2 p-2 flex flex-row size-16 relative',
         className,
       )}
       variant='system'
       onClick={async () => {
-        await signOut();
+        await authClient.signOut();
         router.refresh();
       }}
       {...props}
@@ -49,4 +49,3 @@ const LogoutButton: React.FC<
 };
 
 export default LogoutButton;
-
