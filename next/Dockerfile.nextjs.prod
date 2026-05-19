@@ -4,7 +4,7 @@
 # Build layer
 # devDependenciesも含めてinstallし、
 # .next/ 内にNext.js関連の仕組みが動作するのに必要なファイルを出力
-FROM node:20-slim AS build
+FROM node:24-bookworm-slim AS build
 
 WORKDIR /app
 
@@ -19,7 +19,7 @@ RUN pnpm next build
 
 # Package install layer
 # dependencies をインストール、動作に必要なライブラリだけを取得する
-FROM node:20-slim AS node_modules
+FROM node:24-bookworm-slim AS node_modules
 WORKDIR /app
 RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml ./
@@ -29,8 +29,7 @@ RUN pnpm install --frozen-lockfile --prod
 # Deploy layer
 #
 # イメージサイズやセキュリティの視点からおすすめのイメージとのこと
-#FROM gcr.io/distroless/nodejs20-debian12
-FROM gcr.io/distroless/nodejs20:debug
+FROM gcr.io/distroless/nodejs24-debian12:debug
 
 WORKDIR /app
 ENV NODE_ENV=production
