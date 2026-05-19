@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { cors } from 'hono/cors'
 
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod/v4'
@@ -16,14 +17,36 @@ import {
   getUserStatesMaster,
   insertUserStatesIfUpdated,
 } from './lib/users'
+import { auth } from './lib/auth'
 
 const apiKey = process.env.API_KEY ??
   (() => { throw new Error('process.env.API_KEY is not defined!') })()
 
+const frontendOrigin = process.env.BETTER_AUTH_URL ??
+  (() => { throw new Error('process.env.BETTER_AUTH_URL is not defined!') })()
+
 export const app = new Hono()
 
-// 単純なAPIキー認証
+// 本番では別サブドメインから叩かれるため CORS が必須。
+// ローカルでは同一オリジンだが allow しても害はないので常に設定。
+app.use(
+  '/api/auth/*',
+  cors({
+    origin: frontendOrigin,
+    credentials: true,
+    allowMethods: ['GET', 'POST', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization'],
+  }),
+)
+
+// better-auth は cookie ベースで自己完結するため API キー認証の対象外
+app.on(['POST', 'GET'], '/api/auth/*', (c) => auth.handler(c.req.raw))
+
+// 既存 API（投票・キャラ等）は API キー認証必須
 app.use('*', async (c, next) => {
+  if (c.req.path.startsWith('/api/auth/')) {
+    return next()
+  }
   const authHeader = c.req.header('Authorization')
   if (!authHeader) return c.body(null, 401)
   const tokens = authHeader.split(' ')
