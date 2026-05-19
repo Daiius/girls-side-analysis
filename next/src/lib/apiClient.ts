@@ -1,4 +1,4 @@
-import { hc, type AppType } from '@daiius/girls-side-analysis-server-ts'
+import { hc, type AppType } from '@daiius/girls-side-analysis-server-ts/client'
 
 const apiKey = process.env.API_KEY
   ?? (() => { throw new Error('process.env.API_KEY is not defined') })()

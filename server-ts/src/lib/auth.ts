@@ -41,6 +41,20 @@ export const auth = betterAuth({
     twitter: {
       clientId: required('TWITTER_CLIENT_ID', process.env.TWITTER_CLIENT_ID),
       clientSecret: required('TWITTER_CLIENT_SECRET', process.env.TWITTER_CLIENT_SECRET),
+      // X Developer Portal で承認されている scope と完全一致させる
+      // （X の OAuth 実装は scope mismatch に厳しい場合があるため安全側）。
+      // better-auth デフォルトの `offline.access` は portal で未承認なので
+      // disableDefaultScope:true で除外する。
+      // 本プロジェクトは tweet / email を実利用しないので、portal 側から
+      // tweet.read / users.email を外したらここからも対応する scope を削ること。
+      disableDefaultScope: true,
+      scope: ['users.read', 'tweet.read', 'users.email'],
+      // 念のため email 未取得時の保険（schema 側で notNull のため）
+      mapProfileToUser: (profile) => ({
+        email:
+          profile.data.email
+          ?? `${profile.data.username ?? profile.data.id}@twitter.local`,
+      }),
     },
   },
 

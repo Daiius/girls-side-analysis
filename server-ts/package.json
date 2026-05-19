@@ -9,6 +9,9 @@
   "exports": {
     ".": {
       "import": "./src/app.ts"
+    },
+    "./client": {
+      "import": "./src/client.ts"
     }
   },
   "dependencies": {
