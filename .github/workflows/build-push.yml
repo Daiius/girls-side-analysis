@@ -1,4 +1,4 @@
-name: Build and push images to GHCR
+name: Build and push server image to GHCR
 
 on:
   workflow_dispatch:
@@ -10,16 +10,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: nextjs
-            dockerfile: ./next/Dockerfile.nextjs.prod
-            image: ghcr.io/${{ github.repository }}-nextjs
-          - name: server
-            dockerfile: ./server-ts/Dockerfile.server.prod
-            image: ghcr.io/${{ github.repository }}-server
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,7 +28,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ matrix.image }}
+          images: ghcr.io/${{ github.repository }}-server
           tags: |
             type=ref,event=branch
             type=sha,format=long
@@ -47,7 +37,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ${{ matrix.dockerfile }}
+          file: ./server-ts/Dockerfile.server.prod
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
