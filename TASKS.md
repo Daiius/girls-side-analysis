@@ -151,27 +151,53 @@ better-auth 公式の MySQL スキーマに準ずる。`@better-auth/cli generat
 - [x] **22.** 既存 twitter_id (`272386273`) を持つユーザーが過去の seed 投票を引き継いで表示できることを確認
 - [ ] **23.** revalidatePath が機能してトップ・キャラページが即更新されるか確認（未実施。`voteActions.ts` の revalidatePath は元コードでもコメントアウト状態だったため、保留）
 
-### Phase 5: 本番マイグレーション（保留中）
+### Phase 5: 本番マイグレーション ✅（2026-05-22 疎通完了）
 
-- [ ] **24.** 本番 DB へのスキーマ反映 — **Cloudflare tunnel 経由で `drizzle-kit push` を予定**
-  - 今回の schema 差分は user/session/account/verification の **純粋追加のみ**（既存テーブル DDL 変更なし）。`--force` でも安全だが、push 前に `drizzle-kit generate` で SQL を一度確認するのが推奨
-- [ ] **25.** 本番環境変数を差し替え
-  - server-ts 側に追加: `BETTER_AUTH_SECRET`（dev とは別の新規生成値）, `BETTER_AUTH_URL=https://girls-side-analysis.faveo-systema.net`, `TWITTER_CLIENT_ID`, `TWITTER_CLIENT_SECRET`, `AUTH_COOKIE_DOMAIN=.faveo-systema.net`
-  - Vercel 側: `NEXT_PUBLIC_AUTH_BASE_URL=https://api.faveo-systema.net/girls-side-analysis`、`ENABLE_AUTH_REWRITES` は未設定（本番は cross-origin + cookie domain 共有）
-  - X Developer Portal: Callback URL に `https://girls-side-analysis.faveo-systema.net/api/auth/callback/twitter` を追加
-- [ ] **26.** `server-ts/Dockerfile.server.prod` を node 24 ベースでビルド → deploy
-  - ⚠️ **ローカルから `docker build` 実行時に libuv assertion failure (`exit code 134`) が発生する事象あり**。Node 22 で発生したため Node 24 に上げる方針へ。Node 24 + bookworm-slim の組み合わせでも一部環境で再現。**現状未解消、本番デプロイ時の Docker ビルド環境で別途検証必要**
-- [ ] **27.** デプロイ後の動作確認: ログイン → 投票 → 反映確認
+- [x] **24.** 本番 DB へのスキーマ反映 — **Cloudflare tunnel 経由で `drizzle-kit push`** で実施
+  - schema 差分は user/session/account/verification の純粋追加のみ（既存テーブル DDL 変更なし）
+- [x] **25.** 本番環境変数を差し替え — **same-origin リバースプロキシ方式を採用**（元計画の cross-origin から変更）
+  - 変更理由: **API サーバーの URL（`api.faveo-systema.net`）をブラウザに露出させたくない**ため。
+    `/api/auth/*` を Vercel の rewrites でサーバ側から API へ転送し、ブラウザにはフロントのドメインだけ見せる。
+    結果として CORS / cross-subdomain cookie 共有が不要になり構成も単純化。
+  - Vercel: `ENABLE_AUTH_REWRITES=true`, `API_URL=https://api.faveo-systema.net/girls-side-analysis`,
+    `NEXT_PUBLIC_AUTH_BASE_URL`=**空**（相対パスで same-origin に叩かせる）
+  - server-ts: `BETTER_AUTH_SECRET`（dev とは別の新規生成値）, `BETTER_AUTH_URL=https://girls-side-analysis.faveo-systema.net`（=フロント origin。OAuth callback もこのドメイン経由になり API URL を秘匿）, `TWITTER_CLIENT_ID`, `TWITTER_CLIENT_SECRET`。`AUTH_COOKIE_DOMAIN` は**未設定**（same-origin なので host-only cookie で足りる）
+  - X Developer Portal: Callback URL = `https://girls-side-analysis.faveo-systema.net/api/auth/callback/twitter`（フロント側ドメイン）
+  - ⚠️ `NEXT_PUBLIC_*` / `API_URL` / `ENABLE_AUTH_REWRITES` は **ビルド時に焼き込まれる**ため、Vercel では値を設定後に**再デプロイ**が必要
+- [x] **26.** `server-ts/Dockerfile.server.prod` のビルド → deploy — **GitHub Actions（Linux/amd64）でビルドし GHCR に push する方式で解決**
+  - libuv assertion failure（exit 134）は arm64 Mac のローカル build 固有の問題。GH Actions の amd64 native runner でビルドすることで回避（手動 workflow `build-push.yml`、`ghcr.io/daiius/girls-side-analysis-server`）
+- [x] **27.** デプロイ後の動作確認: Twitter ログイン → `/profile` まで疎通確認（2026-05-22）
+  - ※ 投票 → 反映までの本番 end-to-end は最終確認を推奨（"多分一件落着" の段階）
+
+### 本番デプロイで判明したトラブルと解消（2026-05-22）
+
+順に踏んだ落とし穴の記録（再発防止）：
+
+1. **GHCR push が 403 Forbidden** — ビルドは成功するが push 段階で失敗。原因はパッケージへの
+   **リポジトリ Actions access 未付与**。`permissions: packages: write` だけでは不足で、
+   パッケージ設定の「Manage Actions access」にリポジトリを Write で追加して解決。
+2. **nginx の変数 `proxy_pass` で location prefix が剥がれず 404** — `set $upstream ...; proxy_pass $upstream;`
+   の変数形式では nginx の自動 prefix 置換が無効になり、`/girls-side-analysis/analysis` がそのまま
+   サーバへ渡って 404。静的 `proxy_pass http://...:3000/;`（または `rewrite ... break;`）で prefix を剥がして解決。
+3. **ログインで `/api/auth/sign-in/social` が 404** — `NEXT_PUBLIC_AUTH_BASE_URL` 空のまま rewrites も無効で、
+   ブラウザがフロント相対パスを叩いて 404。same-origin プロキシ方式（項目25）で確定。
+4. **`please_restart_the_process`（OAuth コールバック失敗）の真因は DB 権限不足** — better-auth が
+   `verification` の期限切れ行を掃除する `DELETE` を実行するが、本番 DB ユーザー `girls-side-analysis-user`
+   に **DELETE 権限が無く** `ER_TABLEACCESS_DENIED_ERROR (1142)`。`GRANT SELECT,INSERT,UPDATE,DELETE ON
+   girls_side_analysis.* TO ...` で付与。
+   - ⚠️ **DB 単位の権限変更は既存接続（コネクションプール）が次の `USE` まで拾わない**。`SHOW GRANTS` に
+     DELETE が出てもアプリが 1142 を出し続けたため、**database コンテナを再起動**して接続を張り直したら解消。
 
 ### 保留中の課題
 
-- **Docker build の libuv assertion failure**: ローカル Mac 環境（Docker buildx）で `pnpm install` 後に Node プロセスが `uv__io_poll: Assertion 'errno == EEXIST' failed` で abort（exit code 134）。Node 24 ベースイメージで prod build (`Dockerfile.server.prod`) は通ったが、dev compose の全ビルド (`docker compose up --build`) は別のエラーで未通過。本番のビルド環境（セルフホスト Linux 上の Docker）では発生しないことを期待。
+- ~~**Docker build の libuv assertion failure**~~ → **解決**。arm64 Mac ローカル build 固有の問題で、GitHub Actions（amd64 Linux runner）でビルドし GHCR に push する方式に切り替えて回避（`build-push.yml`）。
 - **next side の Phase 4-23 (revalidatePath)**: 元コードでもコメントアウトされていた処理。better-auth 移行と直接関係ないため保留。
 - **next/.env.production の MYSQL_***: next 側から直接 DB アクセスしない設計なので、削除候補。本ブランチでは触らず保留。
+- **本番 投票 → 反映の end-to-end 最終確認**: ログイン疎通までは確認済み。投票送信→トップ/キャラページ反映までの本番動作は念のため最終確認を推奨。
 
 ## 設計上の保留事項
 
-- **cookie domain**: rewrites で same-origin に見せる前提だが、Vercel の rewrites が `Set-Cookie` の Domain を正しく書き換えるか実装時に要確認
+- ~~**cookie domain**~~ → **確定**。same-origin リバースプロキシ方式を採用したため `AUTH_COOKIE_DOMAIN` は未設定（host-only cookie）。cross-subdomain 共有も `Set-Cookie` の Domain 書き換えも不要になった。
 - **session 期限**: better-auth 既定 7 日。要件次第で延伸 / 短縮
 - **rate limiting**: better-auth に組み込みあり。本番有効化時に検討
 - **cookie cache**: getSession の往復コストが問題になったら better-auth の cookie cache 機能で軽減（DB lookup を一定時間スキップ）
