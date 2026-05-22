@@ -28,10 +28,17 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
+          # github.repository (Daiius/girls-side-analysis) は metadata-action が小文字化するので
+          # 最終的なイメージ名は ghcr.io/daiius/girls-side-analysis-server になる
           images: ghcr.io/${{ github.repository }}-server
+          # push されるタグ:
+          #   - ブランチ名 (/ は - に置換)        例: :ci-ghcr-build-push, main 実行なら :main
+          #   - sha-<40桁フルSHA>                 例: :sha-fc211a4...（固定参照用）
+          #   - :latest                           main(デフォルトブランチ)実行時のみ追加
           tags: |
             type=ref,event=branch
             type=sha,format=long
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push
         uses: docker/build-push-action@v6
