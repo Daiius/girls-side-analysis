@@ -2,5 +2,16 @@
 src/stories/
 .storybook/
 .drizzle/
-node_modules
+**/node_modules
+
+# server イメージのビルドに不要なもの（context: . の転送量削減）
+.git
+next/
+server-rs/
+.playwright-mcp/
+init_db/
+*.zip
+**/.DS_Store
+docker-compose*.yml
+README.md
 
