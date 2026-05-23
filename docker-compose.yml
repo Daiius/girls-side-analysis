@@ -8,19 +8,30 @@ services:
     env_file:
       - next/.env.development
       - next/.env.local
-    volumes:
-      - ./next:/workspace/next
-      - /workspace/next/node_modules
-      - ./server-ts:/workspace/server-ts
-      - /workspace/server-ts/node_modules
-      - /workspace/node_modules
-    tmpfs:
-      - /workspace/next/.next
     ports:
       - 3000:3000
     depends_on:
       database-preparation:
         condition: service_completed_successfully
+    # bind mount をやめ docker compose watch でソースを同期する。
+    # virtiofs のイベント取りこぼしが無くなり HMR が安定、FS もコンテナネイティブで高速。
+    develop:
+      watch:
+        - action: sync
+          path: ./next
+          target: /workspace/next
+          ignore:
+            - node_modules/
+            - .next/
+        # next は server-ts/client (Hono RPC) を import するので server-ts も同期する
+        - action: sync
+          path: ./server-ts
+          target: /workspace/server-ts
+          ignore:
+            - node_modules/
+            - dist/
+        - action: rebuild
+          path: ./pnpm-lock.yaml
 
   server:
     build:
@@ -33,10 +44,17 @@ services:
     working_dir: /workspace/server-ts
     ports:
       - 4000:3000
-    volumes:
-      - ./server-ts:/workspace/server-ts
-      - /workspace/server-ts/node_modules
-      - /workspace/node_modules
+    # tsx watch が自前で再起動するため sync のみ（コンテナ全体の restart は不要）
+    develop:
+      watch:
+        - action: sync
+          path: ./server-ts
+          target: /workspace/server-ts
+          ignore:
+            - node_modules/
+            - dist/
+        - action: rebuild
+          path: ./pnpm-lock.yaml
 
   database:
     image: mysql:8.4
@@ -59,18 +77,19 @@ services:
       start_period: 5s
 
   database-preparation:
+    # 専用 seed イメージは廃止し server イメージを流用（drizzle-kit / tsx / mysql2 は
+    # server-ts の依存に含まれ、ルート onlyBuiltDependencies で esbuild も承認済み）。
     build:
-      dockerfile: ./Dockerfile.seed
-      context: ./server-ts
+      dockerfile: ./server-ts/Dockerfile.server
     container_name: girls-side-analysis-database-seed
     env_file:
       - server-ts/.env.development
-    working_dir: /app
+    working_dir: /workspace/server-ts
     command: >
       bash -c '
         pnpm drizzle-kit push \
           --dialect=mysql \
-          --schema=/app/src/db/schema.ts \
+          --schema=src/db/schema.ts \
           --host=$$DB_HOST \
           --user=$$MYSQL_USER \
           --password=$$MYSQL_PASSWORD \
@@ -80,8 +99,7 @@ services:
     depends_on:
       database:
         condition: service_healthy
-    
+
 networks:
   default:
     name: girls-side-analysis-network
-

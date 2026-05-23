@@ -1,12 +1,12 @@
-.next
-src/stories/
-.storybook/
-.drizzle/
+# 全イメージ共通で不要なもの（next / server イメージは context: . でビルドされ、
+# この .dockerignore が適用される。next/ や server-ts/ は両イメージのどちらかで
+# 必要なので除外しない＝代わりに重い生成物だけをピンポイントで除外する）
 **/node_modules
-
-# server イメージのビルドに不要なもの（context: . の転送量削減）
+**/.next
+**/dist
+.drizzle/
 .git
-next/
+.github/
 server-rs/
 .playwright-mcp/
 init_db/
@@ -14,4 +14,6 @@ init_db/
 **/.DS_Store
 docker-compose*.yml
 README.md
-
+TASKS.md
+next/src/stories/
+next/.storybook/
