@@ -12,6 +12,7 @@ server-rs/
 init_db/
 *.zip
 **/.DS_Store
+compose*.yaml
 docker-compose*.yml
 README.md
 TASKS.md
