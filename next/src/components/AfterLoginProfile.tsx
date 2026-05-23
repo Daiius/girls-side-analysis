@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 
-import { Session } from 'next-auth';
+import type { SessionResponse } from '@/lib/auth-session';
 
 import LogoutButton from './LogoutButton';
 import VotingForm from './VotingForm';
@@ -9,7 +9,7 @@ import VotingForm from './VotingForm';
  * ログイン後のプロファイル画面です
  */
 const AfterLoginProfile: React.FC<
-  { session: Session; } 
+  { session: SessionResponse; }
   & React.ComponentProps<'div'>
 > = async ({
    session,
@@ -33,4 +33,3 @@ const AfterLoginProfile: React.FC<
 );
 
 export default AfterLoginProfile;
-

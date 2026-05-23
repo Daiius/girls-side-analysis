@@ -1,4 +1,4 @@
-FROM node:22-slim AS build
+FROM node:24-bookworm-slim AS build
 
 WORKDIR /workdir/app
 
@@ -13,7 +13,7 @@ COPY ./server-ts/src/ /workdir/app/src/
 RUN pnpm build
 
 
-FROM gcr.io/distroless/nodejs22:debug
+FROM gcr.io/distroless/nodejs24-debian12:debug
 
 WORKDIR /app
 

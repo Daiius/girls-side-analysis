@@ -1,9 +1,9 @@
 import clsx from 'clsx';
 
-import { auth } from '@/auth';
+import { getSession } from '@/lib/auth-session';
 import VotingFormClient from './VotingFormClient';
 
-import { 
+import {
   getLatestUserState,
   getUserStatesMaster,
 } from '@/lib/users';
@@ -22,15 +22,16 @@ const VotingForm: React.FC<
   className,
   ...props
 }) => {
-  const session = await auth();
-  if (session?.user.id == null) {
-    throw new Error('Failed to get user information.');
+  const session = await getSession();
+  const twitterId = session?.user.twitterId;
+  if (twitterId == null) {
+    throw new Error('Failed to get twitterId from session.');
   }
 
-  const latestUserState = await getLatestUserState(session.user.id);
+  const latestUserState = await getLatestUserState(twitterId);
   const userStatesMaster = await getUserStatesMaster();
   const characters = await getCharacters();
-  const latestVotes = await getLatestVotes(session.user.id);
+  const latestVotes = await getLatestVotes(twitterId);
 
   return (
     <VotingFormClient
@@ -45,4 +46,3 @@ const VotingForm: React.FC<
 };
 
 export default VotingForm;
-

@@ -1,11 +1,10 @@
 'use server'
 
-import { auth } from '@/auth';
+import { getSession } from '@/lib/auth-session';
 import { insertUserStatesIfUpdated } from '@/lib/users';
 import { insertVotesIfUpdated } from '@/lib/votes';
 
 import { Vote } from '@/types';
-import { revalidatePath } from 'next/cache';
 
 /**
  * ユーザのプレイ状況と推しデータの記録を行います
@@ -17,13 +16,14 @@ export const vote = async (
   formData: FormData,
   /**
    * ユーザが設定した投票状態
-   */ 
+   */
   userVotes: Vote[],
 ) => {
 
-  const session = await auth();
-  if (session?.user.id == null) {
-    throw new Error('Failed to get user information.');
+  const session = await getSession();
+  const twitterId = session?.user.twitterId;
+  if (twitterId == null) {
+    throw new Error('Failed to get twitterId from session.');
   }
 
   const rawVoteData = {
@@ -34,7 +34,7 @@ export const vote = async (
   };
 
   await insertUserStatesIfUpdated({
-    twitterID: session.user.id, 
+    twitterID: twitterId,
     data: [
       { series: 1, state: rawVoteData.gs1 },
       { series: 2, state: rawVoteData.gs2 },
@@ -44,17 +44,7 @@ export const vote = async (
   });
 
   await insertVotesIfUpdated({
-    twitterID: session.user.id,
+    twitterID: twitterId,
     data: userVotes,
   });
-
-  // 投票ごとにトップページの内容をすぐに更新準備
-  // 負荷が高めなのでピークアクセス時にはちょっと弱小サーバだとつらいかも
-  //revalidatePath('/');
-  // 投票ごとにキャラクターごとの内容をすぐに更新準備
-  // dynamic path はもう少しパラメータを追加してやらないと
-  // （というかそもそもパス指定方法が間違っている？）
-  // 正しく適応されないらしい
-  //revalidatePath('/[charaName]');
 };
-
