@@ -19,6 +19,15 @@ const client = await createConnection({
 const db = drizzle({ client });
 
 
+// 永続 DB 向けの冪等化: 既にデータがあれば二重投入を避けてスキップする
+const existingCount = await db.$count(characters);
+if (existingCount > 0) {
+  console.log(`addTestData.ts skipped: characters に既に ${existingCount} 件あります`);
+  await client.end();
+  process.exit(0);
+}
+
+
 await db.insert(characters).values([
   // GS1
   { name: '葉月珪',     series: 1, sort: 1 },

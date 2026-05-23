@@ -1,0 +1,88 @@
+services:
+  nextjs:
+    build:
+      dockerfile: ./next/Dockerfile.nextjs
+    container_name: girls-side-analysis-nextjs-dev
+    environment:
+      TZ: 'Asia/Tokyo'
+    env_file:
+      - next/.env.development
+      - next/.env.local
+    ports:
+      - 3000:3000
+    depends_on:
+      server:
+        condition: service_started
+    # bind mount をやめ docker compose watch でソースを同期する。
+    # virtiofs のイベント取りこぼしが無くなり HMR が安定、FS もコンテナネイティブで高速。
+    develop:
+      watch:
+        - action: sync
+          path: ./next
+          target: /workspace/next
+          ignore:
+            - node_modules/
+            - .next/
+        # next は server-ts/client (Hono RPC) を import するので server-ts も同期する
+        - action: sync
+          path: ./server-ts
+          target: /workspace/server-ts
+          ignore:
+            - node_modules/
+            - dist/
+        - action: rebuild
+          path: ./pnpm-lock.yaml
+
+  server:
+    build:
+      dockerfile: ./server-ts/Dockerfile.server
+    container_name: girls-side-analysis-server
+    env_file:
+      - ./server-ts/.env.development
+    environment:
+      TZ: 'Asia/Tokyo'
+    working_dir: /workspace/server-ts
+    ports:
+      - 4000:3000
+    depends_on:
+      database:
+        condition: service_healthy
+    # tsx watch が自前で再起動するため sync のみ（コンテナ全体の restart は不要）
+    develop:
+      watch:
+        - action: sync
+          path: ./server-ts
+          target: /workspace/server-ts
+          ignore:
+            - node_modules/
+            - dist/
+        - action: rebuild
+          path: ./pnpm-lock.yaml
+
+  database:
+    image: mysql:8.4
+    container_name: girls-side-analysis-database
+    env_file:
+      - ./server-ts/.env.development
+    # 開発 DB は named volume で永続化する。スキーマ反映/初期データ投入は
+    # one-shot サービスではなく `pnpm db:migrate` / `pnpm db:seed` で行う。
+    volumes:
+      - db-data:/var/lib/mysql
+    environment:
+      TZ: 'Asia/Tokyo'
+      LANG: 'ja_JP.UTF-8'
+    cap_add:
+      - SYS_NICE
+    healthcheck:
+      test: mysql -u $$MYSQL_USER -p$$MYSQL_PASSWORD $$MYSQL_DATABASE -e "select 1;"
+      interval: 5s
+      timeout: 30s
+      retries: 4
+      start_period: 5s
+
+volumes:
+  db-data:
+
+networks:
+  default:
+    name: girls-side-analysis-network

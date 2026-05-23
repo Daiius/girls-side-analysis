@@ -1,6 +1,14 @@
 {
   "name": "@daiius/girls-side-analysis",
   "private": true,
-  "version": "1.1.0"
+  "version": "1.1.0",
+  "packageManager": "pnpm@10.33.2",
+  "scripts": {
+    "dev": "docker compose watch",
+    "stop": "docker compose stop",
+    "down": "docker compose down",
+    "db:migrate": "docker compose exec server pnpm db:migrate",
+    "db:seed": "docker compose exec server pnpm db:seed"
+  }
 }
 

@@ -1,16 +1,22 @@
 FROM node:24-bookworm-slim AS build
 
-WORKDIR /workdir/app
+WORKDIR /workdir
 
-RUN npm install -g pnpm
+RUN corepack enable
 
-COPY package.json pnpm-lock.yaml /workdir
-COPY ./server-ts/package.json ./server-ts/esbuild.config.ts /workdir/app
-RUN pnpm install --filter @daiius/girls-side-analysis-server-ts
+# workspace ルートの依存定義。catalog: 参照の解決には catalog 定義を持つ
+# pnpm-workspace.yaml が必須（これが無いと ERR_PNPM_CATALOG_ENTRY_NOT_FOUND）。
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY server-ts/package.json server-ts/tsconfig.json server-ts/esbuild.config.ts ./server-ts/
+# --frozen-lockfile はワークスペース全 package.json を要求するため next も含める
+COPY next/package.json ./next/
 
-COPY ./server-ts/src/ /workdir/app/src/
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile --filter @daiius/girls-side-analysis-server-ts
 
-RUN pnpm build
+COPY server-ts/src/ ./server-ts/src/
+
+RUN pnpm --filter @daiius/girls-side-analysis-server-ts build
 
 
 FROM gcr.io/distroless/nodejs24-debian12:debug
@@ -18,6 +24,5 @@ FROM gcr.io/distroless/nodejs24-debian12:debug
 WORKDIR /app
 
 COPY ./server-ts/package.json /app
-COPY --from=build /workdir/app/dist/index.js /app/index.js
+COPY --from=build /workdir/server-ts/dist/index.js /app/index.js
 CMD ["index.js"]
-
