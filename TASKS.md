@@ -151,51 +151,21 @@ better-auth 公式の MySQL スキーマに準ずる。`@better-auth/cli generat
 - [x] **22.** 既存 twitter_id (`272386273`) を持つユーザーが過去の seed 投票を引き継いで表示できることを確認
 - [ ] **23.** revalidatePath が機能してトップ・キャラページが即更新されるか確認（未実施。`voteActions.ts` の revalidatePath は元コードでもコメントアウト状態だったため、保留）
 
-### Phase 5: 本番マイグレーション ✅（2026-05-22 疎通完了）
+### Phase 5: 本番マイグレーション ✅
 
-- [x] **24.** 本番 DB へのスキーマ反映 — **Cloudflare tunnel 経由で `drizzle-kit push`** で実施
-  - schema 差分は user/session/account/verification の純粋追加のみ（既存テーブル DDL 変更なし）
-- [x] **25.** 本番環境変数を差し替え — **same-origin リバースプロキシ方式を採用**（元計画の cross-origin から変更）
-  - 変更理由: **API サーバーの URL（`api.faveo-systema.net`）をブラウザに露出させたくない**ため。
-    `/api/auth/*` を Vercel の rewrites でサーバ側から API へ転送し、ブラウザにはフロントのドメインだけ見せる。
-    結果として CORS / cross-subdomain cookie 共有が不要になり構成も単純化。
-  - Vercel: `ENABLE_AUTH_REWRITES=true`, `API_URL=https://api.faveo-systema.net/girls-side-analysis`,
-    `NEXT_PUBLIC_AUTH_BASE_URL`=**空**（相対パスで same-origin に叩かせる）
-  - server-ts: `BETTER_AUTH_SECRET`（dev とは別の新規生成値）, `BETTER_AUTH_URL=https://girls-side-analysis.faveo-systema.net`（=フロント origin。OAuth callback もこのドメイン経由になり API URL を秘匿）, `TWITTER_CLIENT_ID`, `TWITTER_CLIENT_SECRET`。`AUTH_COOKIE_DOMAIN` は**未設定**（same-origin なので host-only cookie で足りる）
-  - X Developer Portal: Callback URL = `https://girls-side-analysis.faveo-systema.net/api/auth/callback/twitter`（フロント側ドメイン）
-  - ⚠️ `NEXT_PUBLIC_*` / `API_URL` / `ENABLE_AUTH_REWRITES` は **ビルド時に焼き込まれる**ため、Vercel では値を設定後に**再デプロイ**が必要
-- [x] **26.** `server-ts/Dockerfile.server.prod` のビルド → deploy — **GitHub Actions（Linux/amd64）でビルドし GHCR に push する方式で解決**
-  - libuv assertion failure（exit 134）は arm64 Mac のローカル build 固有の問題。GH Actions の amd64 native runner でビルドすることで回避（手動 workflow `build-push.yml`、`ghcr.io/daiius/girls-side-analysis-server`）
-- [x] **27.** デプロイ後の動作確認: Twitter ログイン → `/profile` まで疎通確認（2026-05-22）
-  - ※ 投票 → 反映までの本番 end-to-end は最終確認を推奨（"多分一件落着" の段階）
+- [x] 本番 DB へスキーマ反映（user/session/account/verification の純粋追加のみ、既存テーブル DDL 変更なし）
+- [x] 本番環境変数を差し替え（**same-origin リバースプロキシ方式**を採用。`/api/auth/*` をフロント側 rewrites で API へ転送し、ブラウザにはフロントのドメインだけ見せる＝CORS / cross-subdomain cookie 共有が不要、API URL も秘匿できる）
+- [x] server イメージのビルド → デプロイ
+- [x] デプロイ後の動作確認: Twitter ログイン → `/profile` まで疎通確認
 
-### 本番デプロイで判明したトラブルと解消（2026-05-22）
-
-順に踏んだ落とし穴の記録（再発防止）：
-
-1. **GHCR push が 403 Forbidden** — ビルドは成功するが push 段階で失敗。原因はパッケージへの
-   **リポジトリ Actions access 未付与**。`permissions: packages: write` だけでは不足で、
-   パッケージ設定の「Manage Actions access」にリポジトリを Write で追加して解決。
-2. **nginx の変数 `proxy_pass` で location prefix が剥がれず 404** — `set $upstream ...; proxy_pass $upstream;`
-   の変数形式では nginx の自動 prefix 置換が無効になり、`/girls-side-analysis/analysis` がそのまま
-   サーバへ渡って 404。静的 `proxy_pass http://...:3000/;`（または `rewrite ... break;`）で prefix を剥がして解決。
-3. **ログインで `/api/auth/sign-in/social` が 404** — `NEXT_PUBLIC_AUTH_BASE_URL` 空のまま rewrites も無効で、
-   ブラウザがフロント相対パスを叩いて 404。same-origin プロキシ方式（項目25）で確定。
-4. **`please_restart_the_process`（OAuth コールバック失敗）の真因は DB 権限不足** — better-auth が
-   `verification` の期限切れ行を掃除する `DELETE` を実行するが、本番 DB ユーザー `girls-side-analysis-user`
-   に **DELETE 権限が無く** `ER_TABLEACCESS_DENIED_ERROR (1142)`。`GRANT SELECT,INSERT,UPDATE,DELETE ON
-   girls_side_analysis.* TO ...` で付与。
-   - ⚠️ **DB 単位の権限変更は既存接続（コネクションプール）が次の `USE` まで拾わない**。`SHOW GRANTS` に
-     DELETE が出てもアプリが 1142 を出し続けたため、**database コンテナを再起動**して接続を張り直したら解消。
+> 本番環境の固有情報（ドメイン・ホスト名・インフラ構成・運用トラブルの詳細）は public リポには記載しない方針のため省略。
 
 ### 保留中の課題
 
-- ~~**Docker build の libuv assertion failure**~~ → **解決**。arm64 Mac ローカル build 固有の問題で、GitHub Actions（amd64 Linux runner）でビルドし GHCR に push する方式に切り替えて回避（`build-push.yml`）。
 - **next side の Phase 4-23 (revalidatePath)**: 元コードでもコメントアウトされていた処理。better-auth 移行と直接関係ないため保留。
 - **next/.env.production の MYSQL_***: next 側から直接 DB アクセスしない設計なので、削除候補。本ブランチでは触らず保留。
-- **本番 投票 → 反映の end-to-end 最終確認**: ログイン疎通までは確認済み。投票送信→トップ/キャラページ反映までの本番動作は念のため最終確認を推奨。
 
-## 依存更新・開発環境刷新・日本語URL本番500対応（2026-05-24, main マージ済み）
+## 依存更新・開発環境刷新・next バージョン対応（2026-05-24, main マージ済み）
 
 better-auth 移行とは別軸の作業。`update/deps-2026-05` → PR #64、`fix/charaname-cache-tags` → PR #65 でいずれも main にマージ済み。
 
@@ -213,13 +183,11 @@ better-auth 移行とは別軸の作業。`update/deps-2026-05` → PR #64、`fi
 - `.dockerignore`: root コンテキストの next ビルドを壊していた `next/` 除外を撤去（隠れた不具合）。
 - `server-ts/Dockerfile.server.prod`: catalog 解決に必要な `pnpm-workspace.yaml` を COPY していなかったため GHCR ビルドが `ERR_PNPM_CATALOG_ENTRY_NOT_FOUND` で失敗 → workspace レイアウトに整合させて修正。
 
-### 日本語URLのキャラページが本番で500（PR #65）
-- 症状: `/氷室零一` 等が Vercel で `TypeError: Invalid character in header content ["x-next-cache-tags"] (ERR_INVALID_CHAR)`。トップは無事。
-- 原因: 静的/ISR ページ応答に付く `x-next-cache-tags` ヘッダにルートのパス名（非ASCII）が入り、Vercel ランタイムが Latin1 外を弾く。**Vercel minimal mode 限定**で self-hosted の `next start` では再現しない（ローカル本番ビルドは 200）。next 16.1.1→16.2.6 の回帰。
-- upstream: issue vercel/next.js#92145、修正 PR vercel/next.js#93601（タグ生成時にエンコード）。**ただし 16.2.6 は同 PR マージの約4時間前に公開された未修正版**で、修正は 16.3.0-canary 系のみ。
-- セキュリティ制約: 16.2.6 / 15.5.18 は 2026年5月の 13 CVE セキュリティリリース（SSRF 等）。**16.2.6 未満へのダウングレード不可**。
-- 対応: `next` を **`16.3.0-canary.24`** にピン（修正含む / `minimumReleaseAge` を満たす公開3日以上の版）。`force-static` + `revalidatePath` の既存設計を維持したまま日本語 URL を扱える。React 19.2.6 は据え置き（peer 充足）。
-- フォールバック: 動的レンダリング版（`connection()` 化）を `fix/charaname-dynamic-fallback` ブランチ（コミット `efc352a`）に保全。Vercel で動作確認済み。
+### next のバージョン対応（PR #65）
+- 日本語を含む動的ルートで、Next.js が静的/ISR 応答に付ける `x-next-cache-tags` ヘッダに非ASCIIパス名が入り `ERR_INVALID_CHAR` になる既知の upstream バグ（issue vercel/next.js#92145、修正 PR #93601 でタグを生成時エンコード）。16.1.1→16.2.6 の回帰で、修正は同 PR マージ後の 16.3.0-canary 系のみに存在。
+- セキュリティ制約: 16.2.6 / 15.5.18 は 2026年5月の 13 CVE セキュリティリリースのため、16.2.6 未満へのダウングレード不可。
+- 対応: `next` を `16.3.0-canary.24` にピン（修正含む / `minimumReleaseAge` を満たす公開3日以上の版）。`force-static` + `revalidatePath` の既存設計を維持したまま日本語 URL を扱える。React 19.2.6 据え置き（peer 充足）。
+- フォールバック: 動的レンダリング版（`connection()`）を `fix/charaname-dynamic-fallback` ブランチに保全。
 
 ### フォローアップ
 - **修正入りの安定版（16.2.7 backport もしくは 16.3.0）が出たら canary から戻す**。issue #92145 / PR #93601 をウォッチ。
