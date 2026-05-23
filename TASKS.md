@@ -195,6 +195,38 @@ better-auth 公式の MySQL スキーマに準ずる。`@better-auth/cli generat
 - **next/.env.production の MYSQL_***: next 側から直接 DB アクセスしない設計なので、削除候補。本ブランチでは触らず保留。
 - **本番 投票 → 反映の end-to-end 最終確認**: ログイン疎通までは確認済み。投票送信→トップ/キャラページ反映までの本番動作は念のため最終確認を推奨。
 
+## 依存更新・開発環境刷新・日本語URL本番500対応（2026-05-24, main マージ済み）
+
+better-auth 移行とは別軸の作業。`update/deps-2026-05` → PR #64、`fix/charaname-cache-tags` → PR #65 でいずれも main にマージ済み。
+
+### 依存更新（PR #64）
+- server-ts: hono / @hono/* / mysql2 / zod / esbuild 等を最新化。**pnpm catalog 導入**（`better-auth` / `luxon` / `@types/luxon` / `@types/node` / `tsx` / `typescript` を `pnpm-workspace.yaml` で一元管理）。
+- next: 16.2.6 へ。@dnd-kit: core `^6.3.1` / modifiers v9 / sortable v10（DnD 動作確認済み）。
+- サプライチェーン対策で `minimumReleaseAge: 4320`（3日）を設定。公開直後の版はインストールがブロックされる。
+
+### 開発環境刷新（PR #64）
+- **`docker compose watch` へ移行**: bind mount + 匿名 volume を撤廃。virtiofs のイベント取りこぼしが無くなり HMR 安定、FS もコンテナネイティブで高速、匿名 volume によるディスク肥大も解消。
+- Dockerfile（next/server）: ソース焼き込み + `corepack` + pnpm store の BuildKit cache mount + `--frozen-lockfile`。
+- **開発 DB を named volume で永続化**し one-shot seed サービスを廃止。スキーマ反映/初期データは `pnpm db:migrate` / `pnpm db:seed`（コンテナ内 exec、`DB_HOST=database`）に分離。seed（`addTestData.ts`）に**冪等化ガード**（既存データがあればスキップ）。
+- npm スクリプト: `dev`(watch) / `stop` / `down` / `db:migrate` / `db:seed`。
+- compose ファイルを **`compose.yaml` 命名規約**へ統一し、不整合だった `docker-compose.prod.yml` を削除。
+- `.dockerignore`: root コンテキストの next ビルドを壊していた `next/` 除外を撤去（隠れた不具合）。
+- `server-ts/Dockerfile.server.prod`: catalog 解決に必要な `pnpm-workspace.yaml` を COPY していなかったため GHCR ビルドが `ERR_PNPM_CATALOG_ENTRY_NOT_FOUND` で失敗 → workspace レイアウトに整合させて修正。
+
+### 日本語URLのキャラページが本番で500（PR #65）
+- 症状: `/氷室零一` 等が Vercel で `TypeError: Invalid character in header content ["x-next-cache-tags"] (ERR_INVALID_CHAR)`。トップは無事。
+- 原因: 静的/ISR ページ応答に付く `x-next-cache-tags` ヘッダにルートのパス名（非ASCII）が入り、Vercel ランタイムが Latin1 外を弾く。**Vercel minimal mode 限定**で self-hosted の `next start` では再現しない（ローカル本番ビルドは 200）。next 16.1.1→16.2.6 の回帰。
+- upstream: issue vercel/next.js#92145、修正 PR vercel/next.js#93601（タグ生成時にエンコード）。**ただし 16.2.6 は同 PR マージの約4時間前に公開された未修正版**で、修正は 16.3.0-canary 系のみ。
+- セキュリティ制約: 16.2.6 / 15.5.18 は 2026年5月の 13 CVE セキュリティリリース（SSRF 等）。**16.2.6 未満へのダウングレード不可**。
+- 対応: `next` を **`16.3.0-canary.24`** にピン（修正含む / `minimumReleaseAge` を満たす公開3日以上の版）。`force-static` + `revalidatePath` の既存設計を維持したまま日本語 URL を扱える。React 19.2.6 は据え置き（peer 充足）。
+- フォールバック: 動的レンダリング版（`connection()` 化）を `fix/charaname-dynamic-fallback` ブランチ（コミット `efc352a`）に保全。Vercel で動作確認済み。
+
+### フォローアップ
+- **修正入りの安定版（16.2.7 backport もしくは 16.3.0）が出たら canary から戻す**。issue #92145 / PR #93601 をウォッチ。
+- canary を上げる際は `minimumReleaseAge`（3日）に合わせ公開3日以上の版にピンする。
+- 安定版へ戻したら `fix/charaname-dynamic-fallback` ブランチは削除可。
+- `compose.override.yaml`（server ポート公開リセット）は未追跡・ローカル専用のまま。
+
 ## 設計上の保留事項
 
 - ~~**cookie domain**~~ → **確定**。same-origin リバースプロキシ方式を採用したため `AUTH_COOKIE_DOMAIN` は未設定（host-only cookie）。cross-subdomain 共有も `Set-Cookie` の Domain 書き換えも不要になった。
