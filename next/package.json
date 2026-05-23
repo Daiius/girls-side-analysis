@@ -17,11 +17,11 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
-    "better-auth": "^1.6.11",
+    "better-auth": "catalog:",
     "chart.js": "^4.4.6",
     "clsx": "^2.1.1",
     "debug": "^4.4.1",
-    "luxon": "^3.6.1",
+    "luxon": "catalog:",
     "next": "16.1.1",
     "react": "19.2.1",
     "react-dom": "19.2.1"
@@ -30,13 +30,13 @@
     "@daiius/girls-side-analysis-server-ts": "workspace:*",
     "@tailwindcss/postcss": "^4.1.7",
     "@types/debug": "^4.1.12",
-    "@types/luxon": "^3.6.2",
-    "@types/node": "^24.2.0",
+    "@types/luxon": "catalog:",
+    "@types/node": "catalog:",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.1.7",
-    "tsx": "^4.19.4",
-    "typescript": "^5.8.3"
+    "tsx": "catalog:",
+    "typescript": "catalog:"
   }
 }

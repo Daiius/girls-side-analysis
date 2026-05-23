@@ -1,6 +1,15 @@
 packages:
   - 'next'
   - 'server-ts'
+# next / server-ts で共通利用する依存はここでバージョンを一元管理する。
+# 各 package.json では "catalog:" と記述して参照する。
+catalog:
+  better-auth: ^1.6.11
+  luxon: ^3.7.2
+  '@types/luxon': ^3.7.1
+  '@types/node': ^24.12.4
+  tsx: ^4.22.3
+  typescript: ^6.0.3
 onlyBuiltDependencies:
   - '@tailwindcss/oxide'
   - esbuild
