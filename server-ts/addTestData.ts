@@ -8,6 +8,9 @@ import {
 
 import { drizzle } from 'drizzle-orm/mysql2';
 import { createConnection } from 'mysql2/promise';
+import { DateTime } from 'luxon';
+
+import { aggregateOshiCountForDate } from './src/lib/aggregate';
 
 const client = await createConnection({
   host: process.env.DB_HOST,
@@ -201,6 +204,18 @@ await db.insert(latestVotes).values([
   { twitterID: 'testID3', votedDate: '2023-12-01', characterName: '紺野玉緒', level: 2 },
   { twitterID: 'testID3', votedDate: '2023-12-01', characterName: '氷上格', level: 1 },
 ]);
+
+// DailyOshiCount: 過去日分の pair 集計を backfill する。
+// 本番では夜間 cron が日々積み上げるが、seed では固定日範囲をまとめて生成し、
+// getTimelineData（過去日は DailyOshiCount 参照）の開発/テストを成立させる。
+{
+  let d = DateTime.fromISO('2023-12-01');
+  const backfillEnd = DateTime.fromISO('2024-01-04');
+  while (d <= backfillEnd) {
+    await aggregateOshiCountForDate(db, d.toISODate()!);
+    d = d.plus({ days: 1 });
+  }
+}
 
 await client.end();
 

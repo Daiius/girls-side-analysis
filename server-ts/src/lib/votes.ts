@@ -1,10 +1,10 @@
 'use server'
 
 import { db } from '../db';
-import { votes, latestVotes, characters } from '../db/schema';
+import { votes, latestVotes, dailyOshiCount, characters } from '../db/schema';
 import {
   eq, ne, exists, and, max, count, desc, asc,
-  lte
+  lte, lt, gte
 } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/mysql-core';
 
@@ -230,26 +230,55 @@ export const getLatestVotesForAnalysisAll = async () => {
 };
 
 /**
- * 特定のキャラについて、30日間分の関連キャラ投票数を取得します
+ * 特定のキャラについて、30日間分の関連キャラ投票数を取得します。
  *
- * NOTE: かなり重い処理です、1分に1回呼び出すのもちょっとまずいレベルです
- * 以前はトップページで全キャラ分のグラフも出していましたが、
- * 数秒間サーバのCPU使用率が200%（2コア分）になるのでやめました
- * 単一キャラ向けでもそれなりの負荷になります
+ * 過去日（〜昨日）は夜間 cron が作った DailyOshiCount を一括 SELECT し、
+ * 今日分だけ LatestVotes 集計で補う。
+ * 旧実装の「全 Votes 走査を 30 回」を、軽い 2 クエリに置き換えている。
  */
 export const getTimelineData = async (characterName: string) => {
   const today = DateTime.now().endOf('day');
   const ndays = 30;
-  
-  // 累積データを見て表示するキャラ名を判断するので
-  // 一度時系列データをすべて変数に保存する
-  const dataBuffer = await Promise.all(
-    [...Array(ndays)]
-      .map((_, iday) => today.minus({ 'day': ndays-iday-1 })) // DateTimeへ
-      .map(async date => await getVotesRelatedToOshi(
-        characterName, date.toISODate() ?? undefined
-      ))
-  );
+
+  // 表示する 30 日分の DateTime（古い順）
+  const days = [...Array(ndays)]
+    .map((_, iday) => today.minus({ 'day': ndays - iday - 1 }));
+  const todayISO = today.toISODate()!;
+  const startISO = days[0].toISODate()!;
+
+  // 過去日（〜昨日）の pair 集計を DailyOshiCount から一括取得
+  const pastRows = await db
+    .select({
+      snapshotDate: dailyOshiCount.snapshotDate,
+      characterName: dailyOshiCount.relatedChara,
+      count: dailyOshiCount.count,
+    })
+    .from(dailyOshiCount)
+    .where(
+      and(
+        eq(dailyOshiCount.oshi, characterName),
+        gte(dailyOshiCount.snapshotDate, startISO),
+        lt(dailyOshiCount.snapshotDate, todayISO),
+      )
+    )
+    .orderBy(asc(dailyOshiCount.snapshotDate), desc(dailyOshiCount.count));
+
+  // snapshot_date -> [{ characterName, count }]
+  const byDate = new Map<string, { characterName: string; count: number }[]>();
+  for (const row of pastRows) {
+    const arr = byDate.get(row.snapshotDate) ?? [];
+    arr.push({ characterName: row.characterName, count: row.count });
+    byDate.set(row.snapshotDate, arr);
+  }
+
+  // 今日分は LatestVotes 集計で補う（DailyOshiCount は過去日のみ）
+  const todayData = await getCurrentVotesRelatedToOshi(characterName);
+
+  // 旧実装と同じく日ごとの配列に整える
+  const dataBuffer = days.map(day => {
+    const iso = day.toISODate()!;
+    return iso === todayISO ? todayData : (byDate.get(iso) ?? []);
+  });
 
   // データに含まれるキャラ名を重複なく取得する
   const allRelatedCharacters = [...new Set(
@@ -264,8 +293,7 @@ export const getTimelineData = async (characterName: string) => {
       label: character,
       data:
         dataBuffer.map((periodicData, iperiodicData) => {
-          const x: string = today
-            .minus({ 'day': ndays - iperiodicData - 1})
+          const x: string = days[iperiodicData]
             .setLocale('ja')
             .toLocaleString();
           const characterData = periodicData.find(d =>
