@@ -534,18 +534,18 @@ pnpm add -D vitest -F <server-ts のパッケージ名>
 
 順番に消化していく：
 
-- [ ] **1.** vitest を server-ts に導入、`pnpm test` で実行できるよう設定
-- [ ] **2.** addTestData.ts の決定性確認（必要なら調整）
-- [ ] **3.** 現状ロジックに対する snapshot test を作成・コミット（votes.ts, users.ts）
-- [ ] **4.** schema.ts に LatestVotes / DailyOshiCount 追加、Votes / UserStates を date 化（`date`/`int` import 追加）
-- [ ] **5.** `getLatestVotes` を LatestVotes ベースに書き換え
-- [ ] **6.** `getLatestUserState` を新スキーマ（recorded_date）に合わせて書き換え
-- [ ] **7.** `insertVotesIfUpdated` の書き込みフロー実装（Votes + LatestVotes 同時更新、`isSameSet` ヘルパ抽出）
-- [ ] **8.** `insertUserStatesIfUpdated` の書き込みフロー実装
-- [ ] **9.** `getLatestVotesForAnalysis` / `getLatestVotesForAnalysisAll` を LatestVotes 集計に書き換え（Next.js 側の read も確認）
-- [ ] **10.** `getTimelineData` を DailyOshiCount + 今日分 LatestVotes 集計に書き換え
-- [ ] **11.** `aggregateYesterday`（aggregate.ts）+ node-cron スケジュール（index.ts）+ 手動 endpoint（app.ts）実装
-- [ ] **12.** snapshot test 再実行、diff レビュー、必要なら snapshot 更新
+- [x] **1.** vitest を server-ts に導入、`pnpm test` で実行できるよう設定
+- [x] **2.** addTestData.ts の決定性確認（`TEST_TWITTER_ID` 固定で対応）
+- [x] **3.** 現状ロジックに対する snapshot test を作成・コミット（votes.ts, users.ts）
+- [x] **4.** schema.ts に LatestVotes / DailyOshiCount 追加、Votes / UserStates を date 化
+- [x] **5.** `getLatestVotes` を LatestVotes ベースに書き換え
+- [x] **6.** `getLatestUserState` を新スキーマ（recorded_date）に合わせて書き換え（MAX 維持。LatestUserStates は設計外）
+- [x] **7.** `insertVotesIfUpdated` の書き込みフロー実装（Votes + LatestVotes 1 トランザクション）
+- [x] **8.** `insertUserStatesIfUpdated` の書き込みフロー実装（recorded_date 付与）
+- [x] **9.** `getCurrentVotesRelatedToOshi` 新設、`getLatestVotesForAnalysis` / `All` を LatestVotes 集計へ（API レスポンス型不変のため Next.js 側変更なし）
+- [x] **10.** `getTimelineData` を DailyOshiCount + 今日分 LatestVotes 集計に書き換え
+- [x] **11.** `aggregateOshiCountForDate` / `aggregateYesterday`（aggregate.ts）+ node-cron スケジュール（index.ts）+ 手動 endpoint（app.ts）実装
+- [x] **12.** snapshot test 再実行・diff レビュー（baseline 12件すべて不変＝挙動保存を確認）
 - [ ] **13.** 本番マイグレーション SQL スクリプト作成（`migrate.sql`、Phase 1/2/2.5）
 - [ ] **14.** DailyOshiCount backfill スクリプト作成（`backfillDailyOshiCount.ts`）
 - [ ] **15.** ローカルで本番データドライラン、所要時間計測
@@ -553,6 +553,13 @@ pnpm add -D vitest -F <server-ts のパッケージ名>
 - [ ] **17.** 本番デプロイ実行
 - [ ] **18.** 動作確認 + メンテ解除
 - [ ] **19.** 翌日 cron 動作確認
+
+> 補足（実装で確定した設計判断）：
+> - 書き込みフローの専用テスト（insertVotesIfUpdated/insertUserStatesIfUpdated）は、
+>   globalSetup が seed を 1 回だけ流す都合で他テストへの DB 汚染リスクがあるため未追加。
+>   トランザクション rollback で分離した write テストを別途追加するのが follow-up。
+> - 集計は LatestVotes ではなく **Votes の「as-of date 最新 set」** から計算する方式に統一
+>   （cron も backfill も同じ `aggregateOshiCountForDate` を再利用でき、歯抜け・catch-up に強い）。
 
 ## 用語・前提
 
