@@ -33,6 +33,7 @@ export const getVotesRelatedToOshi = async (
       count: count(t1.characterName),
     })
     .from(t1)
+    .innerJoin(characters, eq(t1.characterName, characters.name))
     .where(
       and (
         // 推しキャラに関連するVotesを取り出す操作
@@ -64,9 +65,13 @@ export const getVotesRelatedToOshi = async (
       )
     )
 
-    .groupBy(t1.characterName)
-    // count 同値時の順序を安定させるため characterName を副次キーにする
-    .orderBy(desc(count(t1.characterName)), asc(t1.characterName));
+    .groupBy(t1.characterName, characters.series, characters.sort)
+    // count 同値時は公式順（series, sort）で安定させる
+    .orderBy(
+      desc(count(t1.characterName)),
+      asc(characters.series),
+      asc(characters.sort),
+    );
 
 };
 
@@ -87,15 +92,20 @@ export const getCurrentVotesRelatedToOshi = async (oshi: string) => {
     })
     .from(l1)
     .innerJoin(l2, eq(l1.twitterID, l2.twitterID))
+    .innerJoin(characters, eq(l1.characterName, characters.name))
     .where(
       and(
         eq(l2.characterName, oshi),
         ne(l1.characterName, oshi),
       )
     )
-    .groupBy(l1.characterName)
-    // count 同値時の順序を安定させるため characterName を副次キーにする
-    .orderBy(desc(count(l1.characterName)), asc(l1.characterName));
+    .groupBy(l1.characterName, characters.series, characters.sort)
+    // count 同値時は公式順（series, sort）で安定させる
+    .orderBy(
+      desc(count(l1.characterName)),
+      asc(characters.series),
+      asc(characters.sort),
+    );
 };
 
 /**
@@ -109,9 +119,10 @@ export const getLatestVotes = async (twitterID: string) => {
       level: latestVotes.level,
     })
     .from(latestVotes)
+    .innerJoin(characters, eq(latestVotes.characterName, characters.name))
     .where(eq(latestVotes.twitterID, twitterID))
-    // level 同値時の順序を安定させるため characterName を副次キーにする
-    .orderBy(asc(latestVotes.level), asc(latestVotes.characterName));
+    // level 同値時は公式順（series, sort）で安定させる
+    .orderBy(asc(latestVotes.level), asc(characters.series), asc(characters.sort));
 };
 
 export const insertVotesIfUpdated = async ({
@@ -288,9 +299,8 @@ export const getTimelineData = async (characterName: string) => {
     return iso === todayISO ? todayData : (byDate.get(iso) ?? []);
   });
 
-  // データに含まれるキャラ名を重複なく取得する。
   // 凡例順・色割当をリクエスト間で安定させるため、
-  // 窓内の合計票数（降順）→ 名前（昇順）で決定的に並べる。
+  // 窓内の合計票数（降順）→ 公式順（series, sort）で決定的に並べる。
   const totalByCharacter = new Map<string, number>();
   for (const periodicData of dataBuffer) {
     for (const d of periodicData) {
@@ -300,10 +310,16 @@ export const getTimelineData = async (characterName: string) => {
       );
     }
   }
+  // 公式順（series, sort）のインデックスを引くためのマップ
+  const officialOrder = await db
+    .select({ name: characters.name })
+    .from(characters)
+    .orderBy(asc(characters.series), asc(characters.sort));
+  const officialRank = new Map(officialOrder.map((c, i) => [c.name, i]));
   const allRelatedCharacters = [...totalByCharacter.keys()]
     .sort((a, b) =>
       (totalByCharacter.get(b)! - totalByCharacter.get(a)!)
-      || a.localeCompare(b)
+      || ((officialRank.get(a) ?? Infinity) - (officialRank.get(b) ?? Infinity))
     );
 
   // キャラ毎の推移
