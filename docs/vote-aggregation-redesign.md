@@ -541,7 +541,7 @@ pnpm add -D vitest -F <server-ts のパッケージ名>
 - [x] **5.** `getLatestVotes` を LatestVotes ベースに書き換え
 - [x] **6.** `getLatestUserState` を新スキーマ（recorded_date）に合わせて書き換え（MAX 維持。LatestUserStates は設計外）
 - [x] **7.** `insertVotesIfUpdated` の書き込みフロー実装（Votes + LatestVotes 1 トランザクション）
-- [x] **8.** `insertUserStatesIfUpdated` の書き込みフロー実装（recorded_date 付与）
+- [x] **8.** `insertUserStatesIfUpdated` の書き込みフロー実装（recorded_date 付与 + 当日分の DELETE+INSERT。date 化で生じる同日再更新の PK 衝突を回避。回帰テスト有り）
 - [x] **9.** `getCurrentVotesRelatedToOshi` 新設、`getLatestVotesForAnalysis` / `All` を LatestVotes 集計へ（API レスポンス型不変のため Next.js 側変更なし）
 - [x] **10.** `getTimelineData` を DailyOshiCount + 今日分 LatestVotes 集計に書き換え
 - [x] **11.** `aggregateOshiCountForDate` / `aggregateYesterday`（aggregate.ts）+ node-cron スケジュール（index.ts）+ 手動 endpoint（app.ts）実装
