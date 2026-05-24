@@ -6,7 +6,9 @@
     "build": "tsx esbuild.config.ts",
     "start": "node dist/index.js",
     "db:migrate": "drizzle-kit push --force --dialect=mysql --schema=src/db/schema.ts --host=$DB_HOST --user=$MYSQL_USER --password=$MYSQL_PASSWORD --database=$MYSQL_DATABASE",
-    "db:seed": "tsx addTestData.ts"
+    "db:seed": "tsx addTestData.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "exports": {
     ".": {
@@ -32,6 +34,7 @@
     "drizzle-kit": "1.0.0-rc.3",
     "esbuild": "^0.28.0",
     "tsx": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "^4.1.7"
   }
 }

@@ -1,0 +1,222 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`votes.ts（現状ロジックの baseline snapshot） > getLatestVotes > testID の最新投票 1`] = `
+[
+  {
+    "characterName": "柊夜ノ介",
+    "level": 2,
+  },
+  {
+    "characterName": "氷上格",
+    "level": 1,
+  },
+]
+`;
+
+exports[`votes.ts（現状ロジックの baseline snapshot） > getLatestVotes > testID2 の最新投票 1`] = `
+[
+  {
+    "characterName": "柊夜ノ介",
+    "level": 2,
+  },
+  {
+    "characterName": "氷上格",
+    "level": 1,
+  },
+]
+`;
+
+exports[`votes.ts（現状ロジックの baseline snapshot） > getLatestVotes > testID3 の最新投票 1`] = `
+[
+  {
+    "characterName": "氷上格",
+    "level": 1,
+  },
+  {
+    "characterName": "紺野玉緒",
+    "level": 2,
+  },
+]
+`;
+
+exports[`votes.ts（現状ロジックの baseline snapshot） > getLatestVotesForAnalysis > 柊夜ノ介 1`] = `
+{
+  "氷上格": 2,
+}
+`;
+
+exports[`votes.ts（現状ロジックの baseline snapshot） > getLatestVotesForAnalysisAll > 全キャラ集計 1`] = `
+{
+  "柊夜ノ介": {
+    "氷上格": 2,
+  },
+  "氷上格": {
+    "柊夜ノ介": 2,
+    "紺野玉緒": 1,
+  },
+  "紺野玉緒": {
+    "氷上格": 1,
+  },
+}
+`;
+
+exports[`votes.ts（現状ロジックの baseline snapshot） > getTimelineData > 柊夜ノ介（30日） 1`] = `
+[
+  {
+    "data": [
+      {
+        "x": "2023/12/7",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/8",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/9",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/10",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/11",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/12",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/13",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/14",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/15",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/16",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/17",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/18",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/19",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/20",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/21",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/22",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/23",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/24",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/25",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/26",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/27",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/28",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/29",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/30",
+        "y": 1,
+      },
+      {
+        "x": "2023/12/31",
+        "y": 1,
+      },
+      {
+        "x": "2024/1/1",
+        "y": 2,
+      },
+      {
+        "x": "2024/1/2",
+        "y": 2,
+      },
+      {
+        "x": "2024/1/3",
+        "y": 2,
+      },
+      {
+        "x": "2024/1/4",
+        "y": 2,
+      },
+      {
+        "x": "2024/1/5",
+        "y": 2,
+      },
+    ],
+    "label": "氷上格",
+  },
+]
+`;
+
+exports[`votes.ts（現状ロジックの baseline snapshot） > getVotesRelatedToOshi > 柊夜ノ介 1`] = `
+[
+  {
+    "characterName": "氷上格",
+    "count": 2,
+  },
+]
+`;
+
+exports[`votes.ts（現状ロジックの baseline snapshot） > getVotesRelatedToOshi > 氷上格 1`] = `
+[
+  {
+    "characterName": "柊夜ノ介",
+    "count": 2,
+  },
+  {
+    "characterName": "紺野玉緒",
+    "count": 1,
+  },
+]
+`;
+
+exports[`votes.ts（現状ロジックの baseline snapshot） > getVotesRelatedToOshi > 紺野玉緒 1`] = `
+[
+  {
+    "characterName": "氷上格",
+    "count": 1,
+  },
+]
+`;

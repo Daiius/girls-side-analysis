@@ -8,7 +8,8 @@
     "stop": "docker compose stop",
     "down": "docker compose down",
     "db:migrate": "docker compose exec server pnpm db:migrate",
-    "db:seed": "docker compose exec server pnpm db:seed"
+    "db:seed": "docker compose exec server pnpm db:seed",
+    "test": "docker compose exec server pnpm test"
   }
 }
 
