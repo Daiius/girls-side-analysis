@@ -3,3 +3,7 @@
 
 /node_modules
 
+*.sql.gz
+*.sql
+
+*.override.yaml
