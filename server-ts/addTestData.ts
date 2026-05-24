@@ -107,36 +107,36 @@ await db.insert(userStatesMaster).values([
 await db.transaction(async (_tx) =>{
   // GS4を初プレイしたtestIDさん
   const twitterID = 'testID';
-  const recordedTime = new Date('2023/09/21 00:00:00'); 
+  const recordedDate = '2023-09-21';
   await db.insert(userStates).values([
-    { twitterID, recordedTime, series: 1, status: '未プレイ' }, 
-    { twitterID, recordedTime, series: 2, status: '未プレイ' }, 
-    { twitterID, recordedTime, series: 3, status: '未プレイ' }, 
-    { twitterID, recordedTime, series: 4, status: 'プレイ済み' }, 
+    { twitterID, recordedDate, series: 1, status: '未プレイ' },
+    { twitterID, recordedDate, series: 2, status: '未プレイ' },
+    { twitterID, recordedDate, series: 3, status: '未プレイ' },
+    { twitterID, recordedDate, series: 4, status: 'プレイ済み' },
   ]);
 });
 
 await db.transaction(async (_tx) => {
   // 年が変わるまでに一通りプレイした記録を追加
   const twitterID = 'testID';
-  const recordedTime = new Date('2024/01/01 00:00:00'); 
+  const recordedDate = '2024-01-01';
   await db.insert(userStates).values([
-    { twitterID, recordedTime, series: 1, status: 'プレイ済み' }, 
-    { twitterID, recordedTime, series: 2, status: 'プレイ済み' }, 
-    { twitterID, recordedTime, series: 3, status: 'プレイ済み' }, 
-    { twitterID, recordedTime, series: 4, status: 'プレイ済み' }, 
+    { twitterID, recordedDate, series: 1, status: 'プレイ済み' },
+    { twitterID, recordedDate, series: 2, status: 'プレイ済み' },
+    { twitterID, recordedDate, series: 3, status: 'プレイ済み' },
+    { twitterID, recordedDate, series: 4, status: 'プレイ済み' },
   ]);
 });
 
 await db.transaction(async (_tx) => {
   // 以前から格ヤノ推しの人のプレイ記録
   const twitterID = process.env.TEST_TWITTER_ID ?? 'testID2';
-  const recordedTime = new Date('2023/05/31 00:00:00');
+  const recordedDate = '2023-05-31';
   await db.insert(userStates).values([
-    { twitterID, recordedTime, series: 1, status: '実況視聴' }, 
-    { twitterID, recordedTime, series: 2, status: 'プレイ済み' }, 
-    { twitterID, recordedTime, series: 3, status: '実況視聴' }, 
-    { twitterID, recordedTime, series: 4, status: 'プレイ済み' }, 
+    { twitterID, recordedDate, series: 1, status: '実況視聴' },
+    { twitterID, recordedDate, series: 2, status: 'プレイ済み' },
+    { twitterID, recordedDate, series: 3, status: '実況視聴' },
+    { twitterID, recordedDate, series: 4, status: 'プレイ済み' },
   ]);
 });
 
@@ -144,43 +144,43 @@ await db.insert(votes).values([
   // かつてヤノ単体推しだったある人が、
   {
     twitterID: 'testID',
-    votedTime: new Date('2023/09/21 00:00:00'),
+    votedDate: '2023-09-21',
     characterName: '柊夜ノ介',
     level: 1,
   },
   // GS2をプレイして格くん推しにもなった！
-  { 
-    twitterID: 'testID', 
-    votedTime: new Date('2024/01/01 00:00:00'), 
+  {
+    twitterID: 'testID',
+    votedDate: '2024-01-01',
     characterName: '氷上格',
     level: 1,
   }, {
     twitterID: 'testID',
-    votedTime: new Date('2024/01/01 00:00:00'),
+    votedDate: '2024-01-01',
     characterName: '柊夜ノ介',
     level: 2,
   },
   // ある人は登録した時にはすでにヤノくん&格くん推し
   {
     twitterID: process.env.TEST_TWITTER_ID ?? 'testID2',
-    votedTime: new Date('2023/05/31 00:00:00'),
+    votedDate: '2023-05-31',
     characterName: '柊夜ノ介',
     level: 2,
   }, {
     twitterID: process.env.TEST_TWITTER_ID ?? 'testID2',
-    votedTime: new Date('2023/05/31 00:00:00'),
+    votedDate: '2023-05-31',
     characterName: '氷上格',
     level: 1,
   },
   // 格くん推しには玉緒先輩推しもいらっしゃるらしい
   {
     twitterID: 'testID3',
-    votedTime: new Date('2023/12/01 00:00:00'),
+    votedDate: '2023-12-01',
     characterName: '紺野玉緒',
     level: 2,
   }, {
     twitterID: 'testID3',
-    votedTime: new Date('2023/12/01 00:00:00'),
+    votedDate: '2023-12-01',
     characterName: '氷上格',
     level: 1,
   },

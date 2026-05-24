@@ -23,7 +23,7 @@ import { DateTime } from 'luxon';
  */
 export const getVotesRelatedToOshi = async (
   oshi: string,
-  maxDate?: Date,
+  maxDate?: string,
 ) => {
   const t1 = alias(votes, 't1');
   const t2 = alias(votes, 't2');
@@ -42,16 +42,16 @@ export const getVotesRelatedToOshi = async (
             .where(
               and(
                 eq(t1.twitterID, t2.twitterID),
-                eq(t1.votedTime, t2.votedTime),
+                eq(t1.votedDate, t2.votedDate),
                 eq(t2.characterName, oshi),
               )
             )
         ),
         // 同じtwitterIDを持つVotesの中で、
-        // 最もvotedTimeが新しいものを取り出す操作
+        // 最もvotedDateが新しいものを取り出す操作
         eq(
-          t1.votedTime,
-          db.select({ latest_voted_time: max(t2.votedTime) })
+          t1.votedDate,
+          db.select({ latest_voted_date: max(t2.votedDate) })
             .from(t2)
             .where(
               eq(t1.twitterID, t2.twitterID)
@@ -59,8 +59,8 @@ export const getVotesRelatedToOshi = async (
         ),
         // 推しキャラ以外のVotesを取り出す操作
         ne(t1.characterName, oshi),
-        // maxDateが指定されている時、それ以前のデータに限定する操作
-        maxDate ? lte(t1.votedTime, maxDate) : undefined,
+        // maxDateが指定されている時、それ以前のデータに限定する操作（'YYYY-MM-DD'）
+        maxDate ? lte(t1.votedDate, maxDate) : undefined,
       )
     )
 
@@ -85,8 +85,8 @@ export const getLatestVotes = async (twitterID: string) => {
       and(
         eq(votes.twitterID, twitterID),
         eq(
-          votes.votedTime,
-          db.select({ max_voted_time: max(t1.votedTime) })
+          votes.votedDate,
+          db.select({ max_voted_date: max(t1.votedDate) })
             .from(t1)
             .where(eq(t1.twitterID, twitterID))
         )
@@ -115,10 +115,12 @@ export const insertVotesIfUpdated = async ({
        );
     if (!isSame) {
       // 以前と投票内容が異なるのでDB更新
+      const votedDate =
+        DateTime.now().setZone('Asia/Tokyo').toISODate()!;
       await db
         .insert(votes)
         .values(
-          data.map(d => ({ ...d, twitterID }))
+          data.map(d => ({ ...d, twitterID, votedDate }))
         );
       const currentCharaNames = data.map(vote => vote.characterName)
       const lastCharaNames = latestVotes.map(lv => lv.characterName)
@@ -209,7 +211,7 @@ export const getTimelineData = async (characterName: string) => {
     [...Array(ndays)]
       .map((_, iday) => today.minus({ 'day': ndays-iday-1 })) // DateTimeへ
       .map(async date => await getVotesRelatedToOshi(
-        characterName, date.toJSDate()
+        characterName, date.toISODate() ?? undefined
       ))
   );
 

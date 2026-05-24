@@ -2,6 +2,7 @@ import { db } from '../db';
 import { userStates, userStatesMaster } from '../db/schema';
 import { eq, max, and, asc } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/mysql-core';
+import { DateTime } from 'luxon';
 //import { revalidatePath } from 'next/cache';
 
 /**
@@ -19,8 +20,8 @@ export const getLatestUserState = async (twitterID: string) => {
       and(
         eq(userStates.twitterID, twitterID),
         eq(
-          userStates.recordedTime, 
-          db.select({ latest_recorded_time: max(t1.recordedTime) })
+          userStates.recordedDate,
+          db.select({ latest_recorded_date: max(t1.recordedDate) })
             .from(t1)
             .where(
               eq(t1.twitterID, twitterID)
@@ -64,11 +65,13 @@ export const insertUserStatesIfUpdated = async ({
     const gs4State = data.find(d => d.series === 4)?.state;
     if (gs1State && gs2State && gs3State && gs4State) {
       // 一通りのシリーズプレイ結果が記録されているとき
+      const recordedDate =
+        DateTime.now().setZone('Asia/Tokyo').toISODate()!;
       await db.insert(userStates).values([
-        { twitterID, series: 1, status: gs1State },
-        { twitterID, series: 2, status: gs2State },
-        { twitterID, series: 3, status: gs3State },
-        { twitterID, series: 4, status: gs4State },
+        { twitterID, recordedDate, series: 1, status: gs1State },
+        { twitterID, recordedDate, series: 2, status: gs2State },
+        { twitterID, recordedDate, series: 3, status: gs3State },
+        { twitterID, recordedDate, series: 4, status: gs4State },
       ]);
     }
   }
