@@ -1,8 +1,8 @@
 'use server'
 
 import { db } from '../db';
-import { votes, characters } from '../db/schema';
-import { 
+import { votes, latestVotes, characters } from '../db/schema';
+import {
   eq, ne, exists, and, max, count, desc, asc,
   lte
 } from 'drizzle-orm';
@@ -70,28 +70,45 @@ export const getVotesRelatedToOshi = async (
 };
 
 /**
- * 指定されたtwitterIDに紐づけられた投票のうち、
- * 最新のものを取得します
+ * 指定されたキャラと「現在」同時に推されているキャラのランキングを取得します。
+ *
+ * 現在の推し set は LatestVotes が保持しているため、全 Votes 走査+MAX サブクエリは不要。
+ * LatestVotes の self-join（同じ twitter_id 内）で oshi と共起するキャラを数えるだけ。
+ * getVotesRelatedToOshi(maxDate 無し) と同じ結果を、はるかに軽いクエリで返す。
  */
-export const getLatestVotes = async (twitterID: string) => {
-  const t1 = alias(votes, 't1');
+export const getCurrentVotesRelatedToOshi = async (oshi: string) => {
+  const l1 = alias(latestVotes, 'l1');
+  const l2 = alias(latestVotes, 'l2');
   return await db
     .select({
-      characterName: votes.characterName,
-      level: votes.level,
+      characterName: l1.characterName,
+      count: count(l1.characterName),
     })
-    .from(votes)
+    .from(l1)
+    .innerJoin(l2, eq(l1.twitterID, l2.twitterID))
     .where(
       and(
-        eq(votes.twitterID, twitterID),
-        eq(
-          votes.votedDate,
-          db.select({ max_voted_date: max(t1.votedDate) })
-            .from(t1)
-            .where(eq(t1.twitterID, twitterID))
-        )
+        eq(l2.characterName, oshi),
+        ne(l1.characterName, oshi),
       )
-    ).orderBy(asc(votes.level))
+    )
+    .groupBy(l1.characterName)
+    .orderBy(desc(count(l1.characterName)));
+};
+
+/**
+ * 指定されたtwitterIDの現在の推し（最新投票）を取得します。
+ * LatestVotes をそのまま引くだけ（MAX サブクエリ消滅）。
+ */
+export const getLatestVotes = async (twitterID: string) => {
+  return await db
+    .select({
+      characterName: latestVotes.characterName,
+      level: latestVotes.level,
+    })
+    .from(latestVotes)
+    .where(eq(latestVotes.twitterID, twitterID))
+    .orderBy(asc(latestVotes.level));
 };
 
 export const insertVotesIfUpdated = async ({
@@ -101,29 +118,48 @@ export const insertVotesIfUpdated = async ({
   twitterID: string;
   data: Vote[];
 }): Promise<{ updatedCharaNames: string[] }> => {
-  const latestVotes = await getLatestVotes(twitterID);
-  const isSame: boolean = 
+  const previousLatest = await getLatestVotes(twitterID);
+  const isSame: boolean =
     // 長さが異なればそもそも再投票の対象
-       latestVotes.length === data.length 
-    // 長さが同じだったとしても中身を比較する
+       previousLatest.length === data.length
+    // 長さが同じだったとしても中身（キャラ名・レベル）を比較する
     && data.every(d =>
-        latestVotes.some(lv =>
-          Object.keys(lv).every(key => 
-            d[key as keyof Vote] === lv[key as keyof Vote]
-          )
+        previousLatest.some(lv =>
+          lv.characterName === d.characterName && lv.level === d.level
         )
        );
     if (!isSame) {
-      // 以前と投票内容が異なるのでDB更新
+      // 以前と投票内容が異なるのでDB更新。
+      // Votes（履歴ログ）と LatestVotes（現在状態）を 1 トランザクションで更新する。
+      // per-user の DELETE + INSERT は行ロックで自然に直列化されるため GET_LOCK 不要。
       const votedDate =
         DateTime.now().setZone('Asia/Tokyo').toISODate()!;
-      await db
-        .insert(votes)
-        .values(
+      await db.transaction(async (tx) => {
+        // Votes: 当日分を置き換え（同日再投票に対応）
+        await tx.delete(votes).where(
+          and(
+            eq(votes.twitterID, twitterID),
+            eq(votes.votedDate, votedDate),
+          )
+        );
+        await tx.insert(votes).values(
           data.map(d => ({ ...d, twitterID, votedDate }))
         );
+        // LatestVotes: そのユーザ分を丸ごと置き換え
+        await tx.delete(latestVotes)
+          .where(eq(latestVotes.twitterID, twitterID));
+        await tx.insert(latestVotes).values(
+          data.map(d => ({
+            twitterID,
+            characterName: d.characterName,
+            level: d.level,
+            votedDate,
+          }))
+        );
+      });
+
       const currentCharaNames = data.map(vote => vote.characterName)
-      const lastCharaNames = latestVotes.map(lv => lv.characterName)
+      const lastCharaNames = previousLatest.map(lv => lv.characterName)
 
       // 削除されたキャラは、前の投票にはいるが今の投票にはいないキャラ
       const removedCharaNames = lastCharaNames.filter(lc => !currentCharaNames.includes(lc))
@@ -133,9 +169,9 @@ export const insertVotesIfUpdated = async ({
       // 2. 前の投票にいたキャラクター
       // の両方を含む必要がある
 
-      return { 
+      return {
         updatedCharaNames: [
-          ...data.map(vote => vote.characterName), 
+          ...currentCharaNames,
           ...removedCharaNames,
         ],
       }
@@ -152,7 +188,7 @@ export const insertVotesIfUpdated = async ({
  * この変更で動かなくなるコードを順次修正していきます......
  */
 export const getLatestVotesForAnalysis = async (charaName: string) => {
-  const oshiCombinationData = await getVotesRelatedToOshi(charaName);
+  const oshiCombinationData = await getCurrentVotesRelatedToOshi(charaName);
   const oshiCombinationDataDict = oshiCombinationData
     .map(ocd => ({ [ocd.characterName]: ocd.count }))
     .reduce((acc, curr) => ({ ...acc, ...curr }), {});
@@ -177,7 +213,7 @@ export const getLatestVotesForAnalysisAll = async () => {
   const dataPromise = allCharacters
     .map(async character => {
       const oshiCombinationData =
-        await getVotesRelatedToOshi(character.name);
+        await getCurrentVotesRelatedToOshi(character.name);
       const oshiCombinationDataDict = oshiCombinationData
         .map(ocd => ({ [ocd.characterName]: ocd.count }))
         .reduce((acc, curr) => ({ ...acc, ...curr }), {});

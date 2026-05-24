@@ -1,6 +1,7 @@
-import { 
-  characters, 
+import {
+  characters,
   votes,
+  latestVotes,
   userStatesMaster,
   userStates,
 } from './src/db/schema';
@@ -184,6 +185,21 @@ await db.insert(votes).values([
     characterName: '氷上格',
     level: 1,
   },
+]);
+
+// LatestVotes: 各ユーザの「現在の推し set」（= 上記 Votes の最新日分）。
+// 本番では投票時に維持されるが、seed では明示投入する。
+const testID2 = process.env.TEST_TWITTER_ID ?? 'testID2';
+await db.insert(latestVotes).values([
+  // testID: 最新は 2024-01-01 の 氷上格 + 柊夜ノ介
+  { twitterID: 'testID', votedDate: '2024-01-01', characterName: '氷上格', level: 1 },
+  { twitterID: 'testID', votedDate: '2024-01-01', characterName: '柊夜ノ介', level: 2 },
+  // testID2: 2023-05-31 の 柊夜ノ介 + 氷上格
+  { twitterID: testID2, votedDate: '2023-05-31', characterName: '柊夜ノ介', level: 2 },
+  { twitterID: testID2, votedDate: '2023-05-31', characterName: '氷上格', level: 1 },
+  // testID3: 2023-12-01 の 紺野玉緒 + 氷上格
+  { twitterID: 'testID3', votedDate: '2023-12-01', characterName: '紺野玉緒', level: 2 },
+  { twitterID: 'testID3', votedDate: '2023-12-01', characterName: '氷上格', level: 1 },
 ]);
 
 await client.end();
