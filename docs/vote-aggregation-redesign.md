@@ -1,17 +1,24 @@
-# 投票データ集計の改修計画
+# 投票データ集計の改修（設計と実装）
 
 ブランチ: `feature/vote-aggregation-redesign`
-（旧 `feature/daily-oshi-count-performance-improvements` の計画を現状に合わせて改訂）
+（旧 `feature/daily-oshi-count-performance-improvements` の計画を現状に合わせて改訂・実装）
 
-## この改訂について（2026-05-24）
+## 状態（2026-05-24）
 
 元の計画は 2026-05-16 に `feature/daily-oshi-count-performance-improvements` ブランチで策定したが、
 実装には未着手のまま main が 31 コミット進み、その間に **next-auth → better-auth 移行が完了**した（PR #63、main マージ済み）。
-本ドキュメントは元計画を現在の main に合わせて改訂したもの。主な変更点は末尾の「元計画からの差分」を参照。
+本ドキュメントは元計画を現在の main に合わせて改訂し、**着手リスト 1〜14（アプリ実装・テスト・移行スクリプト）まで実装済み**の状態を反映したもの。
+コード例・SQL は実装に合わせてある。残りは 15〜19 の本番デプロイ手順（手動作業）。
 
-**結論：計画の中核（twitter_id ベースの 3 テーブル設計）はそのまま有効。** better-auth 移行は
+**結論：計画の中核（twitter_id ベースの 3 テーブル設計）はそのまま有効だった。** better-auth 移行は
 `Votes` / `UserStates` テーブルには一切触れておらず、認証テーブル（`user`/`session`/`account`/`verification`）の
-追加と `twitterId` 取得経路の変更のみだった。投票は引き続き `twitter_id` をキーにしている。
+追加と `twitterId` 取得経路の変更のみ。投票は引き続き `twitter_id` をキーにしている。
+
+実装上で確定した主な設計判断（元計画からの変更）：
+- **集計は LatestVotes ではなく Votes の「as-of date 最新 set」から計算**（cron も backfill も `aggregateOshiCountForDate` を共用、歯抜け・catch-up に強い）
+- **UserStates の同日再更新は upsert（`ON DUPLICATE KEY UPDATE`）**で吸収（series 1-4 固定集合のため。Votes は推し増減があるので DELETE+INSERT）
+- **ランキング/凡例の同値時ソートは公式順 `(characters.series, characters.sort)`**（`characters` を join）
+- 手動 endpoint は独自 `CRON_API_KEY` 不要（既存 `API_KEY` ミドルウェアで保護）
 
 ## 背景
 
@@ -30,9 +37,9 @@
 
 | テーブル | 役割 | 書き込みタイミング |
 |---|---|---|
-| `Votes` | 全投票履歴の不変ログ（日単位） | 投票時に追記 |
-| `LatestVotes`（新設） | ユーザごとの現在の推し set | 投票時に DELETE + INSERT |
-| `DailyOshiCount`（新設） | 過去日の pair 集計 snapshot | 夜間 cron（00:01 JST） |
+| `Votes` | 全投票履歴の不変ログ（日単位） | 投票時に当日分を DELETE + INSERT |
+| `LatestVotes`（新設） | ユーザごとの現在の推し set | 投票時に per-user で DELETE + INSERT |
+| `DailyOshiCount`（新設） | 過去日の pair 集計 snapshot | 夜間 cron（00:01 JST）が Votes から as-of 集計 |
 
 **read パス**：
 
@@ -60,23 +67,26 @@
 | `mode: 'string'` + luxon | TZ env 依存を排除。`'YYYY-MM-DD'` string で driver 解釈介在ゼロ |
 | **キーは `twitter_id` を維持** | better-auth で実 `user` テーブル（安定 `id`）が増えたが、`Votes`/`UserStates` の貼り替えは移行コスト・既存データ紐付けが重い。`user.twitterId` は unique なので twitter_id 維持で整合する。user.id への移行は将来の独立タスク |
 
-## 現在のコードとの対応関係
+## コードとの対応関係（実装後）
 
-改修対象の現行コード（better-auth 移行後の main）：
-
-- `server-ts/src/db/schema.ts`：`votes`（`voted_time TIMESTAMP`）、`userStates`（`recorded_time TIMESTAMP`）。
-  better-auth の `user`/`session`/`account`/`verification` も同ファイルに同居（本改修では触らない）
-- `server-ts/src/lib/votes.ts`：`getVotesRelatedToOshi`、`getLatestVotes`、`insertVotesIfUpdated`、
-  `getLatestVotesForAnalysis`、`getLatestVotesForAnalysisAll`、`getTimelineData`
-- `server-ts/src/lib/users.ts`：`getLatestUserState`、`insertUserStatesIfUpdated`、`getUserStatesMaster`
-- `server-ts/src/app.ts`：Hono ルート定義。`votes`/`users` は `/votes/:id`・`/users/:id` で twitter_id を `:id` として受ける。
-  `*` ミドルウェアが `API_KEY` で全 API を保護（better-auth の `/api/auth/*` のみ除外）
-- `server-ts/src/index.ts`：`serve()` のみ。**cron スケジュールはここに足す**
-- `server-ts/addTestData.ts`：ローカル seed スクリプト（snapshot テストの seed 元）
+- `server-ts/src/db/schema.ts`：`votes`（`voted_date DATE`）、`userStates`（`recorded_date DATE`）、
+  新設 `latestVotes`・`dailyOshiCount`。better-auth の `user`/`session`/`account`/`verification` も同居（本改修では非対象）
+- `server-ts/src/lib/votes.ts`：`getLatestVotes`（LatestVotes 直引き）、`getCurrentVotesRelatedToOshi`（LatestVotes self-join・新設）、
+  `getVotesRelatedToOshi`（Votes as-of・maxDate 付き、テスト/将来の過去分析用に残置）、
+  `getLatestVotesForAnalysis` / `getLatestVotesForAnalysisAll`、`getTimelineData`、`insertVotesIfUpdated`
+- `server-ts/src/lib/users.ts`：`getLatestUserState`、`insertUserStatesIfUpdated`（upsert）、`getUserStatesMaster`
+- `server-ts/src/lib/aggregate.ts`（新設）：`aggregateOshiCountForDate(database, date)`、`aggregateYesterday(date?)`
+- `server-ts/src/app.ts`：Hono ルート。`votes`/`users` は `/votes/:id`・`/users/:id` で twitter_id を `:id` として受ける。
+  `POST /admin/aggregate-day` を追加。`*` ミドルウェアが `API_KEY` で全 API を保護（`/api/auth/*` のみ除外）
+- `server-ts/src/index.ts`：`serve()` + node-cron スケジュール（00:01 JST）
+- `server-ts/addTestData.ts`：ローカル seed（votes/latestVotes/userStates + DailyOshiCount を固定日 backfill）
+- `server-ts/backfillDailyOshiCount.ts`（新設）：DailyOshiCount 過去日 backfill（`pnpm db:backfill`）
+- `server-ts/migrations/001_vote_aggregation_redesign.sql`（新設）：本番マイグレーション
+- テスト：`server-ts/vitest.config.ts`・`server-ts/test/globalSetup.ts`・`server-ts/src/lib/{votes,users}.test.ts`
 
 投票フロー（next 側）：`next/src/actions/voteActions.ts` が `getSession()` で
 `session.user.twitterId`（better-auth、nullable）を取得 → null チェック済み → `twitterID` として API に渡す。
-**書き込み関数のシグネチャ（`twitterID` を受ける）は変えなくてよい。**
+**書き込み関数のシグネチャ（`twitterID` を受ける）は変更不要だった。API レスポンス型も不変のため next 側の改修なし。**
 
 ## スキーマ定義（Drizzle、`server-ts/src/db/schema.ts`）
 
@@ -235,9 +245,9 @@ export const insertVotesIfUpdated = async ({ twitterID, data }) => {
 
 **並行性**：MySQL InnoDB の gap lock + 行ロックで自然に直列化。`GET_LOCK` 不要。
 
-> 現状の `insertVotesIfUpdated` は単純 INSERT 追記（同日上書きなし）。新フローは
-> 「今日分 DELETE + INSERT」に変わるため、`isSame` 判定ロジック（現行の `latestVotes.length === data.length && ...`）は
-> `isSameSet` ヘルパに切り出して流用する。
+> 実装では `isSameSet` ヘルパは切り出さず、変更判定を関数内にインライン展開している
+> （`previousLatest.length === data.length && data.every(d => previousLatest.some(lv => lv.characterName === d.characterName && lv.level === d.level))`）。
+> 変更が無ければ何も書かずに `{ updatedCharaNames: [] }` を返す。`votedDate` は `DateTime.now().setZone('Asia/Tokyo').toISODate()!`。
 
 ## getLatestVotes の書き換え
 
@@ -249,90 +259,157 @@ export const getLatestVotes = async (twitterID: string) => {
       level: latestVotes.level,
     })
     .from(latestVotes)
+    // level 同値時を公式順で安定させるため characters を join
+    .innerJoin(characters, eq(latestVotes.characterName, characters.name))
     .where(eq(latestVotes.twitterID, twitterID))
-    .orderBy(asc(latestVotes.level));
+    .orderBy(asc(latestVotes.level), asc(characters.series), asc(characters.sort));
 };
 ```
 
-MAX サブクエリ消滅。`getLatestUserState`（users.ts）も `recorded_date` ベースに同様の方針で書き換える
-（UserStates は LatestVotes 相当の現在状態テーブルを作らず、`recorded_date` の MAX 取得を維持するか、
-将来 `LatestUserStates` を作るかは実装時に判断。現状の更新頻度なら MAX 維持で十分軽い）。
+MAX サブクエリ消滅。`getLatestUserState`（users.ts）は `recorded_date` ベースに書き換え、
+**`recorded_date` の MAX 取得を維持**した（LatestVotes 相当の現在状態テーブルは作らない。
+更新頻度が低く MAX 取得で十分軽いため。`LatestUserStates` 導入は設計外）。
 
 ## 今日の pair 集計（read 時に LatestVotes から）
 
-```sql
-SELECT
-  l1.character_name AS oshi,
-  l2.character_name AS related_chara,
-  COUNT(*) AS count
-FROM LatestVotes l1
-JOIN LatestVotes l2 USING (twitter_id)
-WHERE l1.character_name <> l2.character_name
-GROUP BY l1.character_name, l2.character_name
-ORDER BY l1.character_name, count DESC;
-```
-
-特定 oshi に絞る場合は `WHERE l1.character_name = ?` を追加。
-`getLatestVotesForAnalysis` / `getLatestVotesForAnalysisAll` はこのクエリベースに置き換える。
-
-## 夜間 cron（昨日分の DailyOshiCount を生成）
+特定 oshi に共起するキャラを LatestVotes の self-join で数える `getCurrentVotesRelatedToOshi` を新設し、
+`getLatestVotesForAnalysis` / `getLatestVotesForAnalysisAll` をこれに切り替えた。全 Votes 走査 + MAX サブクエリは消滅。
 
 ```ts
-// server-ts/src/lib/aggregate.ts
-import cron from 'node-cron';
-import { DateTime } from 'luxon';
-import { sql, eq } from 'drizzle-orm';
-
-export const aggregateYesterday = async (date?: string) => {
-  const targetDate = date ??
-    DateTime.now().setZone('Asia/Tokyo').minus({ days: 1 }).toISODate();
-
-  await db.transaction(async (tx) => {
-    await tx.delete(dailyOshiCount)
-      .where(eq(dailyOshiCount.snapshotDate, targetDate));
-
-    await tx.execute(sql`
-      INSERT INTO DailyOshiCount (snapshot_date, oshi, related_chara, count)
-      SELECT ${targetDate}, l1.character_name, l2.character_name, COUNT(*)
-      FROM LatestVotes l1
-      JOIN LatestVotes l2 USING (twitter_id)
-      WHERE l1.voted_date <= ${targetDate}
-        AND l2.voted_date <= ${targetDate}
-        AND l1.character_name <> l2.character_name
-      GROUP BY l1.character_name, l2.character_name
-    `);
-  });
+export const getCurrentVotesRelatedToOshi = async (oshi: string) => {
+  const l1 = alias(latestVotes, 'l1');
+  const l2 = alias(latestVotes, 'l2');
+  return await db
+    .select({ characterName: l1.characterName, count: count(l1.characterName) })
+    .from(l1)
+    .innerJoin(l2, eq(l1.twitterID, l2.twitterID))
+    // count 同値時を公式順で安定させるため characters を join
+    .innerJoin(characters, eq(l1.characterName, characters.name))
+    .where(and(eq(l2.characterName, oshi), ne(l1.characterName, oshi)))
+    .groupBy(l1.characterName, characters.series, characters.sort)
+    .orderBy(desc(count(l1.characterName)), asc(characters.series), asc(characters.sort));
 };
 ```
 
-cron スケジュールは `server-ts/src/index.ts`（現状 `serve()` のみ）に追加：
+> 同値時の副次キーは公式順 `(characters.series, characters.sort)`。`ONLY_FULL_GROUP_BY` を満たすため
+> 並べ替えに使う `series`/`sort` も `GROUP BY` に含める（`character_name` と一意対応なので group 数は増えない）。
+> `getVotesRelatedToOshi`（Votes ベース・`maxDate` 付き）も同じく公式順 join に揃えてある。
+
+## UserStates の書き込み（upsert）
+
+`UserStates` は date 化で PK が `(twitter_id, recorded_date, series)` になり、同日に状態を再更新すると
+PK 衝突する。**series 1-4 の固定集合で行が増減しない**ため、Votes のような DELETE+INSERT ではなく
+`INSERT ... ON DUPLICATE KEY UPDATE`（status のみ更新）で吸収する。
+
+```ts
+await db.insert(userStates)
+  .values([
+    { twitterID, recordedDate, series: 1, status: gs1State },
+    { twitterID, recordedDate, series: 2, status: gs2State },
+    { twitterID, recordedDate, series: 3, status: gs3State },
+    { twitterID, recordedDate, series: 4, status: gs4State },
+  ])
+  .onDuplicateKeyUpdate({ set: { status: sql`values(${userStates.status})` } });
+```
+
+## 夜間 cron / 集計（DailyOshiCount 生成）
+
+集計は **Votes から「対象日終了時点の各ユーザ最新 set」を復元して数える**方式に統一した
+（当初案の「LatestVotes を `voted_date <= targetDate` で絞る」案は、過去日の backfill には使えないため不採用）。
+これにより **cron も backfill も同一関数 `aggregateOshiCountForDate` を再利用**でき、
+任意の過去日を正確に再計算できる（リカバリ・catch-up に強い）。
+
+```ts
+// server-ts/src/lib/aggregate.ts
+import type { MySql2Database } from 'drizzle-orm/mysql2'
+import { sql, eq } from 'drizzle-orm'
+import { DateTime } from 'luxon'
+import { db } from '../db'
+import { dailyOshiCount } from '../db/schema'
+
+// targetDate 終了時点の pair 集計を DailyOshiCount に書き込む。
+// executor を引数に取り、本番（src/db の db）と seed スクリプト（独自接続）の双方から使える。
+export const aggregateOshiCountForDate = async (
+  database: MySql2Database<any>,
+  targetDate: string,
+) => {
+  await database.transaction(async (tx) => {
+    await tx.delete(dailyOshiCount).where(eq(dailyOshiCount.snapshotDate, targetDate))
+    await tx.execute(sql`
+      INSERT INTO DailyOshiCount (snapshot_date, oshi, related_chara, count)
+      WITH latest_per_user AS (
+        SELECT v.twitter_id, v.character_name
+        FROM Votes v
+        WHERE v.voted_date = (
+          SELECT MAX(v2.voted_date) FROM Votes v2
+          WHERE v2.twitter_id = v.twitter_id AND v2.voted_date <= ${targetDate}
+        )
+      )
+      SELECT ${targetDate}, l1.character_name, l2.character_name, COUNT(*)
+      FROM latest_per_user l1
+      JOIN latest_per_user l2 USING (twitter_id)
+      WHERE l1.character_name <> l2.character_name
+      GROUP BY l1.character_name, l2.character_name
+    `)
+  })
+}
+
+// 「昨日」（JST）を集計（cron 用）。date を渡せば任意日のリカバリにも使える。
+export const aggregateYesterday = async (date?: string) => {
+  const targetDate = date
+    ?? DateTime.now().setZone('Asia/Tokyo').minus({ days: 1 }).toISODate()!
+  await aggregateOshiCountForDate(db, targetDate)
+  return targetDate
+}
+```
+
+cron スケジュールは `server-ts/src/index.ts`（`serve()` の隣）に追加：
 
 ```ts
 // index.ts
-cron.schedule('1 0 * * *', () => {
-  aggregateYesterday().catch(e => console.error('cron failed:', e));
-}, { timezone: 'Asia/Tokyo' });
+import cron from 'node-cron'
+cron.schedule(
+  '1 0 * * *',
+  async () => {
+    try {
+      const date = await aggregateYesterday()
+      console.log(`DailyOshiCount aggregated for ${date}`)
+    } catch (e) {
+      console.error('aggregate cron failed:', e)
+    }
+  },
+  { timezone: 'Asia/Tokyo', noOverlap: true },
+)
 ```
 
-**`voted_date <= yesterday` フィルタの意味**：cron が走る瞬間に「00:00:00 〜 00:00:59 の投票」が `LatestVotes` に入っていた場合、それを除外して「昨日終了時点」を正確に取り出す。
-
-**歯抜け対応**：ユーザが何日も投票しなくても `LatestVotes` 行は残るので、毎日の cron で全 active ユーザの寄与が連続して反映される。日付の歯抜けは自然に発生しない。
+**as-of 集計の意味**：`MAX(voted_date) <= targetDate` で各ユーザの「その日終了時点の最新投票日」を取り、
+その set を self-join して pair を数える。投票が何日も無いユーザも「最後の投票」が反映されるため、
+**日付の歯抜けが起きない**。`noOverlap` で前回実行が長引いても多重起動しない。
+DailyOshiCount は過去日のみ（今日分は `getCurrentVotesRelatedToOshi` で別途集計）。
 
 ## 手動実行用 endpoint（リカバリ・backfill 両用）
 
-```ts
-// app.ts の route チェーンに追加。
-// 既存の `*` ミドルウェアが API_KEY で保護するため、
-// 元計画にあった独自 CRON_API_KEY チェックは不要（API_KEY 認証に乗る）。
-app.post('/admin/aggregate-day', async (c) => {
-  const date = c.req.query('date'); // 省略時は昨日
-  await aggregateYesterday(date);
-  return c.json({ ok: true, snapshot_date: date ?? 'yesterday' });
-});
-```
+`app.ts` の route チェーンに追加。既存の `*` ミドルウェアが `API_KEY` で保護するため、
+独自 `CRON_API_KEY` は不要（元計画から変更）。`date` クエリは `YYYY-MM-DD` を zValidator で検証。
 
-> 元計画では `CRON_API_KEY` を別途用意して Bearer チェックしていたが、現 `app.ts` は
-> `/api/auth/*` 以外の全ルートを `API_KEY` で保護済み。`/admin/*` も自動的に保護されるので二重認証は不要。
+```ts
+.post(
+  '/admin/aggregate-day',
+  zValidator('query', z.object({
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  })),
+  async c => {
+    const { date } = c.req.valid('query')   // 省略時は昨日
+    try {
+      const snapshotDate = await aggregateYesterday(date)
+      return c.json({ ok: true, snapshotDate }, 200)
+    } catch (e) {
+      console.error(`exception at POST /admin/aggregate-day: ${e instanceof Error ? e.message : ''}`)
+      return c.body(null, 500)
+    }
+  },
+)
+```
 
 ## 本番マイグレーション SQL
 
@@ -428,46 +505,30 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON <db>.DailyOshiCount TO '<app_user>'@'%';
 FLUSH PRIVILEGES;
 ```
 
-### Phase 3: DailyOshiCount backfill（30 日分）
+### Phase 3: DailyOshiCount backfill（既定 30 日分）
 
-別スクリプトとして実装：`server-ts/backfillDailyOshiCount.ts`
+`server-ts/backfillDailyOshiCount.ts`。as-of 集計ロジックは cron と同じ `aggregateOshiCountForDate` を再利用し、
+直近 N 日（既定 30、引数で変更可。今日は含めない）をループで生成する。
 
 ```ts
-import { DateTime } from 'luxon';
-import { db } from './src/db';
-import { sql } from 'drizzle-orm';
+import { DateTime } from 'luxon'
+import { db, client } from './src/db'
+import { aggregateOshiCountForDate } from './src/lib/aggregate'
 
-const ndays = 30;
-
-for (let i = ndays; i >= 1; i--) {
-  const targetDate = DateTime.now()
-    .setZone('Asia/Tokyo')
-    .minus({ days: i })
-    .toISODate();
-
-  console.log(`backfilling ${targetDate}...`);
-
-  await db.execute(sql`
-    INSERT INTO DailyOshiCount (snapshot_date, oshi, related_chara, count)
-    WITH latest_per_user AS (
-      SELECT v.twitter_id, v.character_name
-      FROM Votes v
-      WHERE v.voted_date = (
-        SELECT MAX(v2.voted_date) FROM Votes v2
-        WHERE v2.twitter_id = v.twitter_id
-          AND v2.voted_date <= ${targetDate}
-      )
-    )
-    SELECT ${targetDate}, l1.character_name, l2.character_name, COUNT(*)
-    FROM latest_per_user l1
-    JOIN latest_per_user l2 USING (twitter_id)
-    WHERE l1.character_name <> l2.character_name
-    GROUP BY l1.character_name, l2.character_name
-  `);
+const ndays = Number(process.argv[2] ?? 30)
+const today = DateTime.now().setZone('Asia/Tokyo')
+try {
+  for (let i = ndays; i >= 1; i--) {
+    const targetDate = today.minus({ days: i }).toISODate()!
+    console.log(`backfilling ${targetDate} ...`)
+    await aggregateOshiCountForDate(db, targetDate)
+  }
+} finally {
+  await client.end()
 }
 ```
 
-実行：`pnpm tsx backfillDailyOshiCount.ts`
+実行：`pnpm db:backfill`（= `pnpm tsx backfillDailyOshiCount.ts`）。日数指定は `pnpm db:backfill 60` など。
 
 ## 本番デプロイ手順
 
@@ -478,7 +539,7 @@ for (let i = ndays; i >= 1; i--) {
 5. **Phase 1 SQL 実行**（Votes + UserStates の date 化）
 6. **Phase 2 SQL 実行**（新テーブル作成 + LatestVotes populate）
 7. **Phase 2.5 GRANT 実行**（新テーブルへのアプリユーザ権限付与）
-8. **Phase 3 スクリプト実行**（DailyOshiCount 30 日分 backfill）
+8. **Phase 3 スクリプト実行**（DailyOshiCount backfill：`pnpm db:backfill`、既定 30 日）
 9. **新コードをデプロイ**（コンテナ再ビルド・再起動、cron 含む。本番 amd64 ビルドは GH Actions で）
 10. **動作確認**：
     - トップページ表示
@@ -500,35 +561,31 @@ for (let i = ndays; i >= 1; i--) {
 
 リファクタリング前に**現状ロジックの snapshot test を追加**して、変更後の挙動変化を機械的に検出する。
 
-### フレームワーク
+### フレームワーク・実行環境
 
-**vitest** を採用：
-```bash
-pnpm add -D vitest -F <server-ts のパッケージ名>
-```
+**vitest `^4.1.7`** を採用（`minimumReleaseAge: 4320` の対象）。
+dev DB を汚さないよう、テストは専用 DB `<MYSQL_DATABASE>_test` に対して走らせる：
 
-> `pnpm-workspace.yaml` の `minimumReleaseAge: 4320`（公開 3 日未満は採用しない）の対象。
-> 直近リリースしか無い版は弾かれることがある点に留意。
+- `server-ts/test/globalSetup.ts`：root で `<db>_test` を **DROP→CREATE→GRANT** し、
+  `drizzle-kit push`（schema 反映）＋ `addTestData`（seed）を流す。teardown で DROP。毎回まっさら。
+- `server-ts/vitest.config.ts`：`test.env.MYSQL_DATABASE` をテスト DB に差し替え、`fileParallelism: false`。
+- 実行は seed と同様コンテナ内：`docker compose exec server pnpm test`（root の `pnpm test` でラップ）。
+- 生成 snapshot はコンテナ内に出るため、初回は `docker compose cp` でホストへ取り出してコミット。
 
 ### テスト対象
 
-- `server-ts/src/lib/votes.ts`：`getLatestVotes`、`getVotesRelatedToOshi`、`getLatestVotesForAnalysis`、`getLatestVotesForAnalysisAll`、`getTimelineData`、`insertVotesIfUpdated`
-- `server-ts/src/lib/users.ts`：`getLatestUserState`、`insertUserStatesIfUpdated`
+- `server-ts/src/lib/votes.ts`：`getLatestVotes`、`getVotesRelatedToOshi`、`getCurrentVotesRelatedToOshi`（経由）、`getLatestVotesForAnalysis`、`getLatestVotesForAnalysisAll`、`getTimelineData`
+- `server-ts/src/lib/users.ts`：`getLatestUserState`、`getUserStatesMaster`、`insertUserStatesIfUpdated`（同日再更新の回帰テスト）
 
-### アプローチ
+### アプローチ（実装済み）
 
-1. **時刻固定**：`vi.useFakeTimers()` + `vi.setSystemTime()` で `getTimelineData` を決定的に
-2. **DB seed 固定**：`addTestData.ts` で投入される seed が決定的（乱数・現在時刻に依存しない）であることを確認・調整
-3. **`toMatchSnapshot()`** で出力を凍結
-4. **同 count での順序ブレ対策**：`ORDER BY ... character_name` を追加するか、テスト側で `.sort()` 正規化
-
-### 進め方
-
-1. vitest 導入
-2. 現コード対象に snapshot 群を作成、コミット
-3. 設計通りリファクタリング
-4. 再度 `pnpm test` 実行、出力比較
-5. diff が「期待通り」なら `pnpm test -u` で更新、「予想外」なら調査
+1. **時刻固定**：`vi.useFakeTimers()` + `vi.setSystemTime('2024-01-05T12:00:00+09:00')` で `getTimelineData` を決定的に
+2. **DB seed 固定**：`addTestData.ts` は固定日付・固定 ID。`TEST_TWITTER_ID` は globalSetup で `testID2` に上書きして決定化
+3. **`toMatchSnapshot()`** で出力を凍結（baseline 12 件）。date 化・LatestVotes/DailyOshiCount 切替の各段階で **snapshot 不変＝挙動保存**を確認
+4. **同値時の順序ブレ対策（両方実施）**：本番 API はクエリ側で公式順 `ORDER BY ... characters.series, characters.sort` を付与し、
+   テスト側でも `.sort()` 正規化して環境差に強くする
+5. **書き込みの回帰テスト**：`insertUserStatesIfUpdated` の同日 2 回更新が PK 衝突せず置き換わることを確認
+   （専用 twitterID + `afterAll` 後始末で snapshot 群を汚さない）
 
 ## 実装着手リスト
 
@@ -555,11 +612,14 @@ pnpm add -D vitest -F <server-ts のパッケージ名>
 - [ ] **19.** 翌日 cron 動作確認
 
 > 補足（実装で確定した設計判断）：
-> - 書き込みフローの専用テスト（insertVotesIfUpdated/insertUserStatesIfUpdated）は、
->   globalSetup が seed を 1 回だけ流す都合で他テストへの DB 汚染リスクがあるため未追加。
->   トランザクション rollback で分離した write テストを別途追加するのが follow-up。
+> - `insertUserStatesIfUpdated` は同日再更新の回帰テストを追加済み（専用 ID + 後始末で snapshot 非汚染）。
+>   `insertVotesIfUpdated` の write テストは、globalSetup が seed を 1 回だけ流す都合で他テスト（特に
+>   `getLatestVotesForAnalysisAll`）への DB 汚染リスクがあるため未追加 → ローカル実機（Playwright + 手動ログイン）で
+>   Votes 追記 + LatestVotes 置換を確認済み。トランザクション rollback で分離した write テスト追加は follow-up。
 > - 集計は LatestVotes ではなく **Votes の「as-of date 最新 set」** から計算する方式に統一
 >   （cron も backfill も同じ `aggregateOshiCountForDate` を再利用でき、歯抜け・catch-up に強い）。
+> - 同値時ソートは **公式順 `(characters.series, characters.sort)`**（ランキング・timeline 凡例とも）。
+> - `UserStates` の同日再更新は **upsert（`ON DUPLICATE KEY UPDATE`）**。Votes は推し増減があるので DELETE+INSERT。
 
 ## 用語・前提
 
@@ -568,8 +628,9 @@ pnpm add -D vitest -F <server-ts のパッケージ名>
 - **「今日」の定義**：`DateTime.now().setZone('Asia/Tokyo').toISODate()`
 - **「昨日」の定義**：同上 `.minus({ days: 1 }).toISODate()`
 - **DB driver**：mysql2 `^3.22.3`、Drizzle ORM `1.0.0-rc.3`、drizzle-kit `1.0.0-rc.3`
-- **luxon**：catalog `^3.7.2`（導入済み）
-- **node-cron / vitest**：未導入（着手リスト 1 / 11 で追加）
+- **luxon**：catalog `^3.7.2`
+- **node-cron**：`^4.2.1`（型同梱のため `@types/node-cron` は不使用）
+- **vitest**：`^4.1.7`
 - **MySQL バージョン**：8.4
 
 ## 設計外（次回以降）
@@ -589,5 +650,8 @@ pnpm add -D vitest -F <server-ts のパッケージ名>
 | drizzle | `1.0.0-beta.10-4a43a22` | `1.0.0-rc.3`（API シグネチャは同一想定） |
 | 手動 endpoint 認証 | 独自 `CRON_API_KEY` Bearer チェック | 不要。既存 `API_KEY` ミドルウェアが `/admin/*` も保護 |
 | 新テーブル GRANT | 言及なし | Phase 2.5 として明記（本番はテーブル単位権限、errno 1142 対策） |
-| node-cron/vitest | 追加予定 | 同左。`minimumReleaseAge: 4320` の制約に留意 |
+| node-cron/vitest | 追加予定 | node-cron `^4.2.1`（型同梱）/ vitest `^4.1.7` 導入済み |
+| DailyOshiCount 集計源 | LatestVotes を `voted_date <= targetDate` で絞る | **Votes の as-of date 最新 set**（cron/backfill 共用、過去日も正確に再計算可） |
+| UserStates 同日再更新 | （未考慮） | **upsert（`ON DUPLICATE KEY UPDATE`）**で吸収（date 化で生じる PK 衝突対策） |
+| 同値時ソート | `character_name`（or テスト正規化） | **公式順 `(characters.series, characters.sort)`**（本番 API・凡例とも安定化） |
 | ドキュメント置き場 | リポジトリ root `TASKS.md` | `docs/`（個人タスクログは `.claude/local/TASKS.md` に分離済みのため棲み分け） |
