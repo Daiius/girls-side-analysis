@@ -65,7 +65,8 @@ export const getVotesRelatedToOshi = async (
     )
 
     .groupBy(t1.characterName)
-    .orderBy(desc(count(t1.characterName)));
+    // count 同値時の順序を安定させるため characterName を副次キーにする
+    .orderBy(desc(count(t1.characterName)), asc(t1.characterName));
 
 };
 
@@ -93,7 +94,8 @@ export const getCurrentVotesRelatedToOshi = async (oshi: string) => {
       )
     )
     .groupBy(l1.characterName)
-    .orderBy(desc(count(l1.characterName)));
+    // count 同値時の順序を安定させるため characterName を副次キーにする
+    .orderBy(desc(count(l1.characterName)), asc(l1.characterName));
 };
 
 /**
@@ -108,7 +110,8 @@ export const getLatestVotes = async (twitterID: string) => {
     })
     .from(latestVotes)
     .where(eq(latestVotes.twitterID, twitterID))
-    .orderBy(asc(latestVotes.level));
+    // level 同値時の順序を安定させるため characterName を副次キーにする
+    .orderBy(asc(latestVotes.level), asc(latestVotes.characterName));
 };
 
 export const insertVotesIfUpdated = async ({
@@ -237,7 +240,8 @@ export const getLatestVotesForAnalysisAll = async () => {
  * 旧実装の「全 Votes 走査を 30 回」を、軽い 2 クエリに置き換えている。
  */
 export const getTimelineData = async (characterName: string) => {
-  const today = DateTime.now().endOf('day');
+  // 「今日/昨日」「30日窓」の境界はプロセス TZ ではなく JST 固定で判定する。
+  const today = DateTime.now().setZone('Asia/Tokyo').endOf('day');
   const ndays = 30;
 
   // 表示する 30 日分の DateTime（古い順）
@@ -261,7 +265,11 @@ export const getTimelineData = async (characterName: string) => {
         lt(dailyOshiCount.snapshotDate, todayISO),
       )
     )
-    .orderBy(asc(dailyOshiCount.snapshotDate), desc(dailyOshiCount.count));
+    .orderBy(
+      asc(dailyOshiCount.snapshotDate),
+      desc(dailyOshiCount.count),
+      asc(dailyOshiCount.relatedChara),
+    );
 
   // snapshot_date -> [{ characterName, count }]
   const byDate = new Map<string, { characterName: string; count: number }[]>();
@@ -280,12 +288,23 @@ export const getTimelineData = async (characterName: string) => {
     return iso === todayISO ? todayData : (byDate.get(iso) ?? []);
   });
 
-  // データに含まれるキャラ名を重複なく取得する
-  const allRelatedCharacters = [...new Set(
-    dataBuffer.flatMap(periodicData =>
-      periodicData.map(d => d.characterName)
-    )
-  )];
+  // データに含まれるキャラ名を重複なく取得する。
+  // 凡例順・色割当をリクエスト間で安定させるため、
+  // 窓内の合計票数（降順）→ 名前（昇順）で決定的に並べる。
+  const totalByCharacter = new Map<string, number>();
+  for (const periodicData of dataBuffer) {
+    for (const d of periodicData) {
+      totalByCharacter.set(
+        d.characterName,
+        (totalByCharacter.get(d.characterName) ?? 0) + d.count,
+      );
+    }
+  }
+  const allRelatedCharacters = [...totalByCharacter.keys()]
+    .sort((a, b) =>
+      (totalByCharacter.get(b)! - totalByCharacter.get(a)!)
+      || a.localeCompare(b)
+    );
 
   // キャラ毎の推移
   const datasets: DataSet[] = allRelatedCharacters

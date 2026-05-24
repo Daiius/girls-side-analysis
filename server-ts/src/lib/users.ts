@@ -64,15 +64,25 @@ export const insertUserStatesIfUpdated = async ({
     const gs3State = data.find(d => d.series === 3)?.state;
     const gs4State = data.find(d => d.series === 4)?.state;
     if (gs1State && gs2State && gs3State && gs4State) {
-      // 一通りのシリーズプレイ結果が記録されているとき
+      // 一通りのシリーズプレイ結果が記録されているとき。
+      // date 粒度の PK (twitter_id, recorded_date, series) は同日再更新で衝突するため、
+      // Votes と同様に当日分を DELETE してから INSERT し直す（1 トランザクション）。
       const recordedDate =
         DateTime.now().setZone('Asia/Tokyo').toISODate()!;
-      await db.insert(userStates).values([
-        { twitterID, recordedDate, series: 1, status: gs1State },
-        { twitterID, recordedDate, series: 2, status: gs2State },
-        { twitterID, recordedDate, series: 3, status: gs3State },
-        { twitterID, recordedDate, series: 4, status: gs4State },
-      ]);
+      await db.transaction(async (tx) => {
+        await tx.delete(userStates).where(
+          and(
+            eq(userStates.twitterID, twitterID),
+            eq(userStates.recordedDate, recordedDate),
+          )
+        );
+        await tx.insert(userStates).values([
+          { twitterID, recordedDate, series: 1, status: gs1State },
+          { twitterID, recordedDate, series: 2, status: gs2State },
+          { twitterID, recordedDate, series: 3, status: gs3State },
+          { twitterID, recordedDate, series: 4, status: gs4State },
+        ]);
+      });
     }
   }
 };
