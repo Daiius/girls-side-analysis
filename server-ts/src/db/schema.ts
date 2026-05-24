@@ -4,6 +4,8 @@ import {
   tinyint,
   varchar,
   timestamp,
+  date,
+  int,
   text,
   boolean,
   index,
@@ -35,8 +37,10 @@ export const votes = mysqlTable(
   {
     twitterID:
       varchar('twitter_id', { length: 32 }).notNull(),
-    votedTime:
-      timestamp('voted_time').notNull().defaultNow(),
+    // 同日内の精度は不要なため DATE。mode:'string' で 'YYYY-MM-DD' を
+    // ドライバ TZ 解釈を介さずそのまま扱う。
+    votedDate:
+      date('voted_date', { mode: 'string' }).notNull(),
 
     characterName:
       varchar('character_name', { length: 20 }).notNull()
@@ -51,10 +55,70 @@ export const votes = mysqlTable(
     primaryKey({
       columns: [
         table.twitterID,
-        table.votedTime,
+        table.votedDate,
         table.characterName,
       ]
     }),
+  ],
+);
+
+/**
+ * ユーザごとの「現在の推し set」。
+ * read 中心ワークロード向けに、最新投票を毎 read 計算する代わりに保持する。
+ * 投票時に per-user で DELETE + INSERT して置き換える。
+ */
+export const latestVotes = mysqlTable(
+  'LatestVotes',
+  {
+    twitterID:
+      varchar('twitter_id', { length: 32 }).notNull(),
+    votedDate:
+      date('voted_date', { mode: 'string' }).notNull(),
+    characterName:
+      varchar('character_name', { length: 20 }).notNull()
+        .references(
+          () => characters.name,
+          { onUpdate: 'cascade', onDelete: 'restrict' }
+        ),
+    level:
+      tinyint('level', { unsigned: true }).notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.twitterID, table.characterName] }),
+    index('idx_character_name').on(table.characterName),
+  ],
+);
+
+/**
+ * 過去日の pair 集計 snapshot。
+ * 夜間 cron が「昨日終了時点」の LatestVotes を集計して書き込む。
+ * 今日分は LatestVotes 集計で代替するため、ここには含めない。
+ */
+export const dailyOshiCount = mysqlTable(
+  'DailyOshiCount',
+  {
+    snapshotDate:
+      date('snapshot_date', { mode: 'string' }).notNull(),
+    oshi:
+      varchar('oshi', { length: 20 }).notNull()
+        .references(
+          () => characters.name,
+          { onUpdate: 'cascade', onDelete: 'restrict' }
+        ),
+    relatedChara:
+      varchar('related_chara', { length: 20 }).notNull()
+        .references(
+          () => characters.name,
+          { onUpdate: 'cascade', onDelete: 'restrict' }
+        ),
+    count:
+      int('count', { unsigned: true }).notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.snapshotDate, table.oshi, table.relatedChara],
+    }),
+    index('idx_oshi_date').on(table.oshi, table.snapshotDate),
   ],
 );
 
@@ -79,8 +143,8 @@ export const userStates = mysqlTable(
   {
     twitterID:
       varchar('twitter_id', { length: 20 }).notNull(),
-    recordedTime:
-      timestamp('recorded_time').defaultNow().notNull(),
+    recordedDate:
+      date('recorded_date', { mode: 'string' }).notNull(),
     series:
       tinyint('series', { unsigned: true }).notNull(),
     status:
@@ -93,7 +157,7 @@ export const userStates = mysqlTable(
   (table) => [
     primaryKey({ columns: [
       table.twitterID,
-      table.recordedTime,
+      table.recordedDate,
       table.series
     ]}),
   ],

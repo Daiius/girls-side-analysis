@@ -1,10 +1,10 @@
 'use server'
 
 import { db } from '../db';
-import { votes, characters } from '../db/schema';
-import { 
+import { votes, latestVotes, dailyOshiCount, characters } from '../db/schema';
+import {
   eq, ne, exists, and, max, count, desc, asc,
-  lte
+  lte, lt, gte
 } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/mysql-core';
 
@@ -23,7 +23,7 @@ import { DateTime } from 'luxon';
  */
 export const getVotesRelatedToOshi = async (
   oshi: string,
-  maxDate?: Date,
+  maxDate?: string,
 ) => {
   const t1 = alias(votes, 't1');
   const t2 = alias(votes, 't2');
@@ -33,6 +33,7 @@ export const getVotesRelatedToOshi = async (
       count: count(t1.characterName),
     })
     .from(t1)
+    .innerJoin(characters, eq(t1.characterName, characters.name))
     .where(
       and (
         // 推しキャラに関連するVotesを取り出す操作
@@ -42,16 +43,16 @@ export const getVotesRelatedToOshi = async (
             .where(
               and(
                 eq(t1.twitterID, t2.twitterID),
-                eq(t1.votedTime, t2.votedTime),
+                eq(t1.votedDate, t2.votedDate),
                 eq(t2.characterName, oshi),
               )
             )
         ),
         // 同じtwitterIDを持つVotesの中で、
-        // 最もvotedTimeが新しいものを取り出す操作
+        // 最もvotedDateが新しいものを取り出す操作
         eq(
-          t1.votedTime,
-          db.select({ latest_voted_time: max(t2.votedTime) })
+          t1.votedDate,
+          db.select({ latest_voted_date: max(t2.votedDate) })
             .from(t2)
             .where(
               eq(t1.twitterID, t2.twitterID)
@@ -59,39 +60,69 @@ export const getVotesRelatedToOshi = async (
         ),
         // 推しキャラ以外のVotesを取り出す操作
         ne(t1.characterName, oshi),
-        // maxDateが指定されている時、それ以前のデータに限定する操作
-        maxDate ? lte(t1.votedTime, maxDate) : undefined,
+        // maxDateが指定されている時、それ以前のデータに限定する操作（'YYYY-MM-DD'）
+        maxDate ? lte(t1.votedDate, maxDate) : undefined,
       )
     )
 
-    .groupBy(t1.characterName)
-    .orderBy(desc(count(t1.characterName)));
+    .groupBy(t1.characterName, characters.series, characters.sort)
+    // count 同値時は公式順（series, sort）で安定させる
+    .orderBy(
+      desc(count(t1.characterName)),
+      asc(characters.series),
+      asc(characters.sort),
+    );
 
 };
 
 /**
- * 指定されたtwitterIDに紐づけられた投票のうち、
- * 最新のものを取得します
+ * 指定されたキャラと「現在」同時に推されているキャラのランキングを取得します。
+ *
+ * 現在の推し set は LatestVotes が保持しているため、全 Votes 走査+MAX サブクエリは不要。
+ * LatestVotes の self-join（同じ twitter_id 内）で oshi と共起するキャラを数えるだけ。
+ * getVotesRelatedToOshi(maxDate 無し) と同じ結果を、はるかに軽いクエリで返す。
  */
-export const getLatestVotes = async (twitterID: string) => {
-  const t1 = alias(votes, 't1');
+export const getCurrentVotesRelatedToOshi = async (oshi: string) => {
+  const l1 = alias(latestVotes, 'l1');
+  const l2 = alias(latestVotes, 'l2');
   return await db
     .select({
-      characterName: votes.characterName,
-      level: votes.level,
+      characterName: l1.characterName,
+      count: count(l1.characterName),
     })
-    .from(votes)
+    .from(l1)
+    .innerJoin(l2, eq(l1.twitterID, l2.twitterID))
+    .innerJoin(characters, eq(l1.characterName, characters.name))
     .where(
       and(
-        eq(votes.twitterID, twitterID),
-        eq(
-          votes.votedTime,
-          db.select({ max_voted_time: max(t1.votedTime) })
-            .from(t1)
-            .where(eq(t1.twitterID, twitterID))
-        )
+        eq(l2.characterName, oshi),
+        ne(l1.characterName, oshi),
       )
-    ).orderBy(asc(votes.level))
+    )
+    .groupBy(l1.characterName, characters.series, characters.sort)
+    // count 同値時は公式順（series, sort）で安定させる
+    .orderBy(
+      desc(count(l1.characterName)),
+      asc(characters.series),
+      asc(characters.sort),
+    );
+};
+
+/**
+ * 指定されたtwitterIDの現在の推し（最新投票）を取得します。
+ * LatestVotes をそのまま引くだけ（MAX サブクエリ消滅）。
+ */
+export const getLatestVotes = async (twitterID: string) => {
+  return await db
+    .select({
+      characterName: latestVotes.characterName,
+      level: latestVotes.level,
+    })
+    .from(latestVotes)
+    .innerJoin(characters, eq(latestVotes.characterName, characters.name))
+    .where(eq(latestVotes.twitterID, twitterID))
+    // level 同値時は公式順（series, sort）で安定させる
+    .orderBy(asc(latestVotes.level), asc(characters.series), asc(characters.sort));
 };
 
 export const insertVotesIfUpdated = async ({
@@ -101,27 +132,48 @@ export const insertVotesIfUpdated = async ({
   twitterID: string;
   data: Vote[];
 }): Promise<{ updatedCharaNames: string[] }> => {
-  const latestVotes = await getLatestVotes(twitterID);
-  const isSame: boolean = 
+  const previousLatest = await getLatestVotes(twitterID);
+  const isSame: boolean =
     // 長さが異なればそもそも再投票の対象
-       latestVotes.length === data.length 
-    // 長さが同じだったとしても中身を比較する
+       previousLatest.length === data.length
+    // 長さが同じだったとしても中身（キャラ名・レベル）を比較する
     && data.every(d =>
-        latestVotes.some(lv =>
-          Object.keys(lv).every(key => 
-            d[key as keyof Vote] === lv[key as keyof Vote]
-          )
+        previousLatest.some(lv =>
+          lv.characterName === d.characterName && lv.level === d.level
         )
        );
     if (!isSame) {
-      // 以前と投票内容が異なるのでDB更新
-      await db
-        .insert(votes)
-        .values(
-          data.map(d => ({ ...d, twitterID }))
+      // 以前と投票内容が異なるのでDB更新。
+      // Votes（履歴ログ）と LatestVotes（現在状態）を 1 トランザクションで更新する。
+      // per-user の DELETE + INSERT は行ロックで自然に直列化されるため GET_LOCK 不要。
+      const votedDate =
+        DateTime.now().setZone('Asia/Tokyo').toISODate()!;
+      await db.transaction(async (tx) => {
+        // Votes: 当日分を置き換え（同日再投票に対応）
+        await tx.delete(votes).where(
+          and(
+            eq(votes.twitterID, twitterID),
+            eq(votes.votedDate, votedDate),
+          )
         );
+        await tx.insert(votes).values(
+          data.map(d => ({ ...d, twitterID, votedDate }))
+        );
+        // LatestVotes: そのユーザ分を丸ごと置き換え
+        await tx.delete(latestVotes)
+          .where(eq(latestVotes.twitterID, twitterID));
+        await tx.insert(latestVotes).values(
+          data.map(d => ({
+            twitterID,
+            characterName: d.characterName,
+            level: d.level,
+            votedDate,
+          }))
+        );
+      });
+
       const currentCharaNames = data.map(vote => vote.characterName)
-      const lastCharaNames = latestVotes.map(lv => lv.characterName)
+      const lastCharaNames = previousLatest.map(lv => lv.characterName)
 
       // 削除されたキャラは、前の投票にはいるが今の投票にはいないキャラ
       const removedCharaNames = lastCharaNames.filter(lc => !currentCharaNames.includes(lc))
@@ -131,9 +183,9 @@ export const insertVotesIfUpdated = async ({
       // 2. 前の投票にいたキャラクター
       // の両方を含む必要がある
 
-      return { 
+      return {
         updatedCharaNames: [
-          ...data.map(vote => vote.characterName), 
+          ...currentCharaNames,
           ...removedCharaNames,
         ],
       }
@@ -150,7 +202,7 @@ export const insertVotesIfUpdated = async ({
  * この変更で動かなくなるコードを順次修正していきます......
  */
 export const getLatestVotesForAnalysis = async (charaName: string) => {
-  const oshiCombinationData = await getVotesRelatedToOshi(charaName);
+  const oshiCombinationData = await getCurrentVotesRelatedToOshi(charaName);
   const oshiCombinationDataDict = oshiCombinationData
     .map(ocd => ({ [ocd.characterName]: ocd.count }))
     .reduce((acc, curr) => ({ ...acc, ...curr }), {});
@@ -175,7 +227,7 @@ export const getLatestVotesForAnalysisAll = async () => {
   const dataPromise = allCharacters
     .map(async character => {
       const oshiCombinationData =
-        await getVotesRelatedToOshi(character.name);
+        await getCurrentVotesRelatedToOshi(character.name);
       const oshiCombinationDataDict = oshiCombinationData
         .map(ocd => ({ [ocd.characterName]: ocd.count }))
         .reduce((acc, curr) => ({ ...acc, ...curr }), {});
@@ -192,33 +244,83 @@ export const getLatestVotesForAnalysisAll = async () => {
 };
 
 /**
- * 特定のキャラについて、30日間分の関連キャラ投票数を取得します
+ * 特定のキャラについて、30日間分の関連キャラ投票数を取得します。
  *
- * NOTE: かなり重い処理です、1分に1回呼び出すのもちょっとまずいレベルです
- * 以前はトップページで全キャラ分のグラフも出していましたが、
- * 数秒間サーバのCPU使用率が200%（2コア分）になるのでやめました
- * 単一キャラ向けでもそれなりの負荷になります
+ * 過去日（〜昨日）は夜間 cron が作った DailyOshiCount を一括 SELECT し、
+ * 今日分だけ LatestVotes 集計で補う。
+ * 旧実装の「全 Votes 走査を 30 回」を、軽い 2 クエリに置き換えている。
  */
 export const getTimelineData = async (characterName: string) => {
-  const today = DateTime.now().endOf('day');
+  // 「今日/昨日」「30日窓」の境界はプロセス TZ ではなく JST 固定で判定する。
+  const today = DateTime.now().setZone('Asia/Tokyo').endOf('day');
   const ndays = 30;
-  
-  // 累積データを見て表示するキャラ名を判断するので
-  // 一度時系列データをすべて変数に保存する
-  const dataBuffer = await Promise.all(
-    [...Array(ndays)]
-      .map((_, iday) => today.minus({ 'day': ndays-iday-1 })) // DateTimeへ
-      .map(async date => await getVotesRelatedToOshi(
-        characterName, date.toJSDate()
-      ))
-  );
 
-  // データに含まれるキャラ名を重複なく取得する
-  const allRelatedCharacters = [...new Set(
-    dataBuffer.flatMap(periodicData =>
-      periodicData.map(d => d.characterName)
+  // 表示する 30 日分の DateTime（古い順）
+  const days = [...Array(ndays)]
+    .map((_, iday) => today.minus({ 'day': ndays - iday - 1 }));
+  const todayISO = today.toISODate()!;
+  const startISO = days[0].toISODate()!;
+
+  // 過去日（〜昨日）の pair 集計を DailyOshiCount から一括取得
+  const pastRows = await db
+    .select({
+      snapshotDate: dailyOshiCount.snapshotDate,
+      characterName: dailyOshiCount.relatedChara,
+      count: dailyOshiCount.count,
+    })
+    .from(dailyOshiCount)
+    .where(
+      and(
+        eq(dailyOshiCount.oshi, characterName),
+        gte(dailyOshiCount.snapshotDate, startISO),
+        lt(dailyOshiCount.snapshotDate, todayISO),
+      )
     )
-  )];
+    .orderBy(
+      asc(dailyOshiCount.snapshotDate),
+      desc(dailyOshiCount.count),
+      asc(dailyOshiCount.relatedChara),
+    );
+
+  // snapshot_date -> [{ characterName, count }]
+  const byDate = new Map<string, { characterName: string; count: number }[]>();
+  for (const row of pastRows) {
+    const arr = byDate.get(row.snapshotDate) ?? [];
+    arr.push({ characterName: row.characterName, count: row.count });
+    byDate.set(row.snapshotDate, arr);
+  }
+
+  // 今日分は LatestVotes 集計で補う（DailyOshiCount は過去日のみ）
+  const todayData = await getCurrentVotesRelatedToOshi(characterName);
+
+  // 旧実装と同じく日ごとの配列に整える
+  const dataBuffer = days.map(day => {
+    const iso = day.toISODate()!;
+    return iso === todayISO ? todayData : (byDate.get(iso) ?? []);
+  });
+
+  // 凡例順・色割当をリクエスト間で安定させるため、
+  // 窓内の合計票数（降順）→ 公式順（series, sort）で決定的に並べる。
+  const totalByCharacter = new Map<string, number>();
+  for (const periodicData of dataBuffer) {
+    for (const d of periodicData) {
+      totalByCharacter.set(
+        d.characterName,
+        (totalByCharacter.get(d.characterName) ?? 0) + d.count,
+      );
+    }
+  }
+  // 公式順（series, sort）のインデックスを引くためのマップ
+  const officialOrder = await db
+    .select({ name: characters.name })
+    .from(characters)
+    .orderBy(asc(characters.series), asc(characters.sort));
+  const officialRank = new Map(officialOrder.map((c, i) => [c.name, i]));
+  const allRelatedCharacters = [...totalByCharacter.keys()]
+    .sort((a, b) =>
+      (totalByCharacter.get(b)! - totalByCharacter.get(a)!)
+      || ((officialRank.get(a) ?? Infinity) - (officialRank.get(b) ?? Infinity))
+    );
 
   // キャラ毎の推移
   const datasets: DataSet[] = allRelatedCharacters
@@ -226,8 +328,7 @@ export const getTimelineData = async (characterName: string) => {
       label: character,
       data:
         dataBuffer.map((periodicData, iperiodicData) => {
-          const x: string = today
-            .minus({ 'day': ndays - iperiodicData - 1})
+          const x: string = days[iperiodicData]
             .setLocale('ja')
             .toLocaleString();
           const characterData = periodicData.find(d =>

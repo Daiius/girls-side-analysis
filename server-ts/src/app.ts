@@ -17,6 +17,7 @@ import {
   getUserStatesMaster,
   insertUserStatesIfUpdated,
 } from './lib/users'
+import { aggregateYesterday } from './lib/aggregate'
 import { auth } from './lib/auth'
 
 const apiKey = process.env.API_KEY ??
@@ -178,7 +179,30 @@ const route = app
       }
     },
   )
-    
+  // 指定日（省略時は昨日）の DailyOshiCount を生成し直す。
+  // cron が失敗した時のリカバリや backfill 用。
+  // 既存の API キー認証ミドルウェア（'*'）で保護されるため追加の認証は不要。
+  .post(
+    '/admin/aggregate-day',
+    zValidator('query', z.object({
+      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    })),
+    async c => {
+      const { date } = c.req.valid('query')
+      try {
+        const snapshotDate = await aggregateYesterday(date)
+        return c.json({ ok: true, snapshotDate }, 200)
+      } catch (e) {
+        if (e instanceof Error) {
+          console.error(`exception at POST /admin/aggregate-day: ${e.message}`)
+        } else {
+          console.error('unknown error at POST /admin/aggregate-day')
+        }
+        return c.body(null, 500)
+      }
+    },
+  )
+
 // RPC用の型情報
 export type AppType = typeof route
 

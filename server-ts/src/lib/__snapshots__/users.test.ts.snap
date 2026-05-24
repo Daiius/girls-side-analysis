@@ -1,0 +1,60 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`users.ts（現状ロジックの baseline snapshot） > getLatestUserState > testID の最新状態 1`] = `
+[
+  {
+    "series": 1,
+    "state": "プレイ済み",
+  },
+  {
+    "series": 2,
+    "state": "プレイ済み",
+  },
+  {
+    "series": 3,
+    "state": "プレイ済み",
+  },
+  {
+    "series": 4,
+    "state": "プレイ済み",
+  },
+]
+`;
+
+exports[`users.ts（現状ロジックの baseline snapshot） > getLatestUserState > testID2 の最新状態 1`] = `
+[
+  {
+    "series": 1,
+    "state": "実況視聴",
+  },
+  {
+    "series": 2,
+    "state": "プレイ済み",
+  },
+  {
+    "series": 3,
+    "state": "実況視聴",
+  },
+  {
+    "series": 4,
+    "state": "プレイ済み",
+  },
+]
+`;
+
+exports[`users.ts（現状ロジックの baseline snapshot） > getUserStatesMaster > プレイ状態マスタ 1`] = `
+[
+  {
+    "sort": 0,
+    "state": "未プレイ",
+  },
+  {
+    "sort": 1,
+    "state": "実況視聴",
+  },
+  {
+    "sort": 2,
+    "state": "プレイ済み",
+  },
+]
+`;
