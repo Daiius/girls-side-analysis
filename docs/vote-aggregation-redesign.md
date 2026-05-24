@@ -546,8 +546,8 @@ pnpm add -D vitest -F <server-ts のパッケージ名>
 - [x] **10.** `getTimelineData` を DailyOshiCount + 今日分 LatestVotes 集計に書き換え
 - [x] **11.** `aggregateOshiCountForDate` / `aggregateYesterday`（aggregate.ts）+ node-cron スケジュール（index.ts）+ 手動 endpoint（app.ts）実装
 - [x] **12.** snapshot test 再実行・diff レビュー（baseline 12件すべて不変＝挙動保存を確認）
-- [ ] **13.** 本番マイグレーション SQL スクリプト作成（`migrate.sql`、Phase 1/2/2.5）
-- [ ] **14.** DailyOshiCount backfill スクリプト作成（`backfillDailyOshiCount.ts`）
+- [x] **13.** 本番マイグレーション SQL スクリプト作成（`server-ts/migrations/001_vote_aggregation_redesign.sql`、Phase 1/2/2.5）
+- [x] **14.** DailyOshiCount backfill スクリプト作成（`server-ts/backfillDailyOshiCount.ts`、`pnpm db:backfill`）
 - [ ] **15.** ローカルで本番データドライラン、所要時間計測
 - [ ] **16.** 本番マイグレーション枠を決めて告知
 - [ ] **17.** 本番デプロイ実行
