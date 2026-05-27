@@ -2,6 +2,7 @@ import { timingSafeEqual } from 'node:crypto'
 
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import { createMiddleware } from 'hono/factory'
 
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod/v4'
@@ -91,6 +92,22 @@ app.use('/admin/*', async (c, next) => {
   }
   await next()
 })
+
+// /votes/:id・/users/:id はユーザー固有データなので、:id が
+// ログイン中ユーザー自身の twitterId と一致する場合のみ許可する。
+// API_KEY（サービス間認証）に加えた本人確認の多層防御で、Next 層に
+// 認可漏れがあっても他人のデータを読み書きできないようにする。
+// セッションは Next から転送された cookie を better-auth で検証して得る。
+const requireOwnId = createMiddleware(async (c, next) => {
+  const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  const sessionTwitterId = session?.user.twitterId
+  if (!sessionTwitterId || sessionTwitterId !== c.req.param('id')) {
+    return c.body(null, 403)
+  }
+  await next()
+})
+app.use('/votes/:id', requireOwnId)
+app.use('/users/:id', requireOwnId)
 
 const route = app
   .get(
