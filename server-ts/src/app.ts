@@ -25,6 +25,11 @@ import { auth } from './lib/auth'
 const apiKey = process.env.API_KEY ??
   (() => { throw new Error('process.env.API_KEY is not defined!') })()
 
+// /admin/* 用の専用キー（最小権限）。通常 API キーとは別系統で、
+// 手動リカバリ endpoint だけに権限を絞るためのもの。
+// 未設定時は後方互換のため通常 API キー保護のみで通す（警告を出す）。
+const adminApiKey = process.env.ADMIN_API_KEY
+
 const frontendOrigin = process.env.BETTER_AUTH_URL ??
   (() => { throw new Error('process.env.BETTER_AUTH_URL is not defined!') })()
 
@@ -66,6 +71,24 @@ app.use('*', async (c, next) => {
   const [bearer, apiKeyToken] = tokens
   if (bearer !== 'Bearer') return c.body(null, 400)
   if (!constantTimeEqual(apiKeyToken, apiKey)) return c.body(null, 401)
+  await next()
+})
+
+// /admin/* は通常 API キーに加えて専用の ADMIN_API_KEY を要求する（最小権限）。
+// 上の '*' ミドルウェアで API_KEY を検証済みなので、ここは追加の認可レイヤ。
+// ADMIN_API_KEY 未設定時は後方互換のため通過させるが、設定を促す警告を出す。
+app.use('/admin/*', async (c, next) => {
+  if (!adminApiKey) {
+    console.warn(
+      'ADMIN_API_KEY is not set; /admin/* is protected only by the shared API_KEY. '
+      + 'Set ADMIN_API_KEY to enable least-privilege separation.',
+    )
+    return next()
+  }
+  const adminToken = c.req.header('X-Admin-Key')
+  if (!adminToken || !constantTimeEqual(adminToken, adminApiKey)) {
+    return c.body(null, 401)
+  }
   await next()
 })
 
@@ -192,7 +215,8 @@ const route = app
   )
   // 指定日（省略時は昨日）の DailyOshiCount を生成し直す。
   // cron が失敗した時のリカバリや backfill 用。
-  // 既存の API キー認証ミドルウェア（'*'）で保護されるため追加の認証は不要。
+  // '*' の API_KEY 認証に加え、'/admin/*' ミドルウェアで ADMIN_API_KEY
+  // （設定時は X-Admin-Key ヘッダ）を要求する。
   .post(
     '/admin/aggregate-day',
     zValidator('query', z.object({
