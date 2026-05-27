@@ -1,4 +1,9 @@
-'use server'
+// NOTE: このモジュールは 'use server' を付けないこと。
+// twitterID を引数で受け取る内部ヘルパー群であり、'use server' を付けると
+// 各 export がセッション検証なしの Server Action として公開され、
+// 任意ユーザーの投票を読み書きできる認可バイパス（IDOR）になる。
+// 公開ミューテーション面はセッションから twitterId を導出する
+// @/actions/voteActions の vote() のみに限定する。
 import { client } from './apiClient'
 import { Vote } from '@/types';
 
