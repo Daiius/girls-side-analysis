@@ -1,3 +1,5 @@
+import { timingSafeEqual } from 'node:crypto'
+
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 
@@ -25,6 +27,15 @@ const apiKey = process.env.API_KEY ??
 
 const frontendOrigin = process.env.BETTER_AUTH_URL ??
   (() => { throw new Error('process.env.BETTER_AUTH_URL is not defined!') })()
+
+// API キー等のシークレット比較はタイミング攻撃を避けるため定数時間で行う。
+// timingSafeEqual は長さが異なると例外を投げるので、先に長さを比較する
+// （ランダムな高エントロピー鍵の長さ漏洩は実害なし）。
+const constantTimeEqual = (a: string, b: string): boolean => {
+  const bufA = Buffer.from(a)
+  const bufB = Buffer.from(b)
+  return bufA.length === bufB.length && timingSafeEqual(bufA, bufB)
+}
 
 export const app = new Hono()
 
@@ -54,7 +65,7 @@ app.use('*', async (c, next) => {
   if (tokens.length != 2) return c.body(null, 400)
   const [bearer, apiKeyToken] = tokens
   if (bearer !== 'Bearer') return c.body(null, 400)
-  if (apiKeyToken !== apiKey) return c.body(null, 401)
+  if (!constantTimeEqual(apiKeyToken, apiKey)) return c.body(null, 401)
   await next()
 })
 
