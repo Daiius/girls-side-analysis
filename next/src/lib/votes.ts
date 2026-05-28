@@ -1,5 +1,10 @@
-'use server'
-import { client } from './apiClient'
+// NOTE: このモジュールは 'use server' を付けないこと。
+// twitterID を引数で受け取る内部ヘルパー群であり、'use server' を付けると
+// 各 export がセッション検証なしの Server Action として公開され、
+// 任意ユーザーの投票を読み書きできる認可バイパス（IDOR）になる。
+// 公開ミューテーション面はセッションから twitterId を導出する
+// @/actions/voteActions の vote() のみに限定する。
+import { client, authedClient } from './apiClient'
 import { Vote } from '@/types';
 
 import { revalidatePath } from 'next/cache'
@@ -10,7 +15,7 @@ import { revalidatePath } from 'next/cache'
  * 最新のものを取得します
  */
 export const getLatestVotes = async (twitterID: string) => {
-  const res = await client().votes[':id'].$get({ param: { id: twitterID } })
+  const res = await authedClient().votes[':id'].$get({ param: { id: twitterID } })
   if (res.ok) {
     return await res.json()
   }
@@ -24,7 +29,7 @@ export const insertVotesIfUpdated = async ({
   twitterID: string;
   data: Vote[];
 }) => {
-  const res = await client().votes[':id'].$post({
+  const res = await authedClient().votes[':id'].$post({
     param: { id: twitterID },
     json: data,
   })

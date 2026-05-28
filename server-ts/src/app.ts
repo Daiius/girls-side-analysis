@@ -1,5 +1,8 @@
+import { timingSafeEqual } from 'node:crypto'
+
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import { createMiddleware } from 'hono/factory'
 
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod/v4'
@@ -23,8 +26,22 @@ import { auth } from './lib/auth'
 const apiKey = process.env.API_KEY ??
   (() => { throw new Error('process.env.API_KEY is not defined!') })()
 
+// /admin/* 用の専用キー（最小権限）。通常 API キーとは別系統で、
+// 手動リカバリ endpoint だけに権限を絞るためのもの。
+// 未設定時は後方互換のため通常 API キー保護のみで通す（警告を出す）。
+const adminApiKey = process.env.ADMIN_API_KEY
+
 const frontendOrigin = process.env.BETTER_AUTH_URL ??
   (() => { throw new Error('process.env.BETTER_AUTH_URL is not defined!') })()
+
+// API キー等のシークレット比較はタイミング攻撃を避けるため定数時間で行う。
+// timingSafeEqual は長さが異なると例外を投げるので、先に長さを比較する
+// （ランダムな高エントロピー鍵の長さ漏洩は実害なし）。
+const constantTimeEqual = (a: string, b: string): boolean => {
+  const bufA = Buffer.from(a)
+  const bufB = Buffer.from(b)
+  return bufA.length === bufB.length && timingSafeEqual(bufA, bufB)
+}
 
 export const app = new Hono()
 
@@ -54,9 +71,43 @@ app.use('*', async (c, next) => {
   if (tokens.length != 2) return c.body(null, 400)
   const [bearer, apiKeyToken] = tokens
   if (bearer !== 'Bearer') return c.body(null, 400)
-  if (apiKeyToken !== apiKey) return c.body(null, 401)
+  if (!constantTimeEqual(apiKeyToken, apiKey)) return c.body(null, 401)
   await next()
 })
+
+// /admin/* は通常 API キーに加えて専用の ADMIN_API_KEY を要求する（最小権限）。
+// 上の '*' ミドルウェアで API_KEY を検証済みなので、ここは追加の認可レイヤ。
+// ADMIN_API_KEY 未設定時は後方互換のため通過させるが、設定を促す警告を出す。
+app.use('/admin/*', async (c, next) => {
+  if (!adminApiKey) {
+    console.warn(
+      'ADMIN_API_KEY is not set; /admin/* is protected only by the shared API_KEY. '
+      + 'Set ADMIN_API_KEY to enable least-privilege separation.',
+    )
+    return next()
+  }
+  const adminToken = c.req.header('X-Admin-Key')
+  if (!adminToken || !constantTimeEqual(adminToken, adminApiKey)) {
+    return c.body(null, 401)
+  }
+  await next()
+})
+
+// /votes/:id・/users/:id はユーザー固有データなので、:id が
+// ログイン中ユーザー自身の twitterId と一致する場合のみ許可する。
+// API_KEY（サービス間認証）に加えた本人確認の多層防御で、Next 層に
+// 認可漏れがあっても他人のデータを読み書きできないようにする。
+// セッションは Next から転送された cookie を better-auth で検証して得る。
+const requireOwnId = createMiddleware(async (c, next) => {
+  const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  const sessionTwitterId = session?.user.twitterId
+  if (!sessionTwitterId || sessionTwitterId !== c.req.param('id')) {
+    return c.body(null, 403)
+  }
+  await next()
+})
+app.use('/votes/:id', requireOwnId)
+app.use('/users/:id', requireOwnId)
 
 const route = app
   .get(
@@ -181,7 +232,8 @@ const route = app
   )
   // 指定日（省略時は昨日）の DailyOshiCount を生成し直す。
   // cron が失敗した時のリカバリや backfill 用。
-  // 既存の API キー認証ミドルウェア（'*'）で保護されるため追加の認証は不要。
+  // '*' の API_KEY 認証に加え、'/admin/*' ミドルウェアで ADMIN_API_KEY
+  // （設定時は X-Admin-Key ヘッダ）を要求する。
   .post(
     '/admin/aggregate-day',
     zValidator('query', z.object({
