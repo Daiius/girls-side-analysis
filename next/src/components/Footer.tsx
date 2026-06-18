@@ -15,6 +15,7 @@ const Footer: React.FC = () => (
         'text-sm sm:text-base',
       )}
       target='_blank'
+      rel='noopener noreferrer'
       href={
         `https://twitter.com/share?text=${encodeURIComponent(
           '#GSAnalysis 要望・不具合連絡はこのハッシュタグで!'

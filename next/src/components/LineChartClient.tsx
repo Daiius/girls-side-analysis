@@ -2,7 +2,32 @@
 
 import { useRef, useEffect } from 'react';
 import clsx from 'clsx';
-import Chart from 'chart.js/auto';
+// chart.js/auto は全コントローラ・全プラグインを登録してバンドルが膨らむため、
+// この折れ線チャートが実際に使う機能だけを個別 import して登録する。
+import {
+  Chart,
+  LineController,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Title,
+  Tooltip,
+  Colors,
+} from 'chart.js';
+
+Chart.register(
+  LineController,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Title,
+  Tooltip,
+  // データセット側で色指定が無いため、chart.js/auto と同様に Colors プラグインで
+  // 既定パレットを自動割り当てする（これが無いと全系列がグレーになる）。
+  Colors,
+);
 
 import { DataSet } from '@/types';
 import { useSettings } from '@/providers/SettingsProvider';
