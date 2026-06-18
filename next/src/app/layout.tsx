@@ -16,7 +16,10 @@ const hostUrl = process.env.HOST_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(hostUrl),
-  title: "Girl's Side Analysis",
+  title: {
+    default: "Girl's Side Analysis",
+    template: "%s | Girl's Side Analysis",
+  },
   description: "GSシリーズの情報共有・分析サイト",
   alternates: {
     canonical: '/',

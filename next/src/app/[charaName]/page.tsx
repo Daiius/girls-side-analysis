@@ -57,7 +57,9 @@ export async function generateMetadata({ params }: { params: Promise<{ charaName
   const { charaName } = await params;
   const decodedCharaName = decodeURIComponent(charaName);
   return {
-    title: `${decodedCharaName}分析 | Girl's Side Analysis`,
+    // layout の title.template で " | Girl's Side Analysis" が付与される。
+    // 鉤括弧で名前を区切り、長い複合名でも判読しやすくする。
+    title: `「${decodedCharaName}」分析`,
     description: ` GSシリーズの情報共有・分析サイト ${decodedCharaName}分析ページ`,
     alternates: {
       // 内部リンク（router.push(`/${charaName}`)）と同じく生の日本語 URL に揃える。
