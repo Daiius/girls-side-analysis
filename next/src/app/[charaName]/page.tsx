@@ -57,8 +57,14 @@ export async function generateMetadata({ params }: { params: Promise<{ charaName
   const { charaName } = await params;
   const decodedCharaName = decodeURIComponent(charaName);
   return {
-    title: "Girl's Side Analysis",
+    title: `${decodedCharaName}分析 | Girl's Side Analysis`,
     description: ` GSシリーズの情報共有・分析サイト ${decodedCharaName}分析ページ`,
+    alternates: {
+      // 内部リンク（router.push(`/${charaName}`)）と同じく生の日本語 URL に揃える。
+      // Google は UTF-8 の日本語 URL を正式サポートしており、エンコード形式と
+      // 混在させると canonical 判定がブレるため、あえてエンコードしない。
+      canonical: `/${decodedCharaName}`,
+    },
     openGraph: {
       type: 'website',
       url: `${hostUrl}/${decodedCharaName}`,

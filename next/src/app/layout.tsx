@@ -11,19 +11,26 @@ import Footer from '@/components/Footer';
 
 const inter = Inter({ subsets: ["latin"] });
 
+const hostUrl = process.env.HOST_URL
+  ?? (() => { throw new Error(`process.env.HOST_URL is null`) })();
+
 export const metadata: Metadata = {
+  metadataBase: new URL(hostUrl),
   title: "Girl's Side Analysis",
   description: "GSシリーズの情報共有・分析サイト",
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     type: 'website',
-    url: 'https://faveo-systema.net/girls-side-analysis',
+    url: hostUrl,
     description: "GSシリーズの情報共有・分析サイト",
     siteName: "Girl's Side Analysis",
-    images: 'https://faveo-systema.net/girls-side-analysis/girls-side-analysis-logo.png',
+    images: `${hostUrl}/girls-side-analysis-logo.png`,
   },
   icons: [{
     rel: 'apple-touch-icon',
-    url: 'https://faveo-systema.net/girls-side-analysis/girls-side-analysis-touch-icon.png',
+    url: `${hostUrl}/girls-side-analysis-touch-icon.png`,
     sizes: '180x180',
   }]
 };
@@ -34,7 +41,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="jp" suppressHydrationWarning>
+    <html lang="ja" suppressHydrationWarning>
       <SettingsProvider>
         <body className={clsx(
           'min-h-screen',
