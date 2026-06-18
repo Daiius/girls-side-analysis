@@ -13,6 +13,7 @@ import {
   CategoryScale,
   Title,
   Tooltip,
+  Colors,
 } from 'chart.js';
 
 Chart.register(
@@ -23,6 +24,9 @@ Chart.register(
   CategoryScale,
   Title,
   Tooltip,
+  // データセット側で色指定が無いため、chart.js/auto と同様に Colors プラグインで
+  // 既定パレットを自動割り当てする（これが無いと全系列がグレーになる）。
+  Colors,
 );
 
 import { DataSet } from '@/types';
