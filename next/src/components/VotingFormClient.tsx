@@ -64,10 +64,15 @@ const VotingFormClient: React.FC<
       const isSamePlayerStatus = gsSeries.every(gs => 
         formData.get(gs.name) === latestUserStateDict[gs.series]
       );
+      // level（=並び順）込みで前回投票と比較する。
+      // キャラの集合が同じでも順番だけ変えた場合は「変更あり」として扱う。
+      const previousFavorites = latestVotes
+        .toSorted((a, b) => a.level - b.level)
+        .map(lv => lv.characterName);
       const isSameVotes: boolean =
-           latestVotes.length === favorites.length // 長さが異なればそもそも再投票の対象
-        && favorites.every(d =>
-            latestVotes.some(lv => lv.characterName === d)
+           previousFavorites.length === favorites.length // 長さが異なればそもそも再投票の対象
+        && previousFavorites.every((characterName, i) =>
+            characterName === favorites[i]
            );
 
       if (isSamePlayerStatus && isSameVotes) {
