@@ -59,6 +59,7 @@ export const NoticeButton = () => {
         </div>
       }
       title={'お知らせ:'}
+      ariaLabel={'お知らせを開く'}
     >
       {notices.map(notice =>
         <Fragment key={notice.time}>

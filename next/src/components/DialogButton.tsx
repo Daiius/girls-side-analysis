@@ -16,15 +16,17 @@ export const DialogButton = ({
   children,
   icon,
   title,
+  ariaLabel,
 }: {
   children: ReactNode,
   icon: ReactNode,
   title: ReactNode,
+  ariaLabel?: string,
 }) => {
   const [open, setOpen] = useState(false)
   return (
     <>
-      <Button onClick={() => setOpen(true)}>
+      <Button aria-label={ariaLabel} onClick={() => setOpen(true)}>
         {icon}
       </Button>
 
