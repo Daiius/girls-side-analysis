@@ -16,10 +16,15 @@ const XShareLink: React.FC<
   children,
   ...props
 }) => (
-  <a 
+  <GSButton
+    as='a'
+    // 配置は呼び出し側が absolute 等で指定する想定。
+    // absolute 要素自身が絶対配置の子アイコンの包含ブロックになる。
     className={clsx(
-      className
+      'inline-block h-16 w-16 text-white',
+      className,
     )}
+    variant='system'
     target='_blank'
     href={
       `https://twitter.com/share?text=${encodeURIComponent(text+'\n')}&url=${encodeURIComponent(url)}`
@@ -27,30 +32,23 @@ const XShareLink: React.FC<
     rel='noopener noreferrer'
     {...props}
   >
-    <GSButton 
+    <div className={clsx(
+      'text-sm',
+      'absolute top-1 left-1/2 -translate-x-1/2 text-nowrap',
+    )}>
+      シェア
+    </div>
+    <ChatBubbleOvalLeftEllipsisIcon
       className={clsx(
-        'h-16 w-16 relative text-white', 
+        'absolute size-8 top-4 right-0'
       )}
-      variant='system'
-    >
-      <div className={clsx(
-        'text-sm',
-        'absolute top-1 left-1/2 -translate-x-1/2 text-nowrap',
-      )}>
-        シェア
-      </div>
-      <ChatBubbleOvalLeftEllipsisIcon 
-        className={clsx(
-          'absolute size-8 top-4 right-0'
-        )}
-      />
-      <XIcon 
-        className='absolute left-2 bottom-1'
-        width={31}
-        height={30}
-      />
-    </GSButton>
-  </a>
+    />
+    <XIcon
+      className='absolute left-2 bottom-1'
+      width={31}
+      height={30}
+    />
+  </GSButton>
 );
 
 export default XShareLink;
