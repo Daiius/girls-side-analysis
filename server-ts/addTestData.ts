@@ -47,7 +47,7 @@ await db.insert(characters).values([
   { name: '益田義人',   series: 1, sort: 11 },
   { name: '有沢志穂',   series: 1, sort: 12 },
   { name: '須藤瑞希',   series: 1, sort: 13 },
-  { name: '藤井奈津美', series: 1, sort: 14 },
+  { name: '藤井奈津実', series: 1, sort: 14 },
   { name: '紺野珠美',   series: 1, sort: 15 },
   { name: '尽',         series: 1, sort: 16 },
   { name: '花椿吾郎',   series: 1, sort: 17 },
