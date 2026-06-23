@@ -7,7 +7,7 @@ import VotingFormUserStatesClient, {
   gsSeries
 } from '@/components/VotingFormUserStatesClient';
 import VotingFormCharactersClient from './VotingFormCharactersClient';
-import AddCharacterSelect from '@/components/AddCharacterSelect';
+import AddCharacterDialog from '@/components/AddCharacterDialog';
 import VoteButton from '@/components/VoteButton';
 
 import {
@@ -122,13 +122,15 @@ const VotingFormClient: React.FC<
           favorites={favorites}
           setFavorites={setFavorites}
         />
-        <div className='sm:hidden'>推しを選んで追加：</div>
-        <AddCharacterSelect 
-          className='mb-2 h-[3rem]'
+        <AddCharacterDialog
+          className='mb-2'
           characters={characters}
           selectedCharaNames={favorites}
           addCharacter={(characterName: string) =>
             setFavorites([...favorites, characterName])
+          }
+          removeCharacter={(characterName: string) =>
+            setFavorites(favorites.filter(name => name !== characterName))
           }
         />
         <div className='relative w-full h-24'>
