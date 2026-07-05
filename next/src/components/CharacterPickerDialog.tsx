@@ -20,6 +20,7 @@ import {
 } from '@heroicons/react/24/solid';
 
 import Button from '@/components/Button';
+import { normalizeForSearch } from '@/lib/searchNormalization';
 import { Character } from '@/types';
 
 /**
@@ -31,7 +32,7 @@ import { Character } from '@/types';
  * - 分析: そのキャラページへ遷移（リンク）
  *
  * 配色はサイトのライトテーマに合わせる（body: bg-sky-100 / 既存ダイアログ: sky 系）。
- * タブ・セルのアクセントは GSButton と同じシリーズ色グラデーション。
+ * タブ・セルのアクセントはシリーズ色のフラットな塗り（characterCellStyle と対応）。
  */
 const CharacterPickerDialog: React.FC<{
   characters: Character[];
@@ -64,13 +65,20 @@ const CharacterPickerDialog: React.FC<{
     [characters],
   );
 
-  const trimmed = query.trim();
-  // 検索中は全シリーズ横断のフラット結果。空ならタブ表示。
+  // 表記ゆらぎ（ひらがな/カタカナ・全半角・空白）を吸収した部分一致。
+  // 名前に加えて読み仮名（reading）にも当てるので「ひむろ」「カズマ」等で探せる。
+  const normalized = normalizeForSearch(query);
   const searchResults = React.useMemo(
-    () => trimmed
-      ? characters.filter(c => c.name.includes(trimmed))
+    () => normalized
+      ? characters.filter(c =>
+          normalizeForSearch(c.name).includes(normalized)
+          // characters API は1日キャッシュされるため、reading カラム追加直後は
+          // 旧データ（reading なし）が流れてくる。その間も名前検索だけで動くように
+          // undefined を許容する。
+          || normalizeForSearch(c.reading ?? '').includes(normalized)
+        )
       : null,
-    [characters, trimmed],
+    [characters, normalized],
   );
 
   return (
@@ -125,8 +133,8 @@ const CharacterPickerDialog: React.FC<{
                   type='search'
                   value={query}
                   onChange={e => setQuery(e.target.value)}
-                  placeholder='名前で検索（全シリーズ横断）'
-                  aria-label='キャラクター名で検索'
+                  placeholder='名前・よみがなで検索（全シリーズ横断）'
+                  aria-label='キャラクター名・よみがなで検索'
                   className={clsx(
                     'w-full rounded-lg border-none bg-black/5',
                     'py-2 pl-8 pr-3 text-sm',
@@ -144,7 +152,7 @@ const CharacterPickerDialog: React.FC<{
                   searchResults.length > 0
                     ? <CharacterGrid characters={searchResults} renderCell={renderCell} close={close} />
                     : <p className='p-4 text-center text-sm text-black/60'>
-                        「{trimmed}」に一致するキャラがいません
+                        「{query.trim()}」に一致するキャラがいません
                       </p>
                 )
                 : <TabGroup>
