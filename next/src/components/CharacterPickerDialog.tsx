@@ -40,6 +40,8 @@ const CharacterPickerDialog: React.FC<{
   title: string;
   /** トリガーボタンの中身（アイコン・ラベル・カウント等は呼び出し側で構成）。 */
   trigger: React.ReactNode;
+  /** トリガーボタンへの追加クラス（例: 現在キャラをセル風に装飾する）。 */
+  triggerClassName?: string;
   /** 各セルの描画。button か a かは呼び出し側が決める。close でダイアログを閉じられる。 */
   renderCell: (character: Character, ctx: { close: () => void }) => React.ReactNode;
   /** フッタ左側の任意表示（例: 「選択中 N 人」）。 */
@@ -49,6 +51,7 @@ const CharacterPickerDialog: React.FC<{
   characters,
   title,
   trigger,
+  triggerClassName,
   renderCell,
   footerLeft,
   className,
@@ -111,7 +114,10 @@ const CharacterPickerDialog: React.FC<{
   return (
     <div className={clsx(className)}>
       <Button
-        className='flex flex-row gap-2 items-center justify-center w-full p-2'
+        className={clsx(
+          'flex flex-row gap-2 items-center justify-center w-full p-2',
+          triggerClassName,
+        )}
         onClick={() => setIsOpen(true)}
       >
         {trigger}

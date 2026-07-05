@@ -20,14 +20,22 @@ export const characterCellBaseClass = clsx(
   'transition-colors',
 );
 
-/** 非アクティブセル: 白ベース + シリーズ色の左アクセントバー。 */
-export const characterCellIdleClass = (series: number) => clsx(
-  'border-slate-800 bg-white/60 hover:bg-white',
+/**
+ * シリーズ色の左アクセントバー。
+ * セルのほか、ダイアログを開くトリガーボタンを「セル風」に見せる用途でも使う。
+ */
+export const seriesLeftAccentClass = (series: number) => clsx(
   'border-l-4',
   series === 1 && 'border-l-green-400',
   series === 2 && 'border-l-sky-400',
   series === 3 && 'border-l-pink-400',
   series === 4 && 'border-l-orange-400',
+);
+
+/** 非アクティブセル: 白ベース + シリーズ色の左アクセントバー。 */
+export const characterCellIdleClass = (series: number) => clsx(
+  'border-slate-800 bg-white/60 hover:bg-white',
+  seriesLeftAccentClass(series),
 );
 
 /** アクティブ（選択済み / 現在地）セルのシリーズ別アクセント色。 */

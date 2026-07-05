@@ -11,6 +11,7 @@ import {
   characterCellBaseClass,
   characterCellIdleClass,
   seriesActiveClass,
+  seriesLeftAccentClass,
   characterNameSizeClass,
 } from '@/components/characterCellStyle';
 import { Character } from '@/types';
@@ -33,6 +34,8 @@ const TopCharacterPickerDialog: React.FC<{
   const pathname = usePathname();
   // "/にゃんこ" → "にゃんこ"。トップ("/")では空文字。
   const currentName = decodeURIComponent(pathname.replace('/', ''));
+  // シリーズ色の装飾に使う。トップ("/")や未知のパスでは undefined。
+  const current = characters.find(c => c.name === currentName);
 
   return (
     <CharacterPickerDialog
@@ -40,14 +43,26 @@ const TopCharacterPickerDialog: React.FC<{
       characters={characters}
       title='表示するキャラを選ぶ'
       trigger={
-        <>
-          <span>
-            {currentName
-              ? `「${currentName}」を表示中`
-              : '分析するキャラを選ぶ'}
-          </span>
-          <ChevronDownIcon className='size-4' />
-        </>
+        current
+          ? <>
+              <span className='text-xs text-black/50'>表示中</span>
+              <span className='font-bold'>{current.name}</span>
+              <ChevronDownIcon className='size-4' />
+            </>
+          : <>
+              <span>分析するキャラを選ぶ</span>
+              <ChevronDownIcon className='size-4' />
+            </>
+      }
+      triggerClassName={current
+        ? clsx(
+            // ダイアログ内のキャラセルと同じ「白ベース + シリーズ色の左バー」。
+            // 「現在のキャラのセルがここにあり、タップで一覧が開く」つながりを見せる。
+            // hover は共通 Button の hover:bg-white/10 と競合するため ! で上書きする。
+            'bg-white/60 hover:bg-white!',
+            seriesLeftAccentClass(current.series),
+          )
+        : undefined
       }
       footerLeft='タップで分析ページへ移動します'
       renderCell={(c, { close }) => {
