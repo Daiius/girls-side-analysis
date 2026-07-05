@@ -1,5 +1,4 @@
 import React from 'react';
-import clsx from 'clsx';
 
 import { getCharacters } from '@/lib/characters';
 import TopCharacterPickerDialog from './TopCharacterPickerDialog';
@@ -19,7 +18,7 @@ const TopCharacterSelect: React.FC<
   const characters = await getCharacters();
   return (
     <TopCharacterPickerDialog
-      className={clsx(className)}
+      className={className}
       characters={characters}
     />
   );

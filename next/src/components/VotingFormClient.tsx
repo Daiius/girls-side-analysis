@@ -126,11 +126,10 @@ const VotingFormClient: React.FC<
           className='mb-2'
           characters={characters}
           selectedCharaNames={favorites}
-          addCharacter={(characterName: string) =>
-            setFavorites([...favorites, characterName])
-          }
-          removeCharacter={(characterName: string) =>
-            setFavorites(favorites.filter(name => name !== characterName))
+          toggleCharacter={(characterName: string) =>
+            setFavorites(favorites.includes(characterName)
+              ? favorites.filter(name => name !== characterName)
+              : [...favorites, characterName])
           }
         />
         <div className='relative w-full h-24'>

@@ -16,7 +16,11 @@ import {
 } from '@heroicons/react/24/solid';
 
 import Button from '@/components/Button';
-import { characterCellSpanClass } from '@/components/characterCellStyle';
+import {
+  seriesTheme,
+  seriesActiveClass,
+  characterCellSpanClass,
+} from '@/components/characterCellStyle';
 import { normalizeForSearch } from '@/lib/searchNormalization';
 import { Character } from '@/types';
 
@@ -33,7 +37,8 @@ import { Character } from '@/types';
  * 表示する。一覧は常にシリーズ毎の見出し（チップと同じ淡色バッジ）で区切る。
  *
  * 配色はサイトのライトテーマに合わせる（body: bg-sky-100 / 既存ダイアログ: sky 系）。
- * チップ・セルのアクセントはシリーズ色のフラットな塗り（characterCellStyle と対応）。
+ * チップ・セルのアクセントはシリーズ色のフラットな塗り（characterCellStyle の
+ * seriesTheme に集約）。
  */
 const CharacterPickerDialog: React.FC<{
   characters: Character[];
@@ -65,7 +70,8 @@ const CharacterPickerDialog: React.FC<{
   const [query, setQuery] = React.useState('');
   // 絞り込み表示するシリーズ番号。空 = 絞り込みなし（全シリーズ表示）。
   const [selectedSeries, setSelectedSeries] = React.useState<number[]>([]);
-  const listRef = React.useRef<HTMLDivElement | null>(null);
+  // 「開くたびに1回だけ」自動スクロールするための消費フラグ
+  const scrolledOnOpen = React.useRef(false);
 
   const close = () => setIsOpen(false);
   const open = () => {
@@ -74,31 +80,20 @@ const CharacterPickerDialog: React.FC<{
     // 見えてしまうので、開く時に行う（観測できる結果は同じ）。
     setQuery('');
     setSelectedSeries([]);
+    scrolledOnOpen.current = false;
     setIsOpen(true);
   };
 
   // 開いた直後に、現在選択されているキャラの位置まで一覧をスクロールする。
-  // 依存を isOpen だけにして「開くたびに1回だけ」実行し、
-  // 検索・絞り込み等の操作中には動かさない。
-  //
-  // headlessui の Dialog は open を立てた直後のコミットではまだパネルを
-  // マウントしておらず、effect 実行時点で listRef が空のことがあるため、
-  // 要素が現れるまで数フレームだけリトライする。
-  React.useEffect(() => {
-    if (!isOpen) return;
-    let raf = 0;
-    let tries = 0;
-    const scrollToTarget = () => {
-      const el = listRef.current?.querySelector('[data-scroll-target]');
-      if (el) {
-        el.scrollIntoView({ block: 'center' });
-      } else if (++tries < 30) {
-        raf = requestAnimationFrame(scrollToTarget);
-      }
-    };
-    raf = requestAnimationFrame(scrollToTarget);
-    return () => cancelAnimationFrame(raf);
-  }, [isOpen]);
+  // ダイアログの中身は開いている間しかマウントされないため、対象セルの li に
+  // この callback ref を付けておけば「開いて対象が DOM に現れた瞬間」に呼ばれる。
+  // 消費フラグにより、検索・絞り込みで対象が再マウントされても再スクロールしない。
+  const scrollTargetRef = (node: HTMLLIElement | null) => {
+    if (node && !scrolledOnOpen.current) {
+      scrolledOnOpen.current = true;
+      node.scrollIntoView({ block: 'center' });
+    }
+  };
 
   // characters は series asc, sort asc 済み（サーバ取得時点でソート）。
   // 出現するシリーズ番号を昇順ユニークで取り出してチップにする。
@@ -149,7 +144,7 @@ const CharacterPickerDialog: React.FC<{
     .filter(g => g.members.length > 0);
 
   return (
-    <div className={clsx(className)}>
+    <div className={className}>
       <Button
         className={clsx(
           'flex flex-row gap-2 items-center justify-center w-full p-2',
@@ -242,8 +237,9 @@ const CharacterPickerDialog: React.FC<{
                       'flex-1 rounded-full py-1.5 text-sm border',
                       'flex flex-row items-center justify-center gap-1.5',
                       'transition-colors',
-                      selected && 'font-bold text-white',
-                      seriesChipClass(series, selected),
+                      selected
+                        ? seriesActiveClass(series)
+                        : clsx(seriesTheme[series]?.pale, seriesTheme[series]?.chipHover),
                     )}
                   >
                     {/*
@@ -257,11 +253,11 @@ const CharacterPickerDialog: React.FC<{
                         'flex items-center justify-center size-4 rounded-sm border',
                         selected
                           ? 'bg-white border-white'
-                          : clsx('bg-white/60', seriesCheckboxBorderClass(series)),
+                          : clsx('bg-white/60', seriesTheme[series]?.checkboxBorder),
                       )}
                     >
                       {selected &&
-                        <CheckIcon className={clsx('size-3.5', seriesCheckColorClass(series))} />
+                        <CheckIcon className={clsx('size-3.5', seriesTheme[series]?.check)} />
                       }
                     </span>
                     GS{series}
@@ -271,7 +267,7 @@ const CharacterPickerDialog: React.FC<{
             </div>
 
             {/* 本体: シリーズ毎に見出し（チップと同じ淡色バッジ）で区切ったグリッド */}
-            <div ref={listRef} className='flex-1 overflow-auto'>
+            <div className='flex-1 overflow-auto'>
               {groups.length > 0
                 ? groups.map(g =>
                     <section key={g.series}>
@@ -279,17 +275,23 @@ const CharacterPickerDialog: React.FC<{
                         <span className={clsx(
                           'inline-block rounded-full border px-2.5 py-0.5',
                           'text-xs font-bold',
-                          seriesPaleClass(g.series),
+                          seriesTheme[g.series]?.pale,
                         )}>
                           GS{g.series}
                         </span>
                       </h3>
-                      <CharacterGrid
-                        characters={g.members}
-                        renderCell={renderCell}
-                        scrollTargetName={scrollTargetName}
-                        close={close}
-                      />
+                      <ul className='grid grid-cols-3 gap-2 p-2'>
+                        {g.members.map(c =>
+                          // 長い複合名は col-span-2 で2列分の幅にする（grid の自動配置に任せる）
+                          <li
+                            key={c.name}
+                            className={characterCellSpanClass(c.name)}
+                            ref={c.name === scrollTargetName ? scrollTargetRef : undefined}
+                          >
+                            {renderCell(c, { close })}
+                          </li>
+                        )}
+                      </ul>
                     </section>
                   )
                 : <p className='p-4 text-center text-sm text-black/60'>
@@ -301,7 +303,11 @@ const CharacterPickerDialog: React.FC<{
             {/* フッタ */}
             <div className='flex flex-row items-center justify-between p-3 border-t border-sky-300 bg-sky-200'>
               <span className='text-sm'>{footerLeft}</span>
-              <Button className='px-4 py-1.5 bg-white/60 hover:bg-white' onClick={close}>
+              <Button
+                // hover は共通 Button の hover:bg-white/10 と競合するため ! で上書きする
+                className='px-4 py-1.5 bg-white/60 hover:bg-white!'
+                onClick={close}
+              >
                 閉じる
               </Button>
             </div>
@@ -311,72 +317,5 @@ const CharacterPickerDialog: React.FC<{
     </div>
   );
 };
-
-/** シリーズ別キャラのグリッド。セルの中身は renderCell に委譲。 */
-const CharacterGrid: React.FC<{
-  characters: Character[];
-  renderCell: (character: Character, ctx: { close: () => void }) => React.ReactNode;
-  scrollTargetName?: string;
-  close: () => void;
-}> = ({ characters, renderCell, scrollTargetName, close }) => (
-  <ul className='grid grid-cols-3 gap-2 p-2'>
-    {characters.map(c =>
-      // 長い複合名は col-span-2 で2列分の幅にする（grid の自動配置に任せる）
-      <li
-        key={c.name}
-        className={characterCellSpanClass(c.name)}
-        // 開いた直後のスクロール先の目印（CharacterPickerDialog の effect が探す）
-        data-scroll-target={c.name === scrollTargetName ? true : undefined}
-      >
-        {renderCell(c, { close })}
-      </li>
-    )}
-  </ul>
-);
-
-/**
- * シリーズの淡色（未選択チップ・シリーズ見出しバッジ共通）。
- * シリーズ色は characterCellStyle と同系統。
- * GS2 の淡色はパネル背景（bg-sky-100）に溶けないよう sky-200/60 にしている。
- */
-const seriesPaleClass = (series: number) => clsx(
-  series === 1 && 'bg-green-100 text-green-900 border-green-400',
-  series === 2 && 'bg-sky-200/60 text-sky-900 border-sky-400',
-  series === 3 && 'bg-pink-100 text-pink-900 border-pink-400',
-  series === 4 && 'bg-orange-100 text-orange-900 border-orange-400',
-);
-
-/** 未選択チップのチェックボックス枠色。淡い地の上でも枠として見える濃さにする。 */
-const seriesCheckboxBorderClass = (series: number) => clsx(
-  series === 1 && 'border-green-500',
-  series === 2 && 'border-sky-500',
-  series === 3 && 'border-pink-500',
-  series === 4 && 'border-orange-500',
-);
-
-/** 選択時チェックマークの色（白地の箱の上に置くシリーズ色）。 */
-const seriesCheckColorClass = (series: number) => clsx(
-  series === 1 && 'text-green-600',
-  series === 2 && 'text-sky-600',
-  series === 3 && 'text-pink-600',
-  series === 4 && 'text-orange-600',
-);
-
-/** 絞り込みチップの配色。未選択は淡いフラット、選択中は濃いフラット。 */
-const seriesChipClass = (series: number, selected: boolean) =>
-  selected
-    ? clsx(
-        series === 1 && 'bg-green-500 border-green-600',
-        series === 2 && 'bg-sky-500 border-sky-600',
-        series === 3 && 'bg-pink-500 border-pink-600',
-        series === 4 && 'bg-orange-500 border-orange-600',
-      )
-    : clsx(
-        seriesPaleClass(series),
-        series === 1 && 'hover:bg-green-200',
-        series === 2 && 'hover:bg-sky-200',
-        series === 3 && 'hover:bg-pink-200',
-        series === 4 && 'hover:bg-orange-200',
-      );
 
 export default CharacterPickerDialog;

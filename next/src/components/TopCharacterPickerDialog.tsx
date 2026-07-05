@@ -9,11 +9,8 @@ import { ChevronDownIcon } from '@heroicons/react/24/solid';
 import CharacterNameLabel from '@/components/CharacterNameLabel';
 import CharacterPickerDialog from '@/components/CharacterPickerDialog';
 import {
-  characterCellBaseClass,
-  characterCellIdleClass,
-  seriesActiveClass,
+  characterCellClass,
   seriesLeftAccentClass,
-  characterNameSizeClass,
 } from '@/components/characterCellStyle';
 import { Character } from '@/types';
 
@@ -69,18 +66,14 @@ const TopCharacterPickerDialog: React.FC<{
       scrollTargetName={current?.name}
       footerLeft='タップで分析ページへ移動します'
       renderCell={(c, { close }) => {
-        const current = c.name === currentName;
+        const isCurrent = c.name === currentName;
         return (
           <Link
             // canonical / sitemap と同じく生の日本語 URL に揃える
             href={`/${c.name}`}
             onClick={close}
-            aria-current={current ? 'page' : undefined}
-            className={clsx(
-              characterCellBaseClass,
-              characterNameSizeClass(c.name),
-              current ? seriesActiveClass(c.series) : characterCellIdleClass(c.series),
-            )}
+            aria-current={isCurrent ? 'page' : undefined}
+            className={characterCellClass(c, isCurrent)}
           >
             <CharacterNameLabel name={c.name} />
           </Link>
