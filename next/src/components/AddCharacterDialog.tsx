@@ -52,6 +52,8 @@ const AddCharacterDialog: React.FC<{
           </span>
         </>
       }
+      // 開いた時に選択中の先頭（推し1位）の位置までスクロールする
+      scrollTargetName={selectedCharaNames[0]}
       footerLeft={
         <>選択中 <span className='font-bold'>{selectedCharaNames.length}</span> 人</>
       }

@@ -65,6 +65,8 @@ const TopCharacterPickerDialog: React.FC<{
           )
         : undefined
       }
+      // 開いた時に現在表示中のキャラの位置までスクロールする
+      scrollTargetName={current?.name}
       footerLeft='タップで分析ページへ移動します'
       renderCell={(c, { close }) => {
         const current = c.name === currentName;

@@ -45,6 +45,8 @@ const CharacterPickerDialog: React.FC<{
   triggerClassName?: string;
   /** 各セルの描画。button か a かは呼び出し側が決める。close でダイアログを閉じられる。 */
   renderCell: (character: Character, ctx: { close: () => void }) => React.ReactNode;
+  /** 開いた直後にこの名前のキャラの位置まで一覧をスクロールする（例: 現在選択中のキャラ）。 */
+  scrollTargetName?: string;
   /** フッタ左側の任意表示（例: 「選択中 N 人」）。 */
   footerLeft?: React.ReactNode;
   className?: string;
@@ -54,6 +56,7 @@ const CharacterPickerDialog: React.FC<{
   trigger,
   triggerClassName,
   renderCell,
+  scrollTargetName,
   footerLeft,
   className,
 }) => {
@@ -62,7 +65,40 @@ const CharacterPickerDialog: React.FC<{
   const [query, setQuery] = React.useState('');
   // 絞り込み表示するシリーズ番号。空 = 絞り込みなし（全シリーズ表示）。
   const [selectedSeries, setSelectedSeries] = React.useState<number[]>([]);
+  const listRef = React.useRef<HTMLDivElement | null>(null);
+
   const close = () => setIsOpen(false);
+  const open = () => {
+    // 検索・絞り込みは引き継がず、毎回まっさらな状態で開く。
+    // 「閉じる時」にリセットすると閉じアニメーション中に一覧が変わって
+    // 見えてしまうので、開く時に行う（観測できる結果は同じ）。
+    setQuery('');
+    setSelectedSeries([]);
+    setIsOpen(true);
+  };
+
+  // 開いた直後に、現在選択されているキャラの位置まで一覧をスクロールする。
+  // 依存を isOpen だけにして「開くたびに1回だけ」実行し、
+  // 検索・絞り込み等の操作中には動かさない。
+  //
+  // headlessui の Dialog は open を立てた直後のコミットではまだパネルを
+  // マウントしておらず、effect 実行時点で listRef が空のことがあるため、
+  // 要素が現れるまで数フレームだけリトライする。
+  React.useEffect(() => {
+    if (!isOpen) return;
+    let raf = 0;
+    let tries = 0;
+    const scrollToTarget = () => {
+      const el = listRef.current?.querySelector('[data-scroll-target]');
+      if (el) {
+        el.scrollIntoView({ block: 'center' });
+      } else if (++tries < 30) {
+        raf = requestAnimationFrame(scrollToTarget);
+      }
+    };
+    raf = requestAnimationFrame(scrollToTarget);
+    return () => cancelAnimationFrame(raf);
+  }, [isOpen]);
 
   // characters は series asc, sort asc 済み（サーバ取得時点でソート）。
   // 出現するシリーズ番号を昇順ユニークで取り出してチップにする。
@@ -119,7 +155,7 @@ const CharacterPickerDialog: React.FC<{
           'flex flex-row gap-2 items-center justify-center w-full p-2',
           triggerClassName,
         )}
-        onClick={() => setIsOpen(true)}
+        onClick={open}
       >
         {trigger}
       </Button>
@@ -235,7 +271,7 @@ const CharacterPickerDialog: React.FC<{
             </div>
 
             {/* 本体: シリーズ毎に見出し（チップと同じ淡色バッジ）で区切ったグリッド */}
-            <div className='flex-1 overflow-auto'>
+            <div ref={listRef} className='flex-1 overflow-auto'>
               {groups.length > 0
                 ? groups.map(g =>
                     <section key={g.series}>
@@ -251,6 +287,7 @@ const CharacterPickerDialog: React.FC<{
                       <CharacterGrid
                         characters={g.members}
                         renderCell={renderCell}
+                        scrollTargetName={scrollTargetName}
                         close={close}
                       />
                     </section>
@@ -279,12 +316,18 @@ const CharacterPickerDialog: React.FC<{
 const CharacterGrid: React.FC<{
   characters: Character[];
   renderCell: (character: Character, ctx: { close: () => void }) => React.ReactNode;
+  scrollTargetName?: string;
   close: () => void;
-}> = ({ characters, renderCell, close }) => (
+}> = ({ characters, renderCell, scrollTargetName, close }) => (
   <ul className='grid grid-cols-3 gap-2 p-2'>
     {characters.map(c =>
       // 長い複合名は col-span-2 で2列分の幅にする（grid の自動配置に任せる）
-      <li key={c.name} className={characterCellSpanClass(c.name)}>
+      <li
+        key={c.name}
+        className={characterCellSpanClass(c.name)}
+        // 開いた直後のスクロール先の目印（CharacterPickerDialog の effect が探す）
+        data-scroll-target={c.name === scrollTargetName ? true : undefined}
+      >
         {renderCell(c, { close })}
       </li>
     )}
