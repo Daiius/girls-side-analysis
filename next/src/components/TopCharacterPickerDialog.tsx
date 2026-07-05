@@ -61,7 +61,7 @@ const TopCharacterPickerDialog: React.FC<{
             className={clsx(
               characterCellBaseClass,
               characterNameSizeClass(c.name),
-              current ? seriesActiveClass(c.series) : characterCellIdleClass,
+              current ? seriesActiveClass(c.series) : characterCellIdleClass(c.series),
             )}
           >
             <span>{c.name}</span>

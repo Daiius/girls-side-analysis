@@ -64,7 +64,7 @@ const AddCharacterDialog: React.FC<{
             className={clsx(
               characterCellBaseClass,
               characterNameSizeClass(c.name),
-              selected ? seriesActiveClass(c.series) : characterCellIdleClass,
+              selected ? seriesActiveClass(c.series) : characterCellIdleClass(c.series),
             )}
           >
             {selected &&
