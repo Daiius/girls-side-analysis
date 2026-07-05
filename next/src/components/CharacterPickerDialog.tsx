@@ -16,6 +16,7 @@ import {
 } from '@heroicons/react/24/solid';
 
 import Button from '@/components/Button';
+import { characterCellSpanClass } from '@/components/characterCellStyle';
 import { normalizeForSearch } from '@/lib/searchNormalization';
 import { Character } from '@/types';
 
@@ -282,7 +283,10 @@ const CharacterGrid: React.FC<{
 }> = ({ characters, renderCell, close }) => (
   <ul className='grid grid-cols-3 gap-2 p-2'>
     {characters.map(c =>
-      <li key={c.name}>{renderCell(c, { close })}</li>
+      // 長い複合名は col-span-2 で2列分の幅にする（grid の自動配置に任せる）
+      <li key={c.name} className={characterCellSpanClass(c.name)}>
+        {renderCell(c, { close })}
+      </li>
     )}
   </ul>
 );

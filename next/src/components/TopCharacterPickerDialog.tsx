@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronDownIcon } from '@heroicons/react/24/solid';
 
+import CharacterNameLabel from '@/components/CharacterNameLabel';
 import CharacterPickerDialog from '@/components/CharacterPickerDialog';
 import {
   characterCellBaseClass,
@@ -79,7 +80,7 @@ const TopCharacterPickerDialog: React.FC<{
               current ? seriesActiveClass(c.series) : characterCellIdleClass(c.series),
             )}
           >
-            <span>{c.name}</span>
+            <CharacterNameLabel name={c.name} />
           </Link>
         );
       }}

@@ -57,3 +57,10 @@ export const seriesActiveClass = (series: number) => clsx(
 /** 長い複合名（・入り）はフォントを一段小さく。 */
 export const characterNameSizeClass = (name: string) =>
   name.includes('・') ? 'text-sm' : 'text-base';
+
+/**
+ * 長い複合名（・入り）は例外的にグリッド2列分の幅を使う。
+ * グリッドセルを包む要素（li 等）に付けること。
+ */
+export const characterCellSpanClass = (name: string) =>
+  name.includes('・') ? 'col-span-2' : undefined;

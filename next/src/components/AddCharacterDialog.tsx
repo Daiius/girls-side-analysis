@@ -5,6 +5,7 @@ import clsx from 'clsx';
 
 import { PlusIcon, CheckIcon } from '@heroicons/react/24/solid';
 
+import CharacterNameLabel from '@/components/CharacterNameLabel';
 import CharacterPickerDialog from '@/components/CharacterPickerDialog';
 import {
   characterCellBaseClass,
@@ -70,7 +71,7 @@ const AddCharacterDialog: React.FC<{
             {selected &&
               <CheckIcon className='absolute top-1 right-1 size-3.5' aria-hidden />
             }
-            <span>{c.name}</span>
+            <CharacterNameLabel name={c.name} />
           </button>
         );
       }}
