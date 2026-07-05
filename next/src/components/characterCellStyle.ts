@@ -54,9 +54,17 @@ export const seriesActiveClass = (series: number) => clsx(
   series === 4 && 'bg-orange-500 border-orange-600',
 );
 
-/** 長い複合名（・入り）はフォントを一段小さく。 */
+/**
+ * キャラ名のフォントサイズ。原則1行で収まるサイズを画面幅ごとに選ぶ:
+ * - 通常名: 最長の「ギャリソン伊藤」(7字) が モバイル(375px)の1列幅で
+ *   収まるよう、狭い画面では一段小さくする
+ * - 長い複合名（・入り）: さらに一段小さく + col-span-2（2列幅）で1行に収める。
+ *   想定外の狭さで折り返した場合も他セルと高さが揃うよう行間を詰めておく
+ */
 export const characterNameSizeClass = (name: string) =>
-  name.includes('・') ? 'text-sm' : 'text-base';
+  name.includes('・')
+    ? 'text-xs sm:text-sm leading-tight'
+    : 'text-sm sm:text-base';
 
 /**
  * 長い複合名（・入り）は例外的にグリッド2列分の幅を使う。
