@@ -8,15 +8,11 @@ import {
   DialogPanel,
   DialogTitle,
   DialogBackdrop,
-  TabGroup,
-  TabList,
-  Tab,
-  TabPanels,
-  TabPanel,
 } from '@headlessui/react';
 import {
   XMarkIcon,
   MagnifyingGlassIcon,
+  CheckIcon,
 } from '@heroicons/react/24/solid';
 
 import Button from '@/components/Button';
@@ -24,15 +20,19 @@ import { normalizeForSearch } from '@/lib/searchNormalization';
 import { Character } from '@/types';
 
 /**
- * シリーズタブ + 横断検索のキャラ「ブラウズ面」共通シェル。
+ * シリーズ絞り込み + 横断検索のキャラ「ブラウズ面」共通シェル。
  *
- * ダイアログ/シート・検索・GS1〜4タブ・3列グリッドという見せ方だけを持ち、
- * 「セルをタップした時に何をするか」は呼び出し側が renderCell で決める。
+ * ダイアログ/シート・検索・シリーズ絞り込みチップ・シリーズ見出し付きグリッド
+ * という見せ方だけを持ち、「セルをタップした時に何をするか」は呼び出し側が
+ * renderCell で決める。
  * - 投票: トグル選択（複数選択・閉じない）
  * - 分析: そのキャラページへ遷移（リンク）
  *
+ * シリーズ絞り込みはチェックボックス的な複数選択トグルで、未選択なら全シリーズを
+ * 表示する。一覧は常にシリーズ毎の見出し（チップと同じ淡色バッジ）で区切る。
+ *
  * 配色はサイトのライトテーマに合わせる（body: bg-sky-100 / 既存ダイアログ: sky 系）。
- * タブ・セルのアクセントはシリーズ色のフラットな塗り（characterCellStyle と対応）。
+ * チップ・セルのアクセントはシリーズ色のフラットな塗り（characterCellStyle と対応）。
  */
 const CharacterPickerDialog: React.FC<{
   characters: Character[];
@@ -56,30 +56,57 @@ const CharacterPickerDialog: React.FC<{
 
   const [isOpen, setIsOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
+  // 絞り込み表示するシリーズ番号。空 = 絞り込みなし（全シリーズ表示）。
+  const [selectedSeries, setSelectedSeries] = React.useState<number[]>([]);
   const close = () => setIsOpen(false);
 
   // characters は series asc, sort asc 済み（サーバ取得時点でソート）。
-  // 出現するシリーズ番号を昇順ユニークで取り出してタブにする。
+  // 出現するシリーズ番号を昇順ユニークで取り出してチップにする。
   const seriesList = React.useMemo(
     () => [...new Set(characters.map(c => c.series))].sort((a, b) => a - b),
     [characters],
   );
 
+  const toggleSeries = (series: number) =>
+    setSelectedSeries(prev =>
+      prev.includes(series)
+        ? prev.filter(s => s !== series)
+        : [...prev, series]
+    );
+
   // 表記ゆらぎ（ひらがな/カタカナ・全半角・空白）を吸収した部分一致。
   // 名前に加えて読み仮名（reading）にも当てるので「ひむろ」「カズマ」等で探せる。
   const normalized = normalizeForSearch(query);
-  const searchResults = React.useMemo(
-    () => normalized
-      ? characters.filter(c =>
+  const searching = normalized.length > 0;
+
+  // 一覧に並べるキャラ。
+  // - 検索中: シリーズ絞り込みを無視して全シリーズ横断で当てる
+  // - 未検索: 選択中シリーズのみ（未選択なら全シリーズ）
+  const visibleCharacters = React.useMemo(
+    () => {
+      if (searching) {
+        return characters.filter(c =>
           normalizeForSearch(c.name).includes(normalized)
           // characters API は1日キャッシュされるため、reading カラム追加直後は
           // 旧データ（reading なし）が流れてくる。その間も名前検索だけで動くように
           // undefined を許容する。
           || normalizeForSearch(c.reading ?? '').includes(normalized)
-        )
-      : null,
-    [characters, normalized],
+        );
+      }
+      return selectedSeries.length > 0
+        ? characters.filter(c => selectedSeries.includes(c.series))
+        : characters;
+    },
+    [characters, searching, normalized, selectedSeries],
   );
+
+  // シリーズ見出し付きのグループ（空のシリーズは出さない）
+  const groups = seriesList
+    .map(series => ({
+      series,
+      members: visibleCharacters.filter(c => c.series === series),
+    }))
+    .filter(g => g.members.length > 0);
 
   return (
     <div className={clsx(className)}>
@@ -145,53 +172,85 @@ const CharacterPickerDialog: React.FC<{
               </div>
             </div>
 
-            {/* 本体: 検索中はフラット、未検索はタブ */}
-            <div className='flex-1 overflow-auto'>
-              {searchResults
-                ? (
-                  searchResults.length > 0
-                    ? <CharacterGrid characters={searchResults} renderCell={renderCell} close={close} />
-                    : <p className='p-4 text-center text-sm text-black/60'>
-                        「{query.trim()}」に一致するキャラがいません
-                      </p>
-                )
-                : <TabGroup>
+            {/*
+              シリーズ絞り込みチップ。チェックボックス的な複数選択トグルで、
+              キャラセル（角丸長方形）と見分けやすいようピル型 + 常時シリーズ色
+              （未選択は淡く、選択中は濃く + チェックマーク）。
+              検索中は全シリーズ横断で当てるため無効化して見せる。
+            */}
+            <div
+              role='group'
+              aria-label='シリーズで絞り込み'
+              className={clsx(
+                'flex flex-row gap-1.5 p-2 border-b border-sky-300',
+                searching && 'opacity-40',
+              )}
+            >
+              {seriesList.map(series => {
+                const selected = selectedSeries.includes(series);
+                return (
+                  <button
+                    key={series}
+                    type='button'
+                    aria-pressed={selected}
+                    disabled={searching}
+                    onClick={() => toggleSeries(series)}
+                    className={clsx(
+                      'flex-1 rounded-full py-1.5 text-sm border',
+                      'flex flex-row items-center justify-center gap-1.5',
+                      'transition-colors',
+                      selected && 'font-bold text-white',
+                      seriesChipClass(series, selected),
+                    )}
+                  >
                     {/*
-                      シリーズタブ。キャラセル（角丸長方形）と見分けやすいよう
-                      ピル型 + 常時シリーズ色（未選択は淡く、選択中は濃く）にし、
-                      下の border-b をグリッドとのセパレータにする。
-                      グラデーションは GSButton（ゲーム画面風ボタン）専用なので使わない。
+                      チェックボックス。未選択でも空の枠を常に出して
+                      「チェックできるもの」だと分かるようにする（レイアウトずれ防止も兼ねる）。
+                      選択時は白地の箱にシリーズ色のチェックで視認性を上げる。
                     */}
-                    <TabList className={clsx(
-                      'flex flex-row gap-1.5 p-2 sticky top-0 z-10',
-                      'bg-sky-100 border-b border-sky-300',
-                    )}>
-                      {seriesList.map(series =>
-                        <Tab
-                          key={series}
-                          className={clsx(
-                            'flex-1 rounded-full py-1.5 text-sm border',
-                            'transition-colors',
-                            'data-selected:font-bold data-selected:text-white',
-                            seriesTabClass(series),
-                          )}
-                        >
-                          GS{series}
-                        </Tab>
+                    <span
+                      aria-hidden
+                      className={clsx(
+                        'flex items-center justify-center size-4 rounded-sm border',
+                        selected
+                          ? 'bg-white border-white'
+                          : clsx('bg-white/60', seriesCheckboxBorderClass(series)),
                       )}
-                    </TabList>
-                    <TabPanels>
-                      {seriesList.map(series =>
-                        <TabPanel key={series}>
-                          <CharacterGrid
-                            characters={characters.filter(c => c.series === series)}
-                            renderCell={renderCell}
-                            close={close}
-                          />
-                        </TabPanel>
-                      )}
-                    </TabPanels>
-                  </TabGroup>
+                    >
+                      {selected &&
+                        <CheckIcon className={clsx('size-3.5', seriesCheckColorClass(series))} />
+                      }
+                    </span>
+                    GS{series}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* 本体: シリーズ毎に見出し（チップと同じ淡色バッジ）で区切ったグリッド */}
+            <div className='flex-1 overflow-auto'>
+              {groups.length > 0
+                ? groups.map(g =>
+                    <section key={g.series}>
+                      <h3 className='sticky top-0 z-10 bg-sky-100 px-2 pt-2 pb-1'>
+                        <span className={clsx(
+                          'inline-block rounded-full border px-2.5 py-0.5',
+                          'text-xs font-bold',
+                          seriesPaleClass(g.series),
+                        )}>
+                          GS{g.series}
+                        </span>
+                      </h3>
+                      <CharacterGrid
+                        characters={g.members}
+                        renderCell={renderCell}
+                        close={close}
+                      />
+                    </section>
+                  )
+                : <p className='p-4 text-center text-sm text-black/60'>
+                    「{query.trim()}」に一致するキャラがいません
+                  </p>
               }
             </div>
 
@@ -223,26 +282,48 @@ const CharacterGrid: React.FC<{
 );
 
 /**
- * シリーズタブの配色。シリーズ色（characterCellStyle と同系統）を常時まとい、
- * 未選択は淡いフラット、選択中は濃いフラットで表現する。
+ * シリーズの淡色（未選択チップ・シリーズ見出しバッジ共通）。
+ * シリーズ色は characterCellStyle と同系統。
+ * GS2 の淡色はパネル背景（bg-sky-100）に溶けないよう sky-200/60 にしている。
  */
-const seriesTabClass = (series: number) => clsx(
-  series === 1 && clsx(
-    'bg-green-100 text-green-900 border-green-400 hover:bg-green-200',
-    'data-selected:bg-green-500 data-selected:border-green-600',
-  ),
-  series === 2 && clsx(
-    'bg-sky-200/60 text-sky-900 border-sky-400 hover:bg-sky-200',
-    'data-selected:bg-sky-500 data-selected:border-sky-600',
-  ),
-  series === 3 && clsx(
-    'bg-pink-100 text-pink-900 border-pink-400 hover:bg-pink-200',
-    'data-selected:bg-pink-500 data-selected:border-pink-600',
-  ),
-  series === 4 && clsx(
-    'bg-orange-100 text-orange-900 border-orange-400 hover:bg-orange-200',
-    'data-selected:bg-orange-500 data-selected:border-orange-600',
-  ),
+const seriesPaleClass = (series: number) => clsx(
+  series === 1 && 'bg-green-100 text-green-900 border-green-400',
+  series === 2 && 'bg-sky-200/60 text-sky-900 border-sky-400',
+  series === 3 && 'bg-pink-100 text-pink-900 border-pink-400',
+  series === 4 && 'bg-orange-100 text-orange-900 border-orange-400',
 );
+
+/** 未選択チップのチェックボックス枠色。淡い地の上でも枠として見える濃さにする。 */
+const seriesCheckboxBorderClass = (series: number) => clsx(
+  series === 1 && 'border-green-500',
+  series === 2 && 'border-sky-500',
+  series === 3 && 'border-pink-500',
+  series === 4 && 'border-orange-500',
+);
+
+/** 選択時チェックマークの色（白地の箱の上に置くシリーズ色）。 */
+const seriesCheckColorClass = (series: number) => clsx(
+  series === 1 && 'text-green-600',
+  series === 2 && 'text-sky-600',
+  series === 3 && 'text-pink-600',
+  series === 4 && 'text-orange-600',
+);
+
+/** 絞り込みチップの配色。未選択は淡いフラット、選択中は濃いフラット。 */
+const seriesChipClass = (series: number, selected: boolean) =>
+  selected
+    ? clsx(
+        series === 1 && 'bg-green-500 border-green-600',
+        series === 2 && 'bg-sky-500 border-sky-600',
+        series === 3 && 'bg-pink-500 border-pink-600',
+        series === 4 && 'bg-orange-500 border-orange-600',
+      )
+    : clsx(
+        seriesPaleClass(series),
+        series === 1 && 'hover:bg-green-200',
+        series === 2 && 'hover:bg-sky-200',
+        series === 3 && 'hover:bg-pink-200',
+        series === 4 && 'hover:bg-orange-200',
+      );
 
 export default CharacterPickerDialog;
