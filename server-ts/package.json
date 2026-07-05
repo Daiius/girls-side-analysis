@@ -8,6 +8,7 @@
     "db:migrate": "drizzle-kit push --force --dialect=mysql --schema=src/db/schema.ts --host=$DB_HOST --user=$MYSQL_USER --password=$MYSQL_PASSWORD --database=$MYSQL_DATABASE",
     "db:seed": "tsx addTestData.ts",
     "db:backfill": "tsx backfillDailyOshiCount.ts",
+    "db:backfill-readings": "tsx backfillCharacterReadings.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
