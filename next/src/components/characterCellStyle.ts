@@ -32,9 +32,16 @@ export const seriesLeftAccentClass = (series: number) => clsx(
   series === 4 && 'border-l-orange-400',
 );
 
-/** 非アクティブセル: 白ベース + シリーズ色の左アクセントバー。 */
+/**
+ * 非アクティブセル: 白ベース + シリーズ色の左アクセントバー。
+ * ボーダーと文字色もシリーズ色系統（文字はほぼ黒に近い 950）でまとめる。
+ */
 export const characterCellIdleClass = (series: number) => clsx(
-  'border-slate-800 bg-white/60 hover:bg-white',
+  'bg-white/60 hover:bg-white',
+  series === 1 && 'border-green-600 text-green-950',
+  series === 2 && 'border-sky-600 text-sky-950',
+  series === 3 && 'border-pink-600 text-pink-950',
+  series === 4 && 'border-orange-600 text-orange-950',
   seriesLeftAccentClass(series),
 );
 
@@ -49,4 +56,4 @@ export const seriesActiveClass = (series: number) => clsx(
 
 /** 長い複合名（・入り）はフォントを一段小さく。 */
 export const characterNameSizeClass = (name: string) =>
-  name.includes('・') ? 'text-xs' : 'text-sm';
+  name.includes('・') ? 'text-sm' : 'text-base';
