@@ -25,7 +25,8 @@ export const characters = mysqlTable(
       varchar('name', { length: 20 }).unique().notNull(),
     // 名前の読み（ひらがな・姓名間の区切りなし）。キャラ検索用。
     // 既存 DB への後付けカラムのため default('') で ALTER 可能にしている。
-    // 値の投入は addTestData.ts（新規 DB）/ backfillCharacterReadings.ts（既存 DB）。
+    // 新規 DB は addTestData.ts が値込みで seed、既存 DB は
+    // drizzle マイグレーション（backfill_readings）で投入する。
     reading:
       varchar('reading', { length: 40 }).notNull().default(''),
   },

@@ -35,7 +35,7 @@ if (existingCount > 0) {
 
 
 // キャラマスタ（name / series / sort / reading）は charactersMaster.ts に集約。
-// 既存 DB に reading を後付けする場合は backfillCharacterReadings.ts を使う。
+// 既存 DB への reading 後付けは drizzle マイグレーション（*_backfill_readings）が担当。
 await db.insert(characters).values(charactersMaster);
 
 // プレイ状態の選択肢を生成

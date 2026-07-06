@@ -1,8 +1,8 @@
 /**
  * キャラクターのマスタデータ。
- * - addTestData.ts（新規 DB への seed）
- * - backfillCharacterReadings.ts（既存 DB への reading 後付け）
- * の両方から参照する。
+ * - addTestData.ts（新規 DB への seed。reading 込みで投入）
+ * から参照する。既存 DB への reading 後付けは drizzle マイグレーション
+ * （drizzle/*_backfill_readings）が担当し、そちらも同じ読みを使う。
  *
  * reading は検索用の読み仮名（ひらがな・姓名間の区切りなし）。
  * Wikipedia の各作品記事の表記で検証済み（2026-07 時点）。
