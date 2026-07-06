@@ -7,6 +7,7 @@
     "dev": "docker compose watch",
     "stop": "docker compose stop",
     "down": "docker compose down",
+    "db:push": "docker compose exec server pnpm db:push",
     "db:migrate": "docker compose exec server pnpm db:migrate",
     "db:seed": "docker compose exec server pnpm db:seed",
     "test": "docker compose exec server pnpm test"

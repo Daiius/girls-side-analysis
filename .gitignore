@@ -1,5 +1,6 @@
 .env*
 *.zip
+*.sql.gz
 
 /node_modules
 /.claude/local/
