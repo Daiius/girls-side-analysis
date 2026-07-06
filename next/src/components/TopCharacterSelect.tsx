@@ -1,11 +1,10 @@
 import React from 'react';
-import clsx from 'clsx';
 
 import { getCharacters } from '@/lib/characters';
-import TopCharacterSelectClient from './TopCharacterSelectClient';
+import TopCharacterPickerDialog from './TopCharacterPickerDialog';
 
 /**
- * キャラ毎の分析ページに移動するためのSelectコンポーネントです
+ * キャラ毎の分析ページに移動するためのキャラ選択コンポーネントです
  *
  * データ取得とインタラクションの両方が必要なので、
  * server componentでデータを取得し、client componentに渡しています
@@ -15,13 +14,11 @@ const TopCharacterSelect: React.FC<
   React.ComponentProps<'div'>
 > = async ({
   className,
-  ...props
 }) => {
   const characters = await getCharacters();
   return (
-    <TopCharacterSelectClient 
-      className={clsx(className)} 
-      {...props}
+    <TopCharacterPickerDialog
+      className={className}
       characters={characters}
     />
   );

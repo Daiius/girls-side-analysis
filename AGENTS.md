@@ -16,7 +16,8 @@ GS シリーズファン向けの「推し投票・組み合わせ分析」Web �
 
 - `pnpm dev` — `docker compose watch` で全サービス起動＋ソース同期（next:3000 / server-ts:4000 / MySQL:3306）
 - `pnpm stop` / `pnpm down`
-- `pnpm db:migrate` — `drizzle-kit push` でスキーマ反映
+- `pnpm db:push` — dev/CI 用に `drizzle-kit push` でスキーマ強制同期（履歴を残さない使い捨て DB 向け）
+- `pnpm db:migrate` — バージョン管理マイグレーション（`server-ts/drizzle/*`）を適用。本番はこちら
 - `pnpm db:seed` — テストデータ投入
 - `pnpm test` — server-ts の vitest を実行
 
@@ -25,7 +26,10 @@ GS シリーズファン向けの「推し投票・組み合わせ分析」Web �
 ## 前提・規約
 
 - パッケージマネージャは pnpm 固定（`packageManager` 参照）。npm/yarn は使わない
-- DB は MySQL 8.4。スキーマは `server-ts/src/db/schema.ts`（Drizzle）。マイグレーションは drizzle-kit push 方式
+- DB は MySQL 8.4。スキーマは `server-ts/src/db/schema.ts`（Drizzle）
+  - 本番マイグレーションは drizzle-kit の generate/migrate 方式（`server-ts/drizzle/` にバージョン管理、`db:generate` で生成し `db:migrate` で適用）。既存 DB を初めて管理下に載せる時は一度だけ `db:baseline` で 0000 を適用済み登録する
+  - dev/CI の使い捨て DB は従来どおり `db:push`（強制同期）でよい
+  - 歴史的経緯で手書き SQL の `server-ts/migrations/001_*.sql` が残る（generate 導入前の本番適用済み分。参照用）
 - サプライチェーン対策で `minimumReleaseAge`（公開 3 日未満の新バージョンは不採用）を設定済み。lockfile は尊重する
 - 認証は better-auth の session ベース。JWT と DB session の併用はしない
 - env ファイル（`next/.env.*` / `server-ts/.env.*`）は gitignore 済み・コミットしない

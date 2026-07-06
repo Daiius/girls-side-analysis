@@ -47,12 +47,10 @@ export async function setup() {
     TEST_TWITTER_ID: 'testID2',
   }
 
-  // スキーマ反映（better-auth テーブル含む schema.ts 全体を push）
-  execSync(
-    'pnpm exec drizzle-kit push --force --dialect=mysql --schema=src/db/schema.ts'
-    + ' --host=$DB_HOST --user=$MYSQL_USER --password=$MYSQL_PASSWORD --database=$MYSQL_DATABASE',
-    { env: childEnv, stdio: 'inherit' },
-  )
+  // スキーマ反映：使い捨てテスト DB なので migrate 履歴は不要。
+  // drizzle.config.ts を読む push で schema.ts 全体（better-auth テーブル含む）を一発反映する。
+  // 接続は childEnv（MYSQL_DATABASE=テスト DB）から config 経由で解決。
+  execSync('pnpm exec drizzle-kit push --force', { env: childEnv, stdio: 'inherit' })
 
   // 決定的な seed 投入
   execSync('pnpm exec tsx addTestData.ts', { env: childEnv, stdio: 'inherit' })
