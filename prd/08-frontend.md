@@ -25,7 +25,7 @@
 |---|---|---|
 | `revalidate = 86400` | `/`, `/[charaName]`, `sitemap.ts` | 時間による ISR は 1 日 1 回の保険。主経路は on-demand |
 | `dynamic = 'force-static'` | `/[charaName]` | 指定しないと dynamic rendering に落ちる（**原因未特定**） |
-| `generateStaticParams` | **コメントアウトで無効化** | 全 62 ページのビルド時生成は DB 負荷が高く、`dynamicParams = false` と `revalidatePath` の組み合わせが破綻したため |
+| `generateStaticParams` | **コメントアウトで無効化** | 全 61 ページのビルド時生成は DB 負荷が高く、`dynamicParams = false` と `revalidatePath` の組み合わせが破綻したため |
 | `revalidatePath` | `next/src/lib/votes.ts` | **on-demand ISR の主経路**（[04](./04-voting.md) §6） |
 | cache tag（`revalidateTag` / `unstable_cache`） | **未使用** | fetch の `next: { revalidate }` だけで制御する |
 
@@ -74,7 +74,7 @@
 
 ### 4.1 シリーズ色の一元化
 
-**`src/components/characterCellStyle.ts` の `seriesTheme` テーブルが唯一の定義元**。
+**シリーズと色の対応は本表が原典**。実装はこれに従う。
 
 | シリーズ | 色 |
 |---|---|
@@ -83,9 +83,10 @@
 | GS3 | pink |
 | GS4 | orange |
 
+- 実装上、この対応を **Tailwind のクラス名に落とす場所は `src/components/characterCellStyle.ts` の
+  `seriesTheme` ただ 1 箇所**である。ヘッダーのハート 4 色もこれに対応する。**色を変えるときはそこだけを直す**。
 - Tailwind のクラス検出のため**完全リテラル**で書く（文字列連結でクラス名を組み立てない）。
-- シリーズの追加・色変更は**このテーブルだけを直す**。ヘッダーのハート 4 色もこれに対応する。
-- 「・」を含む複合名の折り返し・フォントサイズ・`col-span-2` の判定もここに集約する。
+- 「・」を含む複合名の折り返し・フォントサイズ・`col-span-2` の判定も同ファイルに集約する。
 
 ### 4.2 スタイル
 
@@ -122,5 +123,6 @@
 | `ENABLE_AUTH_REWRITES` | `'true'` で `/api/auth/*` の rewrite を有効化（ローカル用） |
 | `DEBUG` | `debug` パッケージのフィルタ（名前空間 `girls-side-analysis`） |
 
-> `next/.env.production` に DB 接続情報や `AUTH_TWITTER_*` が残っているが、**現行の next コードは参照していない**（旧構成の名残）。
-> `next/.env.development` の `URSA_AUTH_*` も未使用。UrsaAuth への移行は**追わないと決定済み**（[09](./09-roadmap.md) §4）。
+> 上表以外にも旧構成の名残の変数が env ファイルに残っているが、**現行の next コードは参照していない**。
+> env ファイルはすべて gitignore 対象で、コミットしない（[02](./02-architecture.md) §5）。
+> UrsaAuth への移行は**追わないと決定済み**（[09](./09-roadmap.md) §5）。

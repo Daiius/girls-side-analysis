@@ -17,10 +17,12 @@ GS シリーズファン向けの「推し投票・組み合わせ分析」Web �
 | [prd/06-auth-and-privacy.md](./prd/06-auth-and-privacy.md) | better-auth / X OAuth / owner 境界 / 公開範囲 |
 | [prd/07-api.md](./prd/07-api.md) | API 契約（エンドポイント・認証レイヤ・RPC 型共有） |
 | [prd/08-frontend.md](./prd/08-frontend.md) | ページ / ISR とキャッシュ / UI / SEO・a11y |
-| [prd/09-roadmap.md](./prd/09-roadmap.md) | 実装済み / 未整備 / 将来案 / 未決事項 |
+| [prd/09-roadmap.md](./prd/09-roadmap.md) | 着手する不備 / 次の機能追加 / 将来案 / 決着済みの論点 |
+| [prd/appendix-characters.md](./prd/appendix-characters.md) | 付録 A: キャラクター一覧（名簿の原典）と変更手順 |
 
+> **PRD が原典**。実装（`schema.ts` / `app.ts` / `charactersMaster.ts` など）は PRD に従う。
 > 仕様変更を伴う PR は、該当章の更新を同じ PR に含める。
-> PRD が実装より古いと分かったら、PRD を直す（PRD を無視して進めない）。
+> PRD が実装より古い・誤っていると分かったら、PRD を直す（実装を黙って正とみなさない）。
 
 ## 構成（pnpm monorepo）
 

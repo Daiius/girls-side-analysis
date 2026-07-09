@@ -1,8 +1,8 @@
 # 03. データモデル
 
-本章は DB スキーマ（MySQL 8.4 / Drizzle）を定める。**正典は [`server-ts/src/db/schema.ts`](../server-ts/src/db/schema.ts)**、
-本章はその意図と制約を説明する。ドメイン定義は [01](./01-domain.md)、書き込み規則は [04](./04-voting.md)、
-集計は [05](./05-analysis.md) を参照。
+本章は DB スキーマ（MySQL 8.4 / Drizzle）を定める。**本章がスキーマの原典**であり、
+実装 [`server-ts/src/db/schema.ts`](../server-ts/src/db/schema.ts) は本章に従う（食い違えば本章が正しい）。
+ドメイン定義は [01](./01-domain.md)、書き込み規則は [04](./04-voting.md)、集計は [05](./05-analysis.md) を参照。
 
 ---
 
@@ -10,7 +10,7 @@
 
 | テーブル | 役割 | 書き込み主体 |
 |---|---|---|
-| `Characters` | キャラクターマスタ（62 件）。公式順 `(series, sort)` の定義元 | seed / マイグレーションのみ |
+| `Characters` | キャラクターマスタ（61 件）。公式順 `(series, sort)` の定義元 | seed / マイグレーションのみ |
 | `Votes` | **投票履歴の不変ログ**（日単位） | 投票時（当日分を置換） |
 | `LatestVotes` | **ユーザーごとの現在の推し set** | 投票時（per-user で全置換） |
 | `DailyOshiCount` | **過去日の pair 集計 snapshot** | 夜間 cron / 手動 backfill |
@@ -22,7 +22,7 @@
 
 このアプリは **read >> write**（閲覧は常時、投票は稀）である。にもかかわらず旧実装は
 「毎 read で `Votes` 全体を走査して各ユーザーの最新投票を計算し直す」構造で、トップページは
-**全 62 キャラ × その重いクエリ**、キャラページは **30 日分 × 同クエリ**を走らせていた。
+**全 61 キャラ × その重いクエリ**、キャラページは **30 日分 × 同クエリ**を走らせていた。
 
 これを役割分担で解いたのが現行の 3 テーブル構成である（経緯: [`docs/vote-aggregation-redesign.md`](../docs/vote-aggregation-redesign.md)）。
 
@@ -145,7 +145,7 @@
 - `drizzle/` の現在の内容:
   1. `20260706112547_complex_wild_child` — 全テーブルの CREATE（ベースライン。この時点では `Characters.reading` が無い）
   2. `20260706112635_same_sleeper` — `Characters.reading` の ADD COLUMN
-  3. `20260706112653_backfill_readings` — 62 キャラの `reading` を UPDATE で backfill
+  3. `20260706112653_backfill_readings` — 61 キャラの `reading` を UPDATE で backfill
 - `server-ts/migrations/001_*.sql` は **generate 導入前に本番へ手で適用した SQL**。参照用に残す（再実行しない）。
 
 ### 5.1 本番 DB のテーブル単位権限
@@ -162,6 +162,6 @@
 
 ## 7. パフォーマンス原則
 
-- 規模感: ユーザー数は数百〜、キャラ 62、pair は最大 62×61。**MySQL 8.4 には十分小さい**。
+- 規模感: ユーザー数は数百〜、キャラ 61、pair は最大 61×60。**MySQL 8.4 には十分小さい**。
 - **これ以上の事前集計テーブルは作らない**。`DailyOshiCount` で足りている。実測で遅いクエリが出たら初めて検討する。
-- 重いのは `GET /analysis`（全 62 キャラ分の pair 集計を並列に投げる）。これは **ISR で 1 日 1 回**しか呼ばれない前提で許容している（[08](./08-frontend.md) §2）。
+- 重いのは `GET /analysis`（全 61 キャラ分の pair 集計を並列に投げる）。これは **ISR で 1 日 1 回**しか呼ばれない前提で許容している（[08](./08-frontend.md) §2）。

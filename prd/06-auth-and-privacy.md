@@ -29,7 +29,7 @@
 ### 1.2 cookie とオリジン
 
 - cookie prefix は `gsa`。
-- 本番はフロント（Vercel）と API（self-host）が**別サブドメイン**なので、`AUTH_COOKIE_DOMAIN` を設定して
+- 本番はフロントと API が**別サブドメイン**で動くため、`AUTH_COOKIE_DOMAIN` を設定して
   親ドメインで cookie を共有する（`secure: true`, `sameSite: 'lax'`）。**未設定なら既定のまま**（ローカル）。
 - `trustedOrigins` と `/api/auth/*` の CORS origin はどちらも **`BETTER_AUTH_URL`（= フロントの origin）**。
 - ローカルでは `next.config.ts` の rewrites が `/api/auth/*` を API サーバへ転送し、**same-origin** に見せる

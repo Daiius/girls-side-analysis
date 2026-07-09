@@ -8,12 +8,13 @@
 ## 1. 全体像
 
 - **pnpm monorepo**（`pnpm-workspace.yaml` の packages は `next` と `server-ts` のみ）。
-- フロント（`next`）は **Vercel**、API（`server-ts`）は **self-host のコンテナ**。DB は self-host の MySQL 8.4。
-  → フロントと API は**別オリジン**で動く。これが CORS・cookie ドメイン共有・API キー配置の設計を規定する（[06](./06-auth-and-privacy.md) §3）。
+- **フロント（`next`）と API（`server-ts`）は別々の環境にデプロイされ、別オリジンで動く。**
+  これが CORS・cookie ドメイン共有・API キー配置の設計を規定する（[06](./06-auth-and-privacy.md) §3）。
+  DB は API と同じ環境の MySQL 8.4。
 - `next` は `server-ts` を **Hono RPC の型として import** する。API の形が変われば型エラーで即座に検出される。
 
 ```
- Vercel                              self-host
+ フロント環境                         API 環境
 ┌──────────────┐                   ┌──────────────────────────┐
 │  next        │ ──Bearer API_KEY─→ │ server-ts (Hono)         │
 │  App Router  │   + cookie 転送    │  ├ better-auth handler   │
@@ -24,12 +25,14 @@
         │ API サーバへ直接（cross-origin）  MySQL 8.4
 ```
 
+> デプロイ先の具体名・ドメイン・接続情報は**公開リポジトリに書かない**（§6）。
+
 ## 2. 技術スタック
 
 | 領域 | 採用 | 備考 |
 |---|---|---|
 | 言語 | TypeScript（ESM） | 両パッケージとも `"type": "module"` |
-| DB | **MySQL 8.4** | self-host |
+| DB | **MySQL 8.4** | |
 | ORM | **Drizzle ORM 1.0.0-rc.3** | `drizzle-kit` も同 rc に **exact pin**（catalog 外） |
 | API | **Hono 4 + @hono/node-server** | `hono/client` の `hc` で型付き RPC |
 | 入力検証 | **zod v4**（`zod/v4` サブパス）+ `@hono/zod-validator` | |
@@ -40,15 +43,15 @@
 | D&D | **dnd-kit** | 推しの順位付け |
 | 日時 | **luxon** | TZ は常に `Asia/Tokyo` を明示 |
 | バッチ | **node-cron 4**（in-process） | 型同梱のため `@types/node-cron` 不要 |
-| テスト | **Vitest 4**（server-ts のみ） | 実 MySQL に対する snapshot テスト |
+| テスト | **Vitest 4**（server-ts のみ） | 実 MySQL に対する統合テスト（[05](./05-analysis.md) §7） |
 | パッケージ管理 | **pnpm 10**（workspace + catalog） | `packageManager` で固定。npm/yarn は使わない |
 | 開発環境 | **docker compose watch** | bind mount を使わない |
 
 ## 3. パッケージ構成
 
 ```
-next/        # Next.js フロントエンド（本番: Vercel）
-server-ts/   # Hono API + 集計 cron（本番: self-host コンテナ）
+next/        # Next.js フロントエンド
+server-ts/   # Hono API + 集計 cron
 server-rs/   # Rust(axum + sea-orm) の別実装。workspace / compose の外（§7）
 ```
 
@@ -86,7 +89,7 @@ server-rs/   # Rust(axum + sea-orm) の別実装。workspace / compose の外（
 | `pnpm stop` / `pnpm down` | compose stop / down |
 | `pnpm db:push` | `drizzle-kit push --force`（**dev/CI の使い捨て DB 専用**。履歴を残さない） |
 | `pnpm db:migrate` | `server-ts/drizzle/*` を順に適用（**本番はこちら**） |
-| `pnpm db:seed` | `addTestData.ts`（キャラ 62 件 + 状態マスタ + テスト投票 + DailyOshiCount backfill） |
+| `pnpm db:seed` | `addTestData.ts`（キャラ 61 件 + 状態マスタ + テスト投票 + DailyOshiCount backfill） |
 | `pnpm test` | `docker compose exec server pnpm test`（Vitest） |
 
 個別パッケージ内では `pnpm <script>`（`server-ts`: `db:generate` / `db:baseline` / `db:backfill` / `build` など）。
@@ -105,14 +108,14 @@ server-rs/   # Rust(axum + sea-orm) の別実装。workspace / compose の外（
 ## 6. ビルドとデプロイ
 
 - `server-ts` は **esbuild で `dist/index.js` に単一バンドル**（`esbuild.config.ts`、ESM / node20 target）し、
-  **distroless nodejs24** イメージに置く（`Dockerfile.server.prod`）。
-- イメージは **GHCR に push**（`.github/workflows/build-push.yml`、`workflow_dispatch` の手動起動）。
-  タグは `ブランチ名` / `sha-<full>` / `latest`（default branch のみ）。
+  最小構成のコンテナイメージに置く（`Dockerfile.server.prod`）。
+- イメージのビルドとレジストリへの push は `.github/workflows/build-push.yml`（`workflow_dispatch` の手動起動）で行う。
 - ⚠️ **本番イメージ（linux/amd64）のビルドは必ず GitHub Actions で行う**。
   arm64 Mac 上のエミュレートビルドは libuv の io_uring 周りでクラッシュする。
-- `next` は Vercel でビルド・配信する。
-- **本番・開発環境の具体情報（ドメイン / TLS / リバースプロキシ / 接続先 / シークレット / DB 権限付与の実手順）は
-  公開リポジトリに含めない**。本リポジトリは public である。
+- `next` はホスティング事業者側でビルド・配信される。
+- ⚠️ **本リポジトリは public である。** デプロイ先の事業者名・ドメイン・TLS / リバースプロキシ構成・接続先・
+  シークレット・DB 権限付与の実手順といった**環境の具体情報は書かない**。
+  必要な運用メモは gitignore 対象の `.claude/local/` に置く。
 
 ### 6.1 CI（未整備 → 導入決定）
 
@@ -133,4 +136,4 @@ server-rs/   # Rust(axum + sea-orm) の別実装。workspace / compose の外（
 - 実態: 約 540 行、ハンドラは 4 つ（`characters` / `user_state` の GET・POST / `statuses`）のみ。
   **投票・分析・集計は未実装**。最終更新は 2025-07-30 で、2026-05 の 3 テーブル再設計を反映していない。
 - **pnpm workspace にも `compose.yaml` にも含まれない**。CI もテストも通っていない。
-- **稼働系は `server-ts` である**。仕様の正典はこの PRD と `server-ts` の実装。
+- **稼働系は `server-ts` である**。仕様の原典はこの PRD であり、`server-ts` がそれを実装する。

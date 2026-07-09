@@ -1,8 +1,12 @@
 # PRD: Girl's Side Analysis
 
-> **本ディレクトリはこのアプリの正典（source of truth）**。実装レビュー・仕様判断はここを基準に行う。
-> 記述は **2026-07-10 時点の実装から逆算**したもので、README.md の「初期構想」とは異なる箇所がある
-> （README.md は開発記録・思考ログとして残す。仕様として参照しない）。
+> **本ディレクトリはこのアプリの原典（source of truth）**。実装レビュー・仕様判断はここを基準に行う。
+> 実装（`schema.ts` / `app.ts` / `charactersMaster.ts` など）は PRD に従う。
+>
+> ただし本 PRD は **2026-07-10 時点の実装から書き起こした**ものであり、
+> **書き漏らし・誤読が残っている前提で読むこと**（実際、初版には誤りが数件あった）。
+> 実装の方が正しいと判断したら、PRD を直す PR を出す。
+> リポジトリルートの `README.md` は初期構想の記録であり、**仕様として参照しない**。
 
 ## 目的
 
@@ -24,7 +28,7 @@
 
 ## アーキ概観
 
-- pnpm monorepo。`next/`（Next.js フロント / 本番 Vercel）と `server-ts/`（Hono API + node-cron / 本番 self-host コンテナ）の 2 パッケージ。
+- pnpm monorepo。`next/`（Next.js フロント）と `server-ts/`（Hono API + node-cron）の 2 パッケージ。**別オリジンにデプロイされる**。
 - MySQL 8.4 / Drizzle ORM 1.0 RC / Hono RPC（型を跨いで共有）/ better-auth（X OAuth のみ）。
 - `server-rs/`（axum + sea-orm）は **pnpm workspace にも compose にも含まれない別実装**。稼働系ではない（[02](./02-architecture.md) §7）。
 - 設計の柱: **「履歴（`Votes`）／現在状態（`LatestVotes`）／過去日集計（`DailyOshiCount`）」の 3 テーブル分離**。
@@ -55,10 +59,15 @@
 | [06-auth-and-privacy.md](./06-auth-and-privacy.md) | better-auth / X OAuth / owner 境界 / PII 方針 |
 | [07-api.md](./07-api.md) | API 契約（エンドポイント・認証レイヤ・RPC 型共有） |
 | [08-frontend.md](./08-frontend.md) | ページ / ISR とキャッシュ / UI コンポーネント / SEO・a11y |
-| [09-roadmap.md](./09-roadmap.md) | 実装済み / 未整備 / 将来案 / 未確定事項 |
+| [09-roadmap.md](./09-roadmap.md) | 着手する不備 / 次の機能追加 / 将来案 / 決着済みの論点 |
+| [appendix-characters.md](./appendix-characters.md) | 付録 A: キャラクター一覧（**名簿の原典**）と変更手順 |
 
 ## この PRD の使い方（レビュー時）
 
-- 実装が PRD と食い違う場合、**まず PRD が正しいかを疑う**。実装が正で PRD が古いなら PRD を直す PR を出す。
+- **PRD が原典である。** 実装が PRD と食い違う場合、PRD が正しい。
+  ただし本 PRD は既存実装から書き起こしたため、**書き漏らし・誤読が残っている前提で読むこと**。
+  実装の方が正しいと判断したら、PRD を直す PR を出す（実装を黙って正とみなさない）。
 - 仕様変更を伴う PR は、**該当章の更新を同じ PR に含める**。
 - 「未確認」「既知の不備」と明記された箇所は、仕様の欠落ではなく**意図的に未決**である。指摘は歓迎するが「バグ」として扱わない。
+- 本リポジトリは **public** である。本番環境の具体情報（事業者名・ドメイン・接続先・シークレット・
+  運用手順の詳細）を PRD に書かない（[02](./02-architecture.md) §6）。

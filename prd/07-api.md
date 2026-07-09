@@ -1,6 +1,7 @@
 # 07. API 契約
 
-`server-ts` が公開する HTTP API の仕様。実装の正典は [`server-ts/src/app.ts`](../server-ts/src/app.ts)。
+`server-ts` が公開する HTTP API の仕様。**本章が API 契約の原典**であり、
+実装 [`server-ts/src/app.ts`](../server-ts/src/app.ts) は本章に従う（食い違えば本章が正しい）。
 認可の考え方は [06](./06-auth-and-privacy.md) §3、呼び出し側は [08](./08-frontend.md) §3。
 
 ---
@@ -29,7 +30,7 @@
 
 - `:id` は **`twitter_id`**（better-auth の `user.id` ではない。[06](./06-auth-and-privacy.md) §2）。
 - 例外は握って `console.error` し、**本文なしの 500** を返す（エラー詳細をクライアントに漏らさない）。
-- `GET /analysis` は 62 キャラ分の pair 集計を並列に投げる。**ISR 経由でしか呼ばれない前提**（[03](./03-data-model.md) §7）。
+- `GET /analysis` は 61 キャラ分の pair 集計を並列に投げる。**ISR 経由でしか呼ばれない前提**（[03](./03-data-model.md) §7）。
 
 ### 2.1 `POST /votes/:id` の検証（2026-07-10 決定）
 
@@ -79,4 +80,6 @@
 | `TEST_TWITTER_ID` | — | seed のユーザー ID（テストでは `testID2` に上書きされる） |
 | `TZ` | 実質必須 | `Asia/Tokyo`（compose / 本番コンテナで設定。luxon と cron でも二重に明示） |
 
-`.env*` はコミットしない。`server-ts/.env.example` は**存在しない**（`.env.development` が事実上の雛形）。
+値は環境変数として注入する。`.env*` は**すべて gitignore 対象でコミットしない**（[02](./02-architecture.md) §5）。
+⚠️ `.env.example` が用意されていないため、新しい環境を立てるときに**必要な変数を洗い出す手掛かりが上表しかない**。
+雛形の整備は将来の課題。
