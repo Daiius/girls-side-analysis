@@ -199,7 +199,7 @@ const CharacterPickerDialog: React.FC<{
                   value={query}
                   onChange={e => setQuery(e.target.value)}
                   placeholder='名前・よみがなで検索（全シリーズ横断）'
-                  aria-label='キャラクター名・よみがなで検索'
+                  aria-label='名前・よみがなで検索'
                   className={clsx(
                     'w-full rounded-lg border-none bg-black/5',
                     'py-2 pl-8 pr-3 text-sm',
@@ -295,7 +295,7 @@ const CharacterPickerDialog: React.FC<{
                     </section>
                   )
                 : <p className='p-4 text-center text-sm text-black/60'>
-                    「{query.trim()}」に一致するキャラがいません
+                    「{query.trim()}」に一致する人がいません
                   </p>
               }
             </div>

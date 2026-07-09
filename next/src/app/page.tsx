@@ -59,7 +59,8 @@ export default async function Home() {
           url={sharedURL}
         />
       </div>
-      <TopCharacterSelect />
+      {/* 上下の要素から離して分析への入口を目立たせる（親は gap-2 なので追加で my） */}
+      <TopCharacterSelect className='my-6' />
       <TopAnalysis 
         className='w-full flex-1' 
         topAnalysisData={data}
