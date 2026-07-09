@@ -38,9 +38,9 @@ export const insertVotesIfUpdated = async ({
   }
   const { updatedCharaNames } = await res.json()
   console.log(`updatingPages for: ${updatedCharaNames.join(',')}`)
-  // ロジックミス、実際には関連するキャラが含まれる全部のページを更新しなければならない
-  // ある人の投票に葉月珪が追加された時、
-  // 更新が必要なのは葉月珪のページだけでなく、全キャラ
+  // updatedCharaNames は「今回の推し全員」∪「前回いて今回いないキャラ」= 旧 set と新 set の和。
+  // 票数が変化しうる pair の両端は必ずこの集合に含まれるので、これだけ revalidate すれば足りる
+  // （このユーザーが推していないキャラのページは票数が変わらない）。証明は prd/04-voting.md §2.3。
   for (const charaName of updatedCharaNames) {
     // NOTE: パーセントエンコードしてからrevalidatePathを呼ばないと、キャッシュが更新されません！
     //revalidatePath(`/${charaName}`)
