@@ -1,7 +1,26 @@
 # AGENTS.md
 
 GS シリーズファン向けの「推し投票・組み合わせ分析」Web アプリ。
+**仕様の正典は [`prd/`](./prd/)**（下表）。実装レビュー・仕様判断はここを基準に行う。
 背景・設計の経緯・試行錯誤の記録は [README.md](./README.md) と [docs/](./docs/) を参照（このファイルでは繰り返さない）。
+
+## 仕様（PRD）
+
+| 文書 | 内容 |
+|---|---|
+| [prd/README.md](./prd/README.md) | 目的 / スコープ / アーキ概観 / 索引・使い方 |
+| [prd/01-domain.md](./prd/01-domain.md) | ドメイン事実（キャラ / 推し・順位・組み合わせ / プレイ状態 / 日の定義） |
+| [prd/02-architecture.md](./prd/02-architecture.md) | 技術スタック / monorepo / 開発環境 / 依存ポリシー / デプロイ |
+| [prd/03-data-model.md](./prd/03-data-model.md) | DB スキーマ / 3 テーブル設計 / 日付と TZ / マイグレーション運用 |
+| [prd/04-voting.md](./prd/04-voting.md) | 投票の入力仕様・書き込み規則・差分判定・認可 |
+| [prd/05-analysis.md](./prd/05-analysis.md) | pair 集計 / 夜間 cron / 時系列 / 決定性ルール |
+| [prd/06-auth-and-privacy.md](./prd/06-auth-and-privacy.md) | better-auth / X OAuth / owner 境界 / 公開範囲 |
+| [prd/07-api.md](./prd/07-api.md) | API 契約（エンドポイント・認証レイヤ・RPC 型共有） |
+| [prd/08-frontend.md](./prd/08-frontend.md) | ページ / ISR とキャッシュ / UI / SEO・a11y |
+| [prd/09-roadmap.md](./prd/09-roadmap.md) | 実装済み / 未整備 / 将来案 / 未決事項 |
+
+> 仕様変更を伴う PR は、該当章の更新を同じ PR に含める。
+> PRD が実装より古いと分かったら、PRD を直す（PRD を無視して進めない）。
 
 ## 構成（pnpm monorepo）
 
