@@ -7,6 +7,7 @@ import clsx from 'clsx';
 import { AnalysisData } from '@/types';
 import { StarIcon } from '@heroicons/react/24/solid';
 import { AnimatedVoteBar } from '@/components/AnimatedVoteBar';
+import CharacterNameLabel from '@/components/CharacterNameLabel';
 
 const TopAnalysisContent: React.FC<
   { 
@@ -31,9 +32,14 @@ const TopAnalysisContent: React.FC<
       className={clsx('flex flex-col', className)}
       {...props}
     >
-      <div className='flex flex-row items-baseline gap-1'>
+      {/*
+        flex-wrap で、名前＋文が1行に収まらない時は文を名前の下へ折り返す（nowrap だと
+        名前が潰れて途中改行してしまう）。長い複合名（・入り）は CharacterNameLabel で
+        「・の直後だけ」で折り返す。
+      */}
+      <div className='flex flex-row flex-wrap items-baseline gap-x-1'>
         <div key={targetCharacterName} className='text-lg font-bold animate-bounce-once'>
-          {targetCharacterName}
+          <CharacterNameLabel name={targetCharacterName} />
         </div>
         <span>推しの人が同時に推すのは、</span>
       </div>
