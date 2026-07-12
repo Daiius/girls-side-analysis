@@ -164,12 +164,23 @@ const CharacterPickerDialog: React.FC<{
           )}
         />
 
-        <div className='fixed inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4'>
+        {/*
+          高さの基準は svh（アドレスバーが出ている時の可視高さ）に揃える。
+          vh は「アドレスバーが引っ込んだ状態の高さ」で固定される一方、この fixed
+          コンテナはモバイル Safari では実際の可視領域に張り付くため、vh 基準で
+          パネル高を取ると下寄せ（items-end）の分だけ上にはみ出してヘッダ・検索欄が
+          見切れる。デバイスエミュレーションにはアドレスバーが無くこのズレが再現
+          しないので、実機で初めて露見する。
+          inset-0 と h-svh の併記は over-constrained になり bottom が無視される
+          （= top:0 + height:100svh）ので、これで可視領域そのものになる。
+        */}
+        <div className='fixed inset-0 h-svh flex items-end sm:items-center justify-center p-0 sm:p-4'>
           <DialogPanel
             transition
             className={clsx(
               'flex flex-col w-full sm:max-w-md',
-              'h-[90vh] sm:h-[80vh]',
+              // 上のコンテナ（= 可視領域）に対する割合。vh は使わない。
+              'h-[90%] sm:h-[80%]',
               'bg-sky-100 text-black shadow-xl',
               'rounded-t-2xl sm:rounded-2xl',
               'overflow-hidden',
