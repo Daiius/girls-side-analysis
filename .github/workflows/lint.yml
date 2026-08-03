@@ -1,0 +1,42 @@
+name: Lint
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  biome:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # pnpm はルート package.json の packageManager から corepack が解決する。
+      # setup-node の cache: pnpm より先に pnpm を用意しておく必要がある。
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          # 開発・本番の各 Dockerfile と同じ node 24 に揃える
+          node-version: 24
+          cache: pnpm
+
+      # biome だけが必要なので依存の取得は最小限にしたいが、--frozen-lockfile で
+      # lockfile とツリーの整合そのものも検証したいのでフルインストールする。
+      # NOTE: pnpm-workspace.yaml の minimumReleaseAge（公開 3 日未満は不採用）は
+      # lockfile 解決時の制約であり、frozen-lockfile な CI では新たな解決が
+      # 走らないため CI が日付で不安定になることはない。
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # 整形は意図的に無効にしてあるので lint のみ（設定は biome.jsonc）。
+      # 指摘があれば非ゼロ終了する。
+      - name: Run biome lint
+        run: pnpm exec biome lint .
