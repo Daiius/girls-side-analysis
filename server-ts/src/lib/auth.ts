@@ -15,10 +15,10 @@ const required = (name: string, value: string | undefined): string => {
   return value;
 };
 
-// 本番では `girls-side-analysis.faveo-systema.net` (Vercel フロント) と
-// `api.faveo-systema.net` (このサーバー) で cookie を共有するため、
-// AUTH_COOKIE_DOMAIN=.faveo-systema.net を設定する。
+// 本番はフロントと API が別サブドメインで動くため、共通の親ドメインを
+// AUTH_COOKIE_DOMAIN に設定して cookie を共有する（prd/06-auth-and-privacy.md §1.2）。
 // ローカルでは未設定（localhost で同一ホスト）。
+// 具体的なドメインは環境変数で与える。public リポジトリには書かない（AGENTS.md）。
 const cookieDomain = process.env.AUTH_COOKIE_DOMAIN;
 
 // フロントエンドの origin。CORS の許可と trustedOrigins に使う。

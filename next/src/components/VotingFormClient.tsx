@@ -36,6 +36,8 @@ const VotingFormClient: React.FC<
     latestUserState: UserState;
     characters: Character[];
     latestVotes: Vote[];
+    /** シェア文言に使う自身の公開 URL。server component 側で HOST_URL から解決する */
+    hostUrl: string;
   }
   & React.ComponentProps<'form'>
 > = ({
@@ -43,6 +45,7 @@ const VotingFormClient: React.FC<
   latestUserState,
   characters,
   latestVotes,
+  hostUrl,
   className,
   ...props
 }) => {
@@ -148,7 +151,7 @@ const VotingFormClient: React.FC<
               'top-1/2 -translate-y-1/2',
             )}
             text={`私の推しは ${favorites.join('、')} です！`}
-            url='https://faveo-systema.net/girls-side-analysis'
+            url={hostUrl}
           />
         </div>
         {errorMessage &&
