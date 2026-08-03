@@ -210,10 +210,14 @@ const route = app
   .post(
     '/votes/:id', 
     zValidator('param', z.object({ id: z.string() })),
+    // 推しは 1 人以上でなければならない（prd/04-voting.md §4.1）。
+    // 0 件を許すと Votes にその日の行が 1 行も残らず、as-of 集計が前回の投票日を
+    // 拾って過去日の集計で推しが復活する。加えて drizzle の values([]) が例外を
+    // 投げて 500 になる。ここで 400 として弾く。
     zValidator('json', z.array(z.object({
       characterName: z.string(),
       level: z.number(),
-    }))),
+    })).min(1, '推しは 1 人以上必要です')),
     async c => {
       const { id } = c.req.valid('param')
       const votes = c.req.valid('json')

@@ -90,11 +90,15 @@ pair `(X, Y)` の票数がこのユーザーの投票で変化するのは、`[X
 
 **投票とは「1 人以上の推しを登録する行為」である。** 0 件は投票として認めない。
 
-- server は zod `.min(1)` で **400**。UI は `favorites.length === 0` のとき送信ボタンを無効化する（多層防御）。
-- 🐛 **現状はこれが実バグになっている**: 前回 1 人以上いたユーザーが推しを全消しして投票すると、
+- ✅ **実装済み**（2026-08-04）。**3 層**で止める:
+  1. server は zod `.min(1)` で **400**（`server-ts/src/app.ts` の `POST /votes/:id`）
+  2. UI は `favorites.length === 0` のとき**送信ボタンを無効化**する
+  3. UI は送信処理内でも 0 件を弾き、`推しを 1 人以上選んでから投票してください！` を返す
+- かつては実バグだった: 前回 1 人以上いたユーザーが推しを全消しして投票すると、
   差分ありと判定 → `DELETE` 成功 → `tx.insert(votes).values([])` で drizzle が
-  `values() must be called with at least one value` を投げ、**500** になる（トランザクションは rollback されデータは無事）。
-  - 初回ユーザーの 0 件送信は差分判定が `isSame === true` となり書き込みをスキップするため、500 にならない。
+  `values() must be called with at least one value` を投げ、**500** になっていた
+  （トランザクションは rollback されデータは無事）。
+  - 初回ユーザーの 0 件送信は差分判定が `isSame === true` となり書き込みをスキップするため、500 にならなかった。
 - **なぜ 0 件を正式サポートしないのか**: 0 件を許すと `Votes` にその日の行が 1 行も残らない。
   すると as-of 集計（[05](./05-analysis.md) §2）の `MAX(voted_date) <= targetDate` が**前回の投票日を拾い、
   過去日の集計では推しが復活する**。`LatestVotes`（今日）からは消えるのに `DailyOshiCount`（昨日以前）には残る、
@@ -139,5 +143,21 @@ pair `(X, Y)` の票数がこのユーザーの投票で変化するのは、`[X
    - **パーセントエンコードが必須**。ルートが日本語なので、生の日本語文字列を渡すと一致しない。
 3. 1 件でも更新があればトップページ `revalidatePath('/')`。
 4. クライアントは `router.refresh()` で自分のフォームを再取得する。
+
+## 7. 投票が失敗したときの見せ方
+
+**Server Action の例外をフォームの外に漏らさない**。`vote()` が投げると error boundary まで飛び、
+入力中の推しの並びごと画面が差し替わってしまうため。
+
+| 層 | 実装 | 役割 |
+|---|---|---|
+| フォーム内 | `VotingFormClient` の `useActionState` 内で `vote()` を **try/catch** | 日本語メッセージを `errorMessage` として返す。**選択中の推しは保たれ、そのまま再試行できる** |
+| 安全網 | [`next/src/app/error.tsx`](../next/src/app/error.tsx) | 上記で捕まえきれない例外（server component の失敗など）を受ける |
+
+- `error.tsx` は `layout.tsx` の下に置くため **Header / Footer は維持される**。
+  「もう一度」（`reset()`）と「トップへ」の導線を出し、`digest` は**エラー ID としてのみ**表示する。
+- ⚠️ これが無いと Next の既定画面（英語の `A server error occurred` と ERROR 番号のみ、
+  ヘッダー・フッターも消える）になる。**dev のオーバーレイとは全く別物**なので、
+  この領域を触ったら `pnpm build && pnpm start` で確認すること。
 
 詳細と Next の ISR 設定は [08](./08-frontend.md) §2。

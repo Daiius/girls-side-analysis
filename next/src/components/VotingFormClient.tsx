@@ -83,14 +83,28 @@ const VotingFormClient: React.FC<
         return '投票完了！（過去データと同じ）';
       }
 
-      await vote(
-        formData, 
-        favorites.map((characterName, iCharacterName) =>
-          ({ characterName, level: iCharacterName })
-        )
-      );
+      // 推し 0 人は投票として認めない（prd/04-voting.md §4.1）。
+      // 送信ボタンも無効化しているが、多層防御としてここでも止める。
+      if (favorites.length === 0) {
+        return '推しを 1 人以上選んでから投票してください！';
+      }
+
+      // vote() が投げると error boundary まで飛び、フォームの入力状態ごと
+      // 画面が差し替わってしまう。ここで捕まえてメッセージとして返し、
+      // 選択中の推しを保ったまま再試行できるようにする。
+      try {
+        await vote(
+          formData,
+          favorites.map((characterName, iCharacterName) =>
+            ({ characterName, level: iCharacterName })
+          )
+        );
+      } catch (e) {
+        console.error(e);
+        return '投票に失敗しました... 少し待ってからもう一度お試しください';
+      }
       router.refresh();
-      
+
       if (!isSamePlayerStatus && isSameVotes) {
         return '投票完了！（プレイ状況のみ更新）';
       }
@@ -143,7 +157,8 @@ const VotingFormClient: React.FC<
             )}
             variant='date'
             type='submit'
-            disabled={isPending}
+            // 推し 0 人は投票として認めない（prd/04-voting.md §4.1）
+            disabled={isPending || favorites.length === 0}
           />
           <XShareLink
             className={clsx(

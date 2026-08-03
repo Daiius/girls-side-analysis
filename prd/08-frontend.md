@@ -14,6 +14,7 @@
 | `/profile` | `src/app/profile/page.tsx` | ログイン / 投票フォーム |
 | `/robots.txt` | `src/app/robots.ts` | `/profile` を Disallow |
 | `/sitemap.xml` | `src/app/sitemap.ts` | トップ + 全キャラページ |
+| （error boundary） | `src/app/error.tsx` | 例外時の安全網。日本語 + Header/Footer 維持（[04](./04-voting.md) §7） |
 
 - ルートレイアウトは 1 つ（`layout.tsx`）。`<html lang="ja">` / `SettingsProvider` / `Header` / `Footer`。
 - **`/[charaName]` は生の日本語 URL**（例 `/葉月珪`）で運用する。§5 参照。
