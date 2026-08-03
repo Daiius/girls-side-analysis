@@ -53,11 +53,11 @@ export default function Error({
         メッセージ枠の罫線（1.5rem 間隔）に行を載せるため、1 行 = 1 要素で置き、
         行高を変えるクラス（text-sm 等）と縦方向の余白は当てない（px は可）。
       */}
-      <GSMessage title={<span>エラー</span>} heightFixed={false} className='w-full'>
+      <GSMessage heightFixed={false} className='w-full'>
         <div className='px-4'>
-          <div>ごめんなさい、問題が発生しました......</div>
-          <div>少しお時間をおいてから、もう一度お試しください</div>
-          <div>何度も表示される場合は、下の「ご要望・不具合報告」からお知らせください</div>
+          <p>ごめんなさい、問題が発生しました......</p>
+          <p>少しお時間をおいて、もう一度お試しください</p>
+          <p>何度も表示される場合は、下の「ご要望・不具合報告」からお知らせください</p>
         </div>
       </GSMessage>
 
