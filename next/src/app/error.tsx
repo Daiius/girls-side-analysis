@@ -9,7 +9,6 @@ import { ArrowPathIcon } from '@heroicons/react/24/solid';
 
 import Button from '@/components/Button';
 import GSMessage from '@/components/GSMessage';
-import GSButton from '@/components/GSButton';
 
 /**
  * ルートの error boundary。
@@ -51,40 +50,45 @@ export default function Error({
   return (
     <div className='w-full flex flex-col items-center gap-4'>
       {/*
-        メッセージ枠の罫線（1.5rem 間隔）に行を載せるため、
-        1 行 = 1 要素で置き、行高を変えるクラス（text-sm 等）は当てない。
+        メッセージ枠の罫線（1.5rem 間隔）に行を載せるため、1 行 = 1 要素で置き、
+        行高を変えるクラス（text-sm 等）と縦方向の余白は当てない（px は可）。
       */}
-      <GSMessage title={<span>エラー</span>} className='w-full'>
-        <span>ごめんなさい、問題が発生しました......</span>
-        <span>少し待ってから、もう一度お試しください！</span>
+      <GSMessage title={<span>エラー</span>} heightFixed={false} className='w-full'>
+        <div className='px-4'>
+          <div>ごめんなさい、問題が発生しました......</div>
+          <div>少しお時間をおいてから、もう一度お試しください</div>
+          <div>何度も表示される場合は、下の「ご要望・不具合報告」からお知らせください</div>
+        </div>
       </GSMessage>
 
       {/*
-        GSButton は本家のボタンを模した正方形で、重要なアクションにだけ使う。
-        ここでは復旧操作（再試行）がそれに当たる。トップへ戻る方は副次的な
-        導線なので、素の Button（枠線のみ）にする。
+        どちらも素の Button にする。GSButton（正方形）は重要なアクション専用で、
+        ここには当たらない。
+
+        この画面に来るのは「私たちも想定していないエラー」だけである
+        （投票の失敗はフォーム内で捕まえるので、ここには到達しない）。
+        再試行が効くのは API/DB の一時的な不調のときだけで、本物のバグには
+        効かない。ユーザーにその区別はつかないので、再試行を主役にはせず
+        「トップへ戻る」と横並びにし、わずかに強調するだけに留める。
+
+        なお、この境界が受けるのはレンダリング（読み取り）の失敗だけで
+        ミューテーションを含まないため、再試行は何度押しても安全である。
       */}
-      <div className='flex flex-row items-center gap-4'>
-        <GSButton
-          className='size-20 relative group'
-          variant='system'
+      <div className='flex flex-row items-center gap-3'>
+        <Button
           type='button'
           onClick={retry}
           disabled={isRetrying}
+          // hover は共通 Button の hover:bg-white/10 と競合するため ! で上書きする
+          className='px-4 py-1.5 bg-white/60 hover:bg-white! flex flex-row items-center gap-1.5'
         >
-          <div className={clsx(
-            'absolute top-1 left-1/2 -translate-x-1/2',
-            'text-xs text-nowrap',
-          )}>
-            もう一度
-          </div>
-          <ArrowPathIcon className={clsx(
-            'absolute size-11',
-            'bottom-2 left-1/2 -translate-x-1/2',
-            isRetrying ? 'animate-spin' : 'group-hover:animate-spin',
-          )} />
-        </GSButton>
-        <Button as={Link} href='/' className='px-3 py-1'>
+          <ArrowPathIcon
+            className={clsx('size-4', isRetrying && 'animate-spin')}
+            aria-hidden
+          />
+          もう一度
+        </Button>
+        <Button as={Link} href='/' className='px-4 py-1.5'>
           トップへ戻る
         </Button>
       </div>
