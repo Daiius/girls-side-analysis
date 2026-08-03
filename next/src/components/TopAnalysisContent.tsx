@@ -2,6 +2,7 @@
 
 import React from 'react';
 import clsx from 'clsx';
+import Link from 'next/link';
 
 
 import { AnalysisData } from '@/types';
@@ -95,10 +96,33 @@ const TopAnalysisContent: React.FC<
                     : 'text-right pr-3'
                 )}  
               >
-                <div
+                {/*
+                  共起ランキングの1行1行が「このキャラを推す人は誰を推しているか」という
+                  グラフの辺なので、名前をその相手の分析ページへのリンクにして辺を辿れるようにする。
+                  相互リンクは定義から保証される（count(A,B) == count(B,A) で、集計に LIMIT が無い）。
+                  自分自身は集計 SQL の時点で除外されているので、ここに現在地のキャラは出てこない
+                  （= 自己リンクにならないので aria-current の考慮は不要）。
+
+                  canonical / sitemap と同じく生の日本語 URL に揃える。
+
+                  prefetch={false} は必須。キャラページは static route なので既定では
+                  ビューポート進入時に「ページ全部（30日×共起相手数の時系列込み）」が取られる。
+                  この行は最大60本が縦に並び、読むために視界へ留まるため
+                  スクロール中に破棄されず全員分を取りに行ってしまう。
+                  切ってもクライアントサイドナビゲーション自体は効く（フルリロードにはならない）。
+
+                  親が flex-col なので self-end / self-start でリンクの箱を文字幅に縮める
+                  （stretch のままだと下線が 150px 幅いっぱいに伸びる）。
+                */}
+                <Link
+                  href={`/${characterName}`}
+                  prefetch={false}
                   className={clsx(
                     'text-lg font-bold whitespace-nowrap',
-                    characterName.includes('・') && 'text-sm',
+                    'hover:underline focus-visible:underline underline-offset-4',
+                    characterName.includes('・')
+                      ? 'text-sm self-start'
+                      : 'self-end',
                   )}
                 >
                   {/* クリスの名前を収めるための処理 */}
@@ -113,7 +137,7 @@ const TopAnalysisContent: React.FC<
                       </div>
                     : characterName
                   }
-                </div>
+                </Link>
               </div>
               <AnimatedVoteBar 
                 key={Date.now()}
@@ -123,7 +147,15 @@ const TopAnalysisContent: React.FC<
             </div>
           )
         } 
-        {analysisData == null || Object.keys(analysisData).length === 0 &&
+        {/*
+          括弧は必須。&& は || より強いので、括弧が無いと
+          `analysisData == null || (keys.length === 0 && <div/>)` と解釈され、
+          analysisData が null/undefined の時に式全体が true になって
+          （React は true を何も描画しないので）空欄になる。
+          ランキング行をリンクにした結果、まだ票が入っていないキャラへ直接飛べるようになり、
+          この分岐が実際に踏まれる経路が増えた。
+        */}
+        {(analysisData == null || Object.keys(analysisData).length === 0) &&
           <div>
             <span>データがまだ有りません... </span>
             <span>推しの方は投票をお願いします！</span>
