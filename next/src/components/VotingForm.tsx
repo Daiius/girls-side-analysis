@@ -10,6 +10,10 @@ import {
 import { getCharacters } from '@/lib/characters';
 import { getLatestVotes } from '@/lib/votes';
 
+// シェア文言の URL は他ページ（/ と /[charaName]）と同じく HOST_URL から組み立てる。
+// client component は process.env を読めないので、ここで解決して prop で渡す。
+const hostUrl = process.env.HOST_URL
+  ?? (() => { throw new Error(`process.env.HOST_URL is null`) })();
 
 /**
  * 投票フォーム用server compoenent
@@ -40,6 +44,7 @@ const VotingForm: React.FC<
       userStatesMaster={userStatesMaster}
       characters={characters}
       latestVotes={latestVotes}
+      hostUrl={hostUrl}
       {...props}
     />
   );
