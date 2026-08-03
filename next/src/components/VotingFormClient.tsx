@@ -64,7 +64,16 @@ const VotingFormClient: React.FC<
 
   const [errorMessage, formAction, isPending] = React.useActionState(
     async (prevState: string|undefined, formData: FormData) => {
-      const isSamePlayerStatus = gsSeries.every(gs => 
+      // 推し 0 人は投票として認めない（prd/04-voting.md §4.1）。
+      // ⚠️ 「前回と同じ」判定より**先**に置くこと。初投票のユーザーは
+      // latestVotes が空なので、0 人のまま送ると previousFavorites と
+      // favorites が共に空 → isSameVotes === true となり、後ろに置くと
+      // 「投票完了！（過去データと同じ）」を返してしまう。
+      if (favorites.length === 0) {
+        return '推しを 1 人以上選んでから投票してください！';
+      }
+
+      const isSamePlayerStatus = gsSeries.every(gs =>
         formData.get(gs.name) === latestUserStateDict[gs.series]
       );
       // level（=並び順）込みで前回投票と比較する。
@@ -83,14 +92,22 @@ const VotingFormClient: React.FC<
         return '投票完了！（過去データと同じ）';
       }
 
-      await vote(
-        formData, 
-        favorites.map((characterName, iCharacterName) =>
-          ({ characterName, level: iCharacterName })
-        )
-      );
+      // vote() が投げると error boundary まで飛び、フォームの入力状態ごと
+      // 画面が差し替わってしまう。ここで捕まえてメッセージとして返し、
+      // 選択中の推しを保ったまま再試行できるようにする。
+      try {
+        await vote(
+          formData,
+          favorites.map((characterName, iCharacterName) =>
+            ({ characterName, level: iCharacterName })
+          )
+        );
+      } catch (e) {
+        console.error(e);
+        return '投票に失敗しました... 少し待ってからもう一度お試しください';
+      }
       router.refresh();
-      
+
       if (!isSamePlayerStatus && isSameVotes) {
         return '投票完了！（プレイ状況のみ更新）';
       }
@@ -143,7 +160,8 @@ const VotingFormClient: React.FC<
             )}
             variant='date'
             type='submit'
-            disabled={isPending}
+            // 推し 0 人は投票として認めない（prd/04-voting.md §4.1）
+            disabled={isPending || favorites.length === 0}
           />
           <XShareLink
             className={clsx(
