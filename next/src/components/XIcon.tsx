@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import clsx from 'clsx';
 
 const XIcon: React.FC<
@@ -13,13 +13,17 @@ const XIcon: React.FC<
   ...props
 }) => (
   // logo from https://about.x.com/ja/who-we-are/brand-toolkit
-  <svg 
+  <svg
     className={clsx(className)}
-    width={width} 
-    height={height} 
-    viewBox="0 0 1200 1227" 
-    fill="none" 
+    width={width}
+    height={height}
+    viewBox="0 0 1200 1227"
+    fill="none"
     xmlns="http://www.w3.org/2000/svg"
+    // 呼び出し側（XShareLink / BeforeLoginProfile）が「シェア」「ログイン」という
+    // テキストラベルを併記しているので、このロゴは装飾。読み上げから外す（PRD 08 §6）。
+    // {...props} より前に置き、必要なら呼び出し側が上書きできるようにする。
+    aria-hidden="true"
     {...props}
   >
     <path d="M714.163 519.284L1160.89 0H1055.03L667.137 450.887L357.328 0H0L468.492 681.821L0 1226.37H105.866L515.491 750.218L842.672 1226.37H1200L714.137 519.284H714.163ZM569.165 687.828L521.697 619.934L144.011 79.6944H306.615L611.412 515.685L658.88 583.579L1055.08 1150.3H892.476L569.165 687.854V687.828Z" fill="white"/>

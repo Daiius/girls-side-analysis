@@ -203,10 +203,9 @@ export const insertVotesIfUpdated = async ({
  */
 export const getLatestVotesForAnalysis = async (charaName: string) => {
   const oshiCombinationData = await getCurrentVotesRelatedToOshi(charaName);
-  const oshiCombinationDataDict = oshiCombinationData
-    .map(ocd => ({ [ocd.characterName]: ocd.count }))
-    .reduce((acc, curr) => ({ ...acc, ...curr }), {});
-  return oshiCombinationDataDict;
+  return Object.fromEntries(
+    oshiCombinationData.map(ocd => [ocd.characterName, ocd.count]),
+  );
 };
 
 /**
@@ -228,19 +227,17 @@ export const getLatestVotesForAnalysisAll = async () => {
     .map(async character => {
       const oshiCombinationData =
         await getCurrentVotesRelatedToOshi(character.name);
-      const oshiCombinationDataDict = oshiCombinationData
-        .map(ocd => ({ [ocd.characterName]: ocd.count }))
-        .reduce((acc, curr) => ({ ...acc, ...curr }), {});
-      return oshiCombinationData.length > 0
-        ? {
-            [character.name]: oshiCombinationDataDict
-          }
-        : {};
+      // 共起相手がいないキャラはトップの順送り対象にしないので、ここで落とす
+      if (oshiCombinationData.length === 0) return null;
+      return [
+        character.name,
+        Object.fromEntries(
+          oshiCombinationData.map(ocd => [ocd.characterName, ocd.count]),
+        ),
+      ] as const;
     });
   const data = await Promise.all(dataPromise);
-  const result = data
-    .reduce((acc, curr) => ({ ...acc, ...curr }), {});
-  return result;
+  return Object.fromEntries(data.filter(entry => entry !== null));
 };
 
 /**

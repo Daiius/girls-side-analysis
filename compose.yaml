@@ -38,6 +38,13 @@ services:
           ignore:
             - node_modules/
             - dist/
+        # biome.jsonc はイメージに焼き込まれる（Dockerfile.dev の COPY）ため、
+        # 同期しないとホストで編集しても `pnpm lint` の結果が変わらない。
+        # ⚠️ 設定が壊れていても biome はエラーにせず既定設定にフォールバックし、
+        # .next/ のビルド生成物まで lint し始めるので、変更したら結果を必ず見ること。
+        - action: sync
+          path: ./biome.jsonc
+          target: /workspace/biome.jsonc
         - action: rebuild
           path: ./pnpm-lock.yaml
 
@@ -71,6 +78,24 @@ services:
             - dist/
         - action: rebuild
           path: ./pnpm-lock.yaml
+
+  # lint 専用の使い捨てサービス（`pnpm lint` から docker compose run で起動する）。
+  # nextjs / server と同じイメージを使うが、**env_file / ports / depends_on を持たない**。
+  # アプリ用の env（`next/.env.*` は gitignore 対象）が無い clone 直後の環境でも、
+  # dev スタックが停止していても lint を実行できるようにするため。
+  # ソースはイメージ内のコピーではなくホストの作業ツリーを bind mount して見る
+  # （compose watch の sync はホスト → コンテナの一方向で、`pnpm dev` を動かして
+  #  いない間はイメージ側が古いままになるため）。
+  # profiles を付けて `docker compose up` では起動しないようにする
+  # （`docker compose run` は対象サービスの profile を自動で有効化する）。
+  lint:
+    build:
+      dockerfile: ./Dockerfile.dev
+    image: girls-side-analysis-dev
+    profiles: ['tools']
+    working_dir: /repo
+    volumes:
+      - ./:/repo
 
   database:
     image: mysql:8.4

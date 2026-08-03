@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 
 import { getCharacters } from '@/lib/characters';
 import TopCharacterPickerDialog from './TopCharacterPickerDialog';

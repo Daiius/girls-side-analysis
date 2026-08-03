@@ -1,0 +1,38 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.6/schema.json",
+  "files": {
+    // 対象はソースのみ。生成物・設定ファイルは見ない。
+    // コンテナ内には .gitignore が無い（Dockerfile.dev が COPY しない）ため
+    // vcs.useIgnoreFile には頼らず、ここで明示的に絞る。
+    "includes": [
+      "next/src/**/*.ts",
+      "next/src/**/*.tsx",
+      "server-ts/src/**/*.ts",
+      "server-ts/*.ts"
+    ]
+  },
+  // フォーマッタは使わない。既存コードの整形方針（next はセミコロンあり /
+  // server-ts はなし）がパッケージ間で揃っておらず、有効にすると
+  // 全 63 ファイル・約 1,400 行が書き換わるため。lint だけを導入する。
+  "formatter": { "enabled": false },
+  // assist（organizeImports 等）も import 並べ替えで同様の大量差分を生むので切る。
+  "assist": { "enabled": false },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "style": {
+        // 検出箇所はすべて luxon の `toISODate()!`。luxon の型が `string | null`
+        // なだけで、有効な DateTime に対しては非 null が保証される。
+        // 実害の無い箇所のために集計ロジックへ null ガードを撒くのは割に合わない。
+        "noNonNullAssertion": "off"
+      },
+      "suspicious": {
+        // 検出箇所は CharacterNameLabel の `name.split('・')`。
+        // 固定文字列を分割しただけの配列で並び替え・挿入が起きないため、
+        // index を key にしても再利用の取り違えは起きない。
+        "noArrayIndexKey": "off"
+      }
+    }
+  }
+}

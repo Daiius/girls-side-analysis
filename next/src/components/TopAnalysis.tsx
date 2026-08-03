@@ -5,7 +5,7 @@ import clsx from 'clsx';
 
 import TopAnalysisContent from './TopAnalysisContent';
 
-import { TopAnalysisData, } from '@/types';
+import type { TopAnalysisData, } from '@/types';
 //import LineChartClient from './LineChartClient';
 
 
@@ -38,7 +38,7 @@ const TopAnalysis: React.FC<
       });
     }, 10_000);
     return () => clearInterval(interval);
-  }, []);
+  }, [topAnalysisData]);
 
   return (
     <div className='w-full'>

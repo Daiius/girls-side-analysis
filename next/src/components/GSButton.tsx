@@ -1,7 +1,7 @@
-import {
-  type ComponentPropsWithoutRef,
-  type ElementType,
-  type ReactNode,
+import type {
+  ComponentPropsWithoutRef,
+  ElementType,
+  ReactNode,
 } from 'react';
 import clsx from 'clsx';
 

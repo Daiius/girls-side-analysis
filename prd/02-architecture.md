@@ -46,6 +46,7 @@
 | テスト | **Vitest 4**（server-ts のみ） | 実 MySQL に対する統合テスト（[05](./05-analysis.md) §7） |
 | パッケージ管理 | **pnpm 10**（workspace + catalog） | `packageManager` で固定。npm/yarn は使わない |
 | 開発環境 | **docker compose watch** | bind mount を使わない |
+| Lint | **Biome 2**（**リンターのみ**。フォーマッタは無効） | 設定は `biome.jsonc`。§6.1 |
 
 ## 3. パッケージ構成
 
@@ -72,6 +73,7 @@ server-rs/   # Rust(axum + sea-orm) の別実装。workspace / compose の外（
 ## 4. 開発環境（docker compose watch）
 
 - `compose.yaml` が `nextjs`（:3000）/ `server`（:4000 → コンテナ内 3000）/ `database`（:3306）を起動。
+  - このほかに `lint` サービスがあるが、`profiles: ['tools']` 付きで `up` では起動しない（§6.1）。
 - **`nextjs` と `server` は同一イメージ `girls-side-analysis-dev` を共有**する（`Dockerfile.dev`）。
   両サービスに同じ `build` を書くのは、`pnpm-lock.yaml` 変更時の watch `rebuild` を**両方で効かせる**ため
   （`image` 共有だけだと server 側の rebuild が発火しない）。ビルド実体は片方のキャッシュヒットで済む。
@@ -85,12 +87,13 @@ server-rs/   # Rust(axum + sea-orm) の別実装。workspace / compose の外（
 
 | コマンド | 実体 |
 |---|---|
-| `pnpm dev` | `docker compose watch` |
+| `pnpm dev` | `docker compose up --watch --build`（**`docker compose watch` 単体は同期しかせずサービスを起動しない**） |
 | `pnpm stop` / `pnpm down` | compose stop / down |
 | `pnpm db:push` | `drizzle-kit push --force`（**dev/CI の使い捨て DB 専用**。履歴を残さない） |
 | `pnpm db:migrate` | `server-ts/drizzle/*` を順に適用（**本番はこちら**） |
 | `pnpm db:seed` | `addTestData.ts`（キャラ 61 件 + 状態マスタ + テスト投票 + DailyOshiCount backfill） |
 | `pnpm test` | `docker compose exec server pnpm test`（Vitest） |
+| `pnpm lint` | Biome（**専用の `lint` サービス**を使い捨てで起動。ホストの作業ツリーを bind mount。§6.1） |
 
 個別パッケージ内では `pnpm <script>`（`server-ts`: `db:generate` / `db:baseline` / `db:backfill` / `build` など）。
 
@@ -117,17 +120,73 @@ server-rs/   # Rust(axum + sea-orm) の別実装。workspace / compose の外（
   シークレット・DB 権限付与の実手順といった**環境の具体情報は書かない**。
   必要な運用メモは gitignore 対象の `.claude/local/` に置く。
 
-### 6.1 CI（未整備 → 導入決定）
+### 6.1 Lint と CI
 
-- **現状、自動 CI は存在しない**。`build-push.yml` は手動起動のイメージビルドのみ。
-- さらに **lint も typecheck も実体がない**:
-  - ESLint / Biome とも依存・設定ファイルが無い。`next/package.json` の `"lint": "next lint"` は
-    **Next 16 でコマンドが廃止済み**で動かない。
-  - `typecheck` スクリプトがルート・`next`・`server-ts` のどこにも無い。
-- ✅ **決定（2026-07-10）**: **Biome + typecheck + test の 3 点セット**を GitHub Actions で回す。
-  Biome 設定は同一著者の別リポの `biome.json` を流用（スペース 2 / 行幅 100 / シングルクォート /
-  セミコロンは必要時のみ / `useSortedClasses`）。CI の MySQL は `services: mysql:8.4`。
-  導入手順とコミットの切り方は [09](./09-roadmap.md) §2.5。
+- `build-push.yml` は手動起動のイメージビルドのみで、自動 CI ではない。
+- かつて **lint は実体が無かった**。`next/package.json` の `"lint": "next lint"` は
+  **Next 16 でコマンドが廃止済み**で動かず、ESLint / Biome とも依存・設定ファイルが無かった。
+
+#### ✅ 決定（2026-08-04・2026-07-10 の決定を改訂）
+
+**Biome を導入する。ただしリンターのみを有効にし、フォーマッタと assist は無効にする。**
+設定は **`biome.jsonc`**（ルート）。lint CI を `.github/workflows/lint.yml` で回す。
+
+- **フォーマッタを無効にする理由**: 既存コードの整形方針が **`next` はセミコロンあり /
+  `server-ts` はなし**とパッケージ間で揃っておらず、単一の設定ではどちらかが必ず崩れる。
+  実測では、現行スタイルに寄せた設定でも **63 / 63 ファイル・約 1,380 行**（総 4,694 行の約 29%）、
+  Biome 既定設定なら **約 3,600 行（約 77%）** が書き換わる。整形は各自の裁量に委ねる。
+- `assist` も無効。`organizeImports` が import 並べ替えで同規模の差分を生むため。
+- **off にしたルール**: `noNonNullAssertion`（検出はすべて luxon の `toISODate()!`。
+  luxon の型が `string | null` なだけで実際は非 null）/ `noArrayIndexKey`（固定文字列を
+  split しただけの配列で並び替えが起きない）。理由は `biome.jsonc` のコメントにも書く。
+- 個別の抑制は `// biome-ignore lint/<group>/<rule>: 理由` を **1 行で**書く
+  （複数行に折り返すと 1 行目しか読まれず効かない）。
+- ⚠️ **`--error-on-warnings` を必ず付ける**。Biome は **warning だけなら exit 0** を返すため、
+  付けないと warning 相当のルール（未使用 import 等）が `pnpm lint` でも CI でも素通りする。
+  導入時の指摘 63 件のうち **52 件が warning** だったので、これが無いと関門として機能しない。
+- ⚠️ **設定ファイルは `biome.json` ではなく `biome.jsonc`**。`biome.json` はコメントが使えず、
+  しかも**構文エラーでもエラーにならず既定設定にフォールバックして `.next/` のビルド生成物まで
+  lint し始める**。設定を変えたら必ず検査対象ファイル数を見ること。
+- **`pnpm lint` は compose の専用サービス `lint` を使い捨てで起動する**
+  （`docker compose run --rm --build lint ...`）。アプリ用の `nextjs` サービスを
+  再利用しないのが要点で、`lint` サービスは **`env_file` / `ports` / `depends_on` を持たない**。
+  - `nextjs` は `next/.env.development` と `next/.env.local` を `env_file` で要求するが、
+    これらは **gitignore 対象**。再利用すると **clone 直後の環境で lint がそもそも起動できない**。
+    lint 自体はこれらの env を必要としない。
+  - `profiles: ['tools']` を付けてあるので `docker compose up` では起動しない
+    （`docker compose run` は対象サービスの profile を自動で有効化する）。
+  - ソースは**ホストの作業ツリーを bind mount** して見る。他のルート script のような
+    `docker compose exec` にしないのは、コンテナ内のソースが compose watch の
+    **sync（ホスト → コンテナの一方向）**でしか更新されず、`pnpm dev` を動かしていない間は
+    **コンテナ側が古い**ままで、古いコードを lint してしまうため。dev スタック停止中でも動く。
+  - ⚠️ **`--build` は必須**。Biome はイメージ内の `node_modules` に入っているので、
+    ブランチを取得しただけで**イメージが古いままだと `biome` が存在せず lint が失敗する**。
+    Biome のバージョンを上げた時に古いリンターで検査してしまう事故も防ぐ。
+    レイヤキャッシュが効くので、変更が無ければ実行時間は 2 秒弱（コールドビルドで約 40 秒）。
+  - `Dockerfile.dev` が `biome.jsonc` を COPY し compose watch にも sync 規則を置いてあるのは、
+    `exec` で入った場合やイメージ内で完結させたい場合のため。
+- 🚫 **自動修正のスクリプトは置かない**。ホストに `node_modules` が無いためコンテナから書き戻す形になるが、
+  **書き込んだファイルの所有者が Docker の rootless / rootful で逆になる**
+  （rootless では**コンテナ内 root**がホストの自分にマップされ、rootful ではホストと同じ uid の指定が要る）。
+  環境依存のスクリプトを公開リポジトリに置くより、エディタの Biome 拡張か、各自の環境に合わせた
+  `biome lint --write` の直接実行に委ねる。
+
+#### 改訂前の決定（2026-07-10）との差分
+
+| 項目 | 2026-07-10 の決定 | 現在 |
+|---|---|---|
+| Biome のフォーマッタ | 有効（行幅 100 / セミコロンは必要時のみ / `useSortedClasses`） | **無効**（上記の実測による） |
+| 設定ファイル | `biome.json` を別リポから流用 | **`biome.jsonc`**（コメントを残すため） |
+| CI | `ci.yml` に **Biome + typecheck + test の 3 点セット** | **lint のみ**（`lint.yml`）。残り 2 つは未着手 |
+
+- 🚫 **pre-commit hook は採用しない**。ホストに `node_modules` を置かない docker 専用の
+  開発形態では、hook から Biome を呼ぶのに dev スタック起動を前提にするか
+  `pnpm dlx` でバージョンを二重管理するかになり、どちらも壊れやすい。
+  hook は各開発者の `core.hooksPath` 設定が要り `--no-verify` ですり抜けられる。**関門は CI に置く**。
+- ⏳ **未着手**: `typecheck`（`tsc --noEmit`）スクリプトの新設と CI への追加、
+  および CI での vitest 実行（MySQL は `services: mysql:8.4`）。[09](./09-roadmap.md) §2.5 参照。
+- 📌 フォーマッタを後から入れる場合は、整形のみのコミットを 1 本に切って
+  その SHA を `.git-blame-ignore-revs` に登録すれば blame は汚れない（[09](./09-roadmap.md) §2.5）。
 
 ## 7. `server-rs` の位置づけ（凍結）
 

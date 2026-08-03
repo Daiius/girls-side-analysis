@@ -1,11 +1,11 @@
 'use client'
 
-import React from 'react';
+import type React from 'react';
 import clsx from 'clsx';
 import Link from 'next/link';
 
 
-import { AnalysisData } from '@/types';
+import type { AnalysisData } from '@/types';
 import { StarIcon } from '@heroicons/react/24/solid';
 import { AnimatedVoteBar } from '@/components/AnimatedVoteBar';
 import CharacterNameLabel from '@/components/CharacterNameLabel';

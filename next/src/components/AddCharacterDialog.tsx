@@ -1,13 +1,13 @@
 'use client'
 
-import React from 'react';
+import type React from 'react';
 
 import { PlusIcon, CheckIcon } from '@heroicons/react/24/solid';
 
 import CharacterNameLabel from '@/components/CharacterNameLabel';
 import CharacterPickerDialog from '@/components/CharacterPickerDialog';
 import { characterCellClass } from '@/components/characterCellStyle';
-import { Character } from '@/types';
+import type { Character } from '@/types';
 
 /**
  * 投票フォーム用のキャラ選択ダイアログ。

@@ -22,7 +22,7 @@ import {
   characterCellSpanClass,
 } from '@/components/characterCellStyle';
 import { normalizeForSearch } from '@/lib/searchNormalization';
-import { Character } from '@/types';
+import type { Character } from '@/types';
 
 /**
  * シリーズ絞り込み + 横断検索のキャラ「ブラウズ面」共通シェル。
@@ -226,6 +226,13 @@ const CharacterPickerDialog: React.FC<{
               キャラセル（角丸長方形）と見分けやすいようピル型 + 常時シリーズ色
               （未選択は淡く、選択中は濃く + チェックマーク）。
               検索中は全シリーズ横断で当てるため無効化して見せる。
+            */}
+            {/*
+              biome-ignore lint/a11y/useSemanticElements: <fieldset> は UA 既定の
+              border / margin / padding と min-width:min-content を持ち、この行は
+              flex で 4 チップを等分（flex-1）する前提なので置き換えるとレイアウトが崩れる。
+              打ち消すためだけに reset CSS を足すことになるので role='group' のままにする。
+              支援技術から見えるものは fieldset + legend と同等（role=group + aria-label）。
             */}
             <div
               role='group'

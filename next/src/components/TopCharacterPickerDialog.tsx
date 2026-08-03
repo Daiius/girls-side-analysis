@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react';
+import type React from 'react';
 import clsx from 'clsx';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -14,7 +14,7 @@ import {
 import CharacterNameLabel from '@/components/CharacterNameLabel';
 import CharacterPickerDialog from '@/components/CharacterPickerDialog';
 import { characterCellClass } from '@/components/characterCellStyle';
-import { Character } from '@/types';
+import type { Character } from '@/types';
 
 /**
  * 分析ページ（トップ / キャラ別）でキャラを切り替えるためのダイアログ。

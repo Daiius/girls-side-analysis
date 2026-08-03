@@ -26,7 +26,7 @@
 
 | # | 項目 | 決定した方針 | 参照 |
 |---|---|---|---|
-| **B** | **CI が無い** | **Biome + typecheck + test の 3 点セット**を GitHub Actions で回す。詳細は §2.5 | [02](./02-architecture.md) §6.1 |
+| **B** | **CI が無い**（**lint は 2026-08-04 に着手済み。残りは typecheck + test**） | **Biome + typecheck + test の 3 点セット**を GitHub Actions で回す。Biome は**リンターのみ**（フォーマッタは無効）に改訂。詳細は §2.5 | [02](./02-architecture.md) §6.1 |
 
 ### 2.2 中
 
@@ -54,16 +54,27 @@
 
 ### 2.5 B と E の具体（決定事項）
 
-**CI**（`.github/workflows/ci.yml` を新設）
+**CI**
 
-- **Biome を導入**する。設定は同一著者の別リポ（highscore-must-fall）の `biome.json` を流用
-  （スペース 2 / 行幅 100 / シングルクォート / セミコロンは必要時のみ / `useSortedClasses`）。
-  - `useSortedClasses` は安全。このリポの `!` は **Tailwind v4 の接尾辞 important**（`hover:bg-white!`）で、
-    競合は **CSS の生成順**で起きる。class 属性内の並べ替えは important にも生成順にも影響しない。
-- `typecheck` スクリプト（`tsc --noEmit`）を**両パッケージに新設**する（現在どこにも無い）。
-  `next/package.json` の `"lint": "next lint"` は **Next 16 でコマンドが廃止済み**で動かない。置き換える。
-- **PR / コミットの切り方**: ① `biome.json` + 依存追加 → ② `biome format --write` の**整形のみ**
-  → ③ typecheck script + `ci.yml`。② の SHA を `.git-blame-ignore-revs` に登録して blame を汚さない。
+- ✅ **済（2026-08-04）**: **Biome をリンター専用で導入**し、`.github/workflows/lint.yml` を新設。
+  `next/package.json` の壊れた `"lint": "next lint"`（Next 16 で廃止済み）を除去。
+  既存の指摘 63 件を解消済み。詳細と改訂理由は [02](./02-architecture.md) §6.1。
+- ⏳ **残**: `typecheck` スクリプト（`tsc --noEmit`）を**両パッケージに新設**し CI に載せる。
+  CI での vitest 実行も未着手。
+  - **CI の MySQL は GitHub Actions の `services: mysql:8.4`** で立て、`DB_HOST=127.0.0.1` で
+    `server-ts` の vitest を直接動かす。
+  - ワークフローは既存の `lint.yml` に足すか `ci.yml` に統合するかを着手時に決める。
+- 🚫 **改訂（2026-08-04）**: 当初は **Biome のフォーマッタも有効**にし、
+  `biome format --write` の整形のみのコミットを 1 本切って
+  その SHA を `.git-blame-ignore-revs` に登録する計画だった。
+  実測の結果、現行スタイルに寄せた設定でも **63 / 63 ファイル・約 1,380 行**が書き換わる
+  （`next` はセミコロンあり / `server-ts` はなしで流儀が違い、単一設定ではどちらかが必ず崩れる）ため、
+  **フォーマッタは無効のまま**とした。
+  - 📌 将来フォーマッタを入れる判断をするなら、上記の「整形のみコミット +
+    `.git-blame-ignore-revs`」という手当ては依然有効。
+  - 📌 `useSortedClasses` は安全という分析自体は変わらない。このリポの `!` は
+    **Tailwind v4 の接尾辞 important**（`hover:bg-white!`）で、競合は **CSS の生成順**で起きる。
+    class 属性内の並べ替えは important にも生成順にも影響しない。
 - **CI の MySQL は GitHub Actions の `services: mysql:8.4`** で立て、`DB_HOST=127.0.0.1` で
   `server-ts` の vitest を直接動かす。`test/globalSetup.ts` は**無改造**で通る（root で `<DB>_test` を作る構造がそのまま活きる）。
   エラーメッセージの「server コンテナ内で実行してください」だけ直す。ルートの `pnpm test`（compose 経由）は残す。

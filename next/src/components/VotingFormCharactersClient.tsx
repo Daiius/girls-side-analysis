@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react';
+import type React from 'react';
 import clsx from 'clsx';
 
 import {
@@ -11,7 +11,7 @@ import {
   TouchSensor,
   useSensor,
   useSensors,
-  DragEndEvent,
+  type DragEndEvent,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -23,7 +23,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 
-import { 
+import type { 
   Character,
   Vote,
 } from '@/types';
@@ -106,8 +106,12 @@ const VotingFormCharactersClient: React.FC<
     } else if (active.id !== over.id) {
       // それ以外はいれかえ
       setFavorites(items => {
-        const oldIndex = items.findIndex(c => c === active.id);
-        const newIndex = items.findIndex(c => c === over.id);
+        // items はキャラ名の string[]。dnd-kit の id は `string | number`
+        // （UniqueIdentifier）なので、そのままでは indexOf に渡せない。
+        // ここで扱う id は SortableContext に渡したキャラ名そのものなので
+        // String() は実質何もしない。
+        const oldIndex = items.indexOf(String(active.id));
+        const newIndex = items.indexOf(String(over.id));
         return arrayMove(items, oldIndex, newIndex);
       });
     }

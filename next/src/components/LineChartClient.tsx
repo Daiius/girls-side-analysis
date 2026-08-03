@@ -29,9 +29,8 @@ Chart.register(
   Colors,
 );
 
-import { DataSet } from '@/types';
+import type { DataSet } from '@/types';
 import { useSettings } from '@/providers/SettingsProvider';
-import GSMessage from './GSMessage';
 
 const LineChartClient: React.FC<
   {
@@ -63,7 +62,11 @@ const LineChartClient: React.FC<
         refCanvas.current,
         {
           type: 'line',
-          data: { datasets: datasets as any},
+          // DataSet は {x: string, y: number}[] を許すが、chart.js の
+          // ChartDataset<'line'> は数値点か Point 型しか受け付けない型定義になっている。
+          // 実行時は文字列 x（カテゴリ軸ラベル）で正しく動く。
+          // biome-ignore lint/suspicious/noExplicitAny: chart.js の型定義側の制約を外すためのキャスト
+          data: { datasets: datasets as any },
           options: {
             //maintainAspectRatio: false,
             aspectRatio: 1,
@@ -90,7 +93,10 @@ const LineChartClient: React.FC<
                 ticks: {
                   callback: function(value, index, ticks) {
                     // 7日毎に日付を表示する、今日の日付も含める
+                    // callback の value は string | number だが getLabelForValue は
+                    // number しか受け付けない型。カテゴリ軸では実行時に index が渡る。
                     return (ticks.length - index - 1) % 7 === 0
+                    // biome-ignore lint/suspicious/noExplicitAny: chart.js の型定義側の制約を外すためのキャスト
                     ? this.getLabelForValue(value as any)
                     : null
                   }

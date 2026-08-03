@@ -1,4 +1,4 @@
-import { type ElementType } from 'react';
+import type { ElementType } from 'react';
 import clsx from 'clsx';
 
 import { PaperAirplaneIcon } from '@heroicons/react/24/solid';

@@ -4,13 +4,17 @@
   "version": "1.1.0",
   "packageManager": "pnpm@10.33.2",
   "scripts": {
-    "dev": "docker compose watch",
+    "dev": "docker compose up --watch --build",
     "stop": "docker compose stop",
     "down": "docker compose down",
     "db:push": "docker compose exec server pnpm db:push",
     "db:migrate": "docker compose exec server pnpm db:migrate",
     "db:seed": "docker compose exec server pnpm db:seed",
-    "test": "docker compose exec server pnpm test"
+    "test": "docker compose exec server pnpm test",
+    "lint": "docker compose run --rm --build lint /workspace/node_modules/.bin/biome lint --error-on-warnings ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.6"
   }
 }
 

@@ -1,8 +1,8 @@
 'use client'
 
-import {
-  type ComponentPropsWithoutRef,
-  type ElementType,
+import type {
+  ComponentPropsWithoutRef,
+  ElementType,
 } from 'react';
 import clsx from 'clsx';
 
