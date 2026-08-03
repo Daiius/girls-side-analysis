@@ -5,7 +5,7 @@
 // 公開ミューテーション面はセッションから twitterId を導出する
 // @/actions/voteActions の vote() のみに限定する。
 import { client, authedClient } from './apiClient'
-import { Vote } from '@/types';
+import type { Vote } from '@/types';
 
 import { revalidatePath } from 'next/cache'
 

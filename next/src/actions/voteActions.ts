@@ -4,7 +4,7 @@ import { getSession } from '@/lib/auth-session';
 import { insertUserStatesIfUpdated } from '@/lib/users';
 import { insertVotesIfUpdated } from '@/lib/votes';
 
-import { Vote } from '@/types';
+import type { Vote } from '@/types';
 
 /**
  * ユーザのプレイ状況と推しデータの記録を行います

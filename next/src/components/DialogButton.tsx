@@ -1,7 +1,7 @@
 'use client' // for modal
 
 import clsx from 'clsx'
-import { useState, ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   Dialog,
   DialogPanel,

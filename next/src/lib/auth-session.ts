@@ -47,6 +47,6 @@ export const getSession = async (): Promise<SessionResponse | null> => {
   if (!res.ok) return null
   const data = await res.json()
   // better-auth は session 無しの時 null を返す
-  if (!data || !data.session) return null
+  if (!data?.session) return null
   return data as SessionResponse
 }

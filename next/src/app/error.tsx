@@ -20,6 +20,10 @@ import GSMessage from '@/components/GSMessage';
  * layout.tsx の下に置くので Header / Footer は維持される。
  * digest は本番でサーバログと突き合わせるための識別子で、詳細は出さない。
  */
+// 関数宣言が作るのは値の束縛だけで型の束縛は作らないため、直下の
+// `error: Error & { digest?: string }` はグローバルの Error 型を正しく指している。
+// 名前を変えると公式の例と読み比べにくくなるので合わせる。
+// biome-ignore lint/suspicious/noShadowRestrictedNames: error.tsx の default export を `Error` と名付けるのは Next.js 公式ドキュメントの作法
 export default function Error({
   error,
   reset,

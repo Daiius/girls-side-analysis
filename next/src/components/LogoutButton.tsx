@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react';
+import type React from 'react';
 import clsx from 'clsx';
 
 import { authClient } from '@/lib/auth-client';

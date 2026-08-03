@@ -10,7 +10,7 @@ import VotingFormCharactersClient from './VotingFormCharactersClient';
 import AddCharacterDialog from '@/components/AddCharacterDialog';
 import VoteButton from '@/components/VoteButton';
 
-import {
+import type {
   UserStatesMaster,
   UserState,
   Character,
@@ -58,12 +58,12 @@ const VotingFormClient: React.FC<
       .map(c => c.characterName)
   );
 
-  const latestUserStateDict = latestUserState
-    .map(lus => ({ [lus.series]: lus.state }))
-    .reduce((acc, curr) => ({ ...acc, ...curr }), {});
+  const latestUserStateDict = Object.fromEntries(
+    latestUserState.map(lus => [lus.series, lus.state]),
+  );
 
   const [errorMessage, formAction, isPending] = React.useActionState(
-    async (prevState: string|undefined, formData: FormData) => {
+    async (_prevState: string|undefined, formData: FormData) => {
       // 推し 0 人は投票として認めない（prd/04-voting.md §4.1）。
       // ⚠️ 「前回と同じ」判定より**先**に置くこと。初投票のユーザーは
       // latestVotes が空なので、0 人のまま送ると previousFavorites と
@@ -121,8 +121,7 @@ const VotingFormClient: React.FC<
   );
 
   return (
-    <>
-      <form 
+    <form 
         className={clsx('flex flex-col', className)}
         action={formAction}
         {...props}
@@ -183,7 +182,6 @@ const VotingFormClient: React.FC<
           <span>何人でもお気軽に推してください！</span>
         </GSMessage>
       </form>
-    </>
   );
 };
 

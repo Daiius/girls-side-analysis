@@ -16,6 +16,9 @@ import { dailyOshiCount } from '../db/schema'
  * どちらからも使える。
  */
 export const aggregateOshiCountForDate = async (
+  // 型引数を schema で固定すると seed スクリプト側（schema なしの独自接続）が
+  // 渡せなくなる。この関数は生 SQL しか実行せず schema 型に依存しない。
+  // biome-ignore lint/suspicious/noExplicitAny: 本番の db と seed スクリプトの接続を両方受けるため
   database: MySql2Database<any>,
   targetDate: string,
 ) => {

@@ -27,7 +27,7 @@ const XShareLink: React.FC<
     variant='system'
     target='_blank'
     href={
-      `https://twitter.com/share?text=${encodeURIComponent(text+'\n')}&url=${encodeURIComponent(url)}`
+      `https://twitter.com/share?text=${encodeURIComponent(`${text}\n`)}&url=${encodeURIComponent(url)}`
     }
     rel='noopener noreferrer'
     {...props}
