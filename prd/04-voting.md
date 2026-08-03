@@ -155,7 +155,11 @@ pair `(X, Y)` の票数がこのユーザーの投票で変化するのは、`[X
 | 安全網 | [`next/src/app/error.tsx`](../next/src/app/error.tsx) | 上記で捕まえきれない例外（server component の失敗など）を受ける |
 
 - `error.tsx` は `layout.tsx` の下に置くため **Header / Footer は維持される**。
-  「もう一度」（`reset()`）と「トップへ」の導線を出し、`digest` は**エラー ID としてのみ**表示する。
+  再試行と「トップへ戻る」の導線を出し、`digest` は**エラー ID としてのみ**表示する。
+- ⚠️ **再試行は `router.refresh()` と `reset()` を併用する**。`reset()` だけでは復旧しない。
+  `reset()` は error boundary を再レンダリングするだけで、server component の結果は
+  クライアントにキャッシュされた RSC ペイロードのままなので、原因が解消していても
+  **同じ digest の例外を再生するだけ**になる（2026-08-04 に実測）。
 - ⚠️ これが無いと Next の既定画面（英語の `A server error occurred` と ERROR 番号のみ、
   ヘッダー・フッターも消える）になる。**dev のオーバーレイとは全く別物**なので、
   この領域を触ったら `pnpm build && pnpm start` で確認すること。

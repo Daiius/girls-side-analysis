@@ -3,6 +3,11 @@
 import React from 'react';
 import clsx from 'clsx';
 
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { ArrowPathIcon } from '@heroicons/react/24/solid';
+
+import Button from '@/components/Button';
 import GSMessage from '@/components/GSMessage';
 import GSButton from '@/components/GSButton';
 
@@ -23,26 +28,67 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const router = useRouter();
+  const [isRetrying, startTransition] = React.useTransition();
+
   React.useEffect(() => {
     console.error(error);
   }, [error]);
 
+  // ⚠️ reset() だけでは復旧しない。
+  // reset() は error boundary を再レンダリングするだけで、server component の
+  // 結果はクライアントにキャッシュされた RSC ペイロードのまま。原因が解消して
+  // いても同じ例外を再生するだけになる（実測: API 復旧後に reset() だけ押しても
+  // 同一の digest でエラー表示のままだった）。
+  // router.refresh() でサーバから取り直してから reset() する。
+  const retry = () => {
+    startTransition(() => {
+      router.refresh();
+      reset();
+    });
+  };
+
   return (
     <div className='w-full flex flex-col items-center gap-4'>
-      <GSMessage heightFixed={false} title='エラー'>
-        <div className='px-4 py-2 flex flex-col'>
-          <span>ごめんなさい、問題が発生しました......</span>
-          <span>少し待ってから、もう一度お試しください！</span>
-        </div>
+      {/*
+        メッセージ枠の罫線（1.5rem 間隔）に行を載せるため、
+        1 行 = 1 要素で置き、行高を変えるクラス（text-sm 等）は当てない。
+      */}
+      <GSMessage title={<span>エラー</span>} className='w-full'>
+        <span>ごめんなさい、問題が発生しました......</span>
+        <span>少し待ってから、もう一度お試しください！</span>
       </GSMessage>
-      <div className='flex flex-row gap-3'>
-        <GSButton variant='command' type='button' onClick={reset}>
-          もう一度
+
+      {/*
+        GSButton は本家のボタンを模した正方形で、重要なアクションにだけ使う。
+        ここでは復旧操作（再試行）がそれに当たる。トップへ戻る方は副次的な
+        導線なので、素の Button（枠線のみ）にする。
+      */}
+      <div className='flex flex-row items-center gap-4'>
+        <GSButton
+          className='size-20 relative group'
+          variant='system'
+          type='button'
+          onClick={retry}
+          disabled={isRetrying}
+        >
+          <div className={clsx(
+            'absolute top-1 left-1/2 -translate-x-1/2',
+            'text-xs text-nowrap',
+          )}>
+            もう一度
+          </div>
+          <ArrowPathIcon className={clsx(
+            'absolute size-11',
+            'bottom-2 left-1/2 -translate-x-1/2',
+            isRetrying ? 'animate-spin' : 'group-hover:animate-spin',
+          )} />
         </GSButton>
-        <GSButton as='a' href='/' variant='system'>
-          トップへ
-        </GSButton>
+        <Button as={Link} href='/' className='px-3 py-1'>
+          トップへ戻る
+        </Button>
       </div>
+
       {error.digest &&
         <div className='text-xs text-slate-500'>
           エラー ID: {error.digest}
