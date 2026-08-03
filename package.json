@@ -11,7 +11,7 @@
     "db:migrate": "docker compose exec server pnpm db:migrate",
     "db:seed": "docker compose exec server pnpm db:seed",
     "test": "docker compose exec server pnpm test",
-    "lint": "docker compose run --rm --no-deps --build -v \"$PWD\":/repo -w /repo -u \"$(id -u):$(id -g)\" nextjs /workspace/node_modules/.bin/biome lint --error-on-warnings ."
+    "lint": "docker compose run --rm --build lint /workspace/node_modules/.bin/biome lint --error-on-warnings ."
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.6"

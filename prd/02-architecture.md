@@ -73,6 +73,7 @@ server-rs/   # Rust(axum + sea-orm) の別実装。workspace / compose の外（
 ## 4. 開発環境（docker compose watch）
 
 - `compose.yaml` が `nextjs`（:3000）/ `server`（:4000 → コンテナ内 3000）/ `database`（:3306）を起動。
+  - このほかに `lint` サービスがあるが、`profiles: ['tools']` 付きで `up` では起動しない（§6.1）。
 - **`nextjs` と `server` は同一イメージ `girls-side-analysis-dev` を共有**する（`Dockerfile.dev`）。
   両サービスに同じ `build` を書くのは、`pnpm-lock.yaml` 変更時の watch `rebuild` を**両方で効かせる**ため
   （`image` 共有だけだと server 側の rebuild が発火しない）。ビルド実体は片方のキャッシュヒットで済む。
@@ -92,7 +93,7 @@ server-rs/   # Rust(axum + sea-orm) の別実装。workspace / compose の外（
 | `pnpm db:migrate` | `server-ts/drizzle/*` を順に適用（**本番はこちら**） |
 | `pnpm db:seed` | `addTestData.ts`（キャラ 61 件 + 状態マスタ + テスト投票 + DailyOshiCount backfill） |
 | `pnpm test` | `docker compose exec server pnpm test`（Vitest） |
-| `pnpm lint` | Biome（**ホストの作業ツリーを bind mount した使い捨てコンテナ**で実行。§6.1） |
+| `pnpm lint` | Biome（**専用の `lint` サービス**を使い捨てで起動。ホストの作業ツリーを bind mount。§6.1） |
 
 個別パッケージ内では `pnpm <script>`（`server-ts`: `db:generate` / `db:baseline` / `db:backfill` / `build` など）。
 
@@ -146,18 +147,24 @@ server-rs/   # Rust(axum + sea-orm) の別実装。workspace / compose の外（
 - ⚠️ **設定ファイルは `biome.json` ではなく `biome.jsonc`**。`biome.json` はコメントが使えず、
   しかも**構文エラーでもエラーにならず既定設定にフォールバックして `.next/` のビルド生成物まで
   lint し始める**。設定を変えたら必ず検査対象ファイル数を見ること。
-- **`pnpm lint` は「ホストの作業ツリーを bind mount した使い捨てコンテナ」で実行する**
-  （`docker compose run --rm --no-deps --build -v "$PWD":/repo`）。他のルート script のような
-  `docker compose exec` にしない理由:
-  - コンテナ内のソースは compose watch の **sync（ホスト → コンテナの一方向）**でしか更新されない。
-    `pnpm dev` を動かしていない間は**コンテナ側が古い**ままなので、`exec` だと古いコードを lint しうる。
-  - bind mount なら dev スタックが停止していても動く。
-  - `Dockerfile.dev` が `biome.jsonc` を COPY し compose watch にも sync 規則を置いてあるのは、
-    `exec` で入った場合やイメージ内で完結させたい場合のため。
+- **`pnpm lint` は compose の専用サービス `lint` を使い捨てで起動する**
+  （`docker compose run --rm --build lint ...`）。アプリ用の `nextjs` サービスを
+  再利用しないのが要点で、`lint` サービスは **`env_file` / `ports` / `depends_on` を持たない**。
+  - `nextjs` は `next/.env.development` と `next/.env.local` を `env_file` で要求するが、
+    これらは **gitignore 対象**。再利用すると **clone 直後の環境で lint がそもそも起動できない**。
+    lint 自体はこれらの env を必要としない。
+  - `profiles: ['tools']` を付けてあるので `docker compose up` では起動しない
+    （`docker compose run` は対象サービスの profile を自動で有効化する）。
+  - ソースは**ホストの作業ツリーを bind mount** して見る。他のルート script のような
+    `docker compose exec` にしないのは、コンテナ内のソースが compose watch の
+    **sync（ホスト → コンテナの一方向）**でしか更新されず、`pnpm dev` を動かしていない間は
+    **コンテナ側が古い**ままで、古いコードを lint してしまうため。dev スタック停止中でも動く。
   - ⚠️ **`--build` は必須**。Biome はイメージ内の `node_modules` に入っているので、
     ブランチを取得しただけで**イメージが古いままだと `biome` が存在せず lint が失敗する**。
     Biome のバージョンを上げた時に古いリンターで検査してしまう事故も防ぐ。
     レイヤキャッシュが効くので、変更が無ければ実行時間は 2 秒弱（コールドビルドで約 40 秒）。
+  - `Dockerfile.dev` が `biome.jsonc` を COPY し compose watch にも sync 規則を置いてあるのは、
+    `exec` で入った場合やイメージ内で完結させたい場合のため。
 - 🚫 **自動修正のスクリプトは置かない**。ホストに `node_modules` が無いためコンテナから書き戻す形になるが、
   **書き込んだファイルの所有者が Docker の rootless / rootful で逆になる**
   （rootless では**コンテナ内 root**がホストの自分にマップされ、rootful ではホストと同じ uid の指定が要る）。
