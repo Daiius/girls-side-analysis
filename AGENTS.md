@@ -41,7 +41,7 @@ GS シリーズファン向けの「推し投票・組み合わせ分析」Web �
 - `pnpm db:migrate` — バージョン管理マイグレーション（`server-ts/drizzle/*`）を適用。本番はこちら
 - `pnpm db:seed` — テストデータ投入
 - `pnpm test` — server-ts の vitest を実行
-- `pnpm lint` / `pnpm lint:fix` — biome（リンターのみ）。設定は `biome.jsonc`
+- `pnpm lint` — biome（リンターのみ）。設定は `biome.jsonc`
 
 個別パッケージ内では `pnpm <script>`（next: `dev`/`build`/`start`、server-ts: `dev`/`build`/`test`/`db:*` など）。
 
@@ -59,6 +59,13 @@ GS シリーズファン向けの「推し投票・組み合わせ分析」Web �
   - `noNonNullAssertion` と `noArrayIndexKey` は off。理由は `biome.jsonc` のコメント参照
   - 個別に抑制するときは `// biome-ignore lint/<group>/<rule>: 理由` を**1 行で**書く
     （複数行に折り返すと 1 行目しか読まれず効かない）
+  - ⚠️ **`--error-on-warnings` は必須**。biome は warning だけなら exit 0 を返すので、
+    付けないと未使用 import 等が CI をすり抜ける。`pnpm lint` と CI の両方に入れてある
+  - **自動修正のスクリプトは用意していない**。ホストに `node_modules` を置かない構成のため、
+    コンテナから書き戻す形になるが、**ファイルの所有者が Docker の rootless / rootful で逆になる**
+    （rootless はコンテナ内 root、rootful はホストと同じ uid を指定する必要がある）。
+    環境依存のスクリプトを置くより、エディタの Biome 拡張を使うか、自分の環境に合わせて
+    `biome lint --write` を直接叩く
 - 認証は better-auth の session ベース。JWT と DB session の併用はしない
 - env ファイル（`next/.env.*` / `server-ts/.env.*`）は gitignore 済み・コミットしない
 

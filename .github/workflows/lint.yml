@@ -37,6 +37,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # 整形は意図的に無効にしてあるので lint のみ（設定は biome.jsonc）。
-      # 指摘があれば非ゼロ終了する。
+      # ⚠️ --error-on-warnings は必須。biome は warning だけなら exit 0 を返すため、
+      # 付けないと warning 相当のルール（未使用 import 等）が CI をすり抜ける。
       - name: Run biome lint
-        run: pnpm exec biome lint .
+        run: pnpm exec biome lint --error-on-warnings .

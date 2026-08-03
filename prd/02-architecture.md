@@ -92,7 +92,7 @@ server-rs/   # Rust(axum + sea-orm) の別実装。workspace / compose の外（
 | `pnpm db:migrate` | `server-ts/drizzle/*` を順に適用（**本番はこちら**） |
 | `pnpm db:seed` | `addTestData.ts`（キャラ 61 件 + 状態マスタ + テスト投票 + DailyOshiCount backfill） |
 | `pnpm test` | `docker compose exec server pnpm test`（Vitest） |
-| `pnpm lint` / `pnpm lint:fix` | `docker compose exec -w /workspace nextjs pnpm exec biome lint .`（§6.1） |
+| `pnpm lint` | Biome（**ホストの作業ツリーを bind mount した使い捨てコンテナ**で実行。§6.1） |
 
 個別パッケージ内では `pnpm <script>`（`server-ts`: `db:generate` / `db:baseline` / `db:backfill` / `build` など）。
 
@@ -140,11 +140,25 @@ server-rs/   # Rust(axum + sea-orm) の別実装。workspace / compose の外（
   split しただけの配列で並び替えが起きない）。理由は `biome.jsonc` のコメントにも書く。
 - 個別の抑制は `// biome-ignore lint/<group>/<rule>: 理由` を **1 行で**書く
   （複数行に折り返すと 1 行目しか読まれず効かない）。
+- ⚠️ **`--error-on-warnings` を必ず付ける**。Biome は **warning だけなら exit 0** を返すため、
+  付けないと warning 相当のルール（未使用 import 等）が `pnpm lint` でも CI でも素通りする。
+  導入時の指摘 63 件のうち **52 件が warning** だったので、これが無いと関門として機能しない。
 - ⚠️ **設定ファイルは `biome.json` ではなく `biome.jsonc`**。`biome.json` はコメントが使えず、
   しかも**構文エラーでもエラーにならず既定設定にフォールバックして `.next/` のビルド生成物まで
   lint し始める**。設定を変えたら必ず検査対象ファイル数を見ること。
-- lint はコンテナ内で実行するため、`Dockerfile.dev` が `biome.jsonc` を COPY し、
-  compose watch に sync 規則を置く。同期しないとホストで編集しても結果が変わらない。
+- **`pnpm lint` は「ホストの作業ツリーを bind mount した使い捨てコンテナ」で実行する**
+  （`docker compose run --rm --no-deps -v "$PWD":/repo`）。他のルート script のような
+  `docker compose exec` にしない理由:
+  - コンテナ内のソースは compose watch の **sync（ホスト → コンテナの一方向）**でしか更新されない。
+    `pnpm dev` を動かしていない間は**コンテナ側が古い**ままなので、`exec` だと古いコードを lint しうる。
+  - bind mount なら dev スタックが停止していても動く。
+  - `Dockerfile.dev` が `biome.jsonc` を COPY し compose watch にも sync 規則を置いてあるのは、
+    `exec` で入った場合やイメージ内で完結させたい場合のため。
+- 🚫 **自動修正のスクリプトは置かない**。ホストに `node_modules` が無いためコンテナから書き戻す形になるが、
+  **書き込んだファイルの所有者が Docker の rootless / rootful で逆になる**
+  （rootless では**コンテナ内 root**がホストの自分にマップされ、rootful ではホストと同じ uid の指定が要る）。
+  環境依存のスクリプトを公開リポジトリに置くより、エディタの Biome 拡張か、各自の環境に合わせた
+  `biome lint --write` の直接実行に委ねる。
 
 #### 改訂前の決定（2026-07-10）との差分
 
