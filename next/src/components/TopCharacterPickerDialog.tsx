@@ -83,6 +83,13 @@ const TopCharacterPickerDialog: React.FC<{
           <Link
             // canonical / sitemap と同じく生の日本語 URL に揃える
             href={`/${c.name}`}
+            // キャラページは static route なので、既定ではセルがビューポートに入った時点で
+            // 「ページ全部（30日×共起相手数の時系列込み）」が prefetch される。
+            // このダイアログは61セルを一覧するのが役目なので、開いて眺めるだけで
+            // 数百 KB の転送と数 MB のルーターキャッシュを積むことになる。
+            // 61人から1人を選ぶための画面で、残り60人分を先読みする意味は無い。
+            // 切ってもクライアントサイドナビゲーション自体は効く（フルリロードにはならない）。
+            prefetch={false}
             onClick={close}
             aria-current={isCurrent ? 'page' : undefined}
             className={characterCellClass(c, isCurrent)}
