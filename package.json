@@ -10,7 +10,12 @@
     "db:push": "docker compose exec server pnpm db:push",
     "db:migrate": "docker compose exec server pnpm db:migrate",
     "db:seed": "docker compose exec server pnpm db:seed",
-    "test": "docker compose exec server pnpm test"
+    "test": "docker compose exec server pnpm test",
+    "lint": "docker compose exec -w /workspace nextjs pnpm exec biome lint .",
+    "lint:fix": "docker compose exec -w /workspace nextjs pnpm exec biome lint --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.6"
   }
 }
 

@@ -38,6 +38,13 @@ services:
           ignore:
             - node_modules/
             - dist/
+        # biome.jsonc はイメージに焼き込まれる（Dockerfile.dev の COPY）ため、
+        # 同期しないとホストで編集しても `pnpm lint` の結果が変わらない。
+        # ⚠️ 設定が壊れていても biome はエラーにせず既定設定にフォールバックし、
+        # .next/ のビルド生成物まで lint し始めるので、変更したら結果を必ず見ること。
+        - action: sync
+          path: ./biome.jsonc
+          target: /workspace/biome.jsonc
         - action: rebuild
           path: ./pnpm-lock.yaml
 

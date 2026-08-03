@@ -35,14 +35,15 @@ GS シリーズファン向けの「推し投票・組み合わせ分析」Web �
 
 ルートの `package.json` scripts は docker compose 経由で動く。基本はルートから操作する:
 
-- `pnpm dev` — `docker compose watch` で全サービス起動＋ソース同期（next:3000 / server-ts:4000 / MySQL:3306）
+- `pnpm dev` — `docker compose up --watch --build` で全サービス起動＋ソース同期（next:3000 / server-ts:4000 / MySQL:3306）
 - `pnpm stop` / `pnpm down`
 - `pnpm db:push` — dev/CI 用に `drizzle-kit push` でスキーマ強制同期（履歴を残さない使い捨て DB 向け）
 - `pnpm db:migrate` — バージョン管理マイグレーション（`server-ts/drizzle/*`）を適用。本番はこちら
 - `pnpm db:seed` — テストデータ投入
 - `pnpm test` — server-ts の vitest を実行
+- `pnpm lint` / `pnpm lint:fix` — biome（リンターのみ）。設定は `biome.jsonc`
 
-個別パッケージ内では `pnpm <script>`（next: `dev`/`build`/`lint`、server-ts: `dev`/`build`/`test`/`db:*` など）。
+個別パッケージ内では `pnpm <script>`（next: `dev`/`build`/`start`、server-ts: `dev`/`build`/`test`/`db:*` など）。
 
 ## 前提・規約
 
@@ -52,6 +53,12 @@ GS シリーズファン向けの「推し投票・組み合わせ分析」Web �
   - dev/CI の使い捨て DB は従来どおり `db:push`（強制同期）でよい
   - 歴史的経緯で手書き SQL の `server-ts/migrations/001_*.sql` が残る（generate 導入前の本番適用済み分。参照用）
 - サプライチェーン対策で `minimumReleaseAge`（公開 3 日未満の新バージョンは不採用）を設定済み。lockfile は尊重する
+- Lint は **biome のリンターのみ**（`biome.jsonc`）。**フォーマッタと assist は意図的に無効**にしてある
+  - 既存コードの整形方針が next（セミコロンあり）と server-ts（なし）で揃っておらず、
+    フォーマッタを有効にすると全 63 ファイル・約 1,400 行が書き換わるため。整形は各自の裁量に委ねる
+  - `noNonNullAssertion` と `noArrayIndexKey` は off。理由は `biome.jsonc` のコメント参照
+  - 個別に抑制するときは `// biome-ignore lint/<group>/<rule>: 理由` を**1 行で**書く
+    （複数行に折り返すと 1 行目しか読まれず効かない）
 - 認証は better-auth の session ベース。JWT と DB session の併用はしない
 - env ファイル（`next/.env.*` / `server-ts/.env.*`）は gitignore 済み・コミットしない
 

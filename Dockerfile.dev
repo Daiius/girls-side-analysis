@@ -11,7 +11,8 @@ WORKDIR /workspace
 RUN corepack enable
 
 # 依存定義のみ先に COPY（lockfile 変更時だけこの層が無効化される）
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# biome.jsonc は `pnpm lint`（= コンテナ内で biome を実行）が読むので一緒に入れる。
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml biome.jsonc ./
 COPY server-ts/package.json server-ts/tsconfig.json ./server-ts/
 COPY next/package.json next/tsconfig.json ./next/
 
