@@ -147,13 +147,17 @@ server-rs/   # Rust(axum + sea-orm) の別実装。workspace / compose の外（
   しかも**構文エラーでもエラーにならず既定設定にフォールバックして `.next/` のビルド生成物まで
   lint し始める**。設定を変えたら必ず検査対象ファイル数を見ること。
 - **`pnpm lint` は「ホストの作業ツリーを bind mount した使い捨てコンテナ」で実行する**
-  （`docker compose run --rm --no-deps -v "$PWD":/repo`）。他のルート script のような
+  （`docker compose run --rm --no-deps --build -v "$PWD":/repo`）。他のルート script のような
   `docker compose exec` にしない理由:
   - コンテナ内のソースは compose watch の **sync（ホスト → コンテナの一方向）**でしか更新されない。
     `pnpm dev` を動かしていない間は**コンテナ側が古い**ままなので、`exec` だと古いコードを lint しうる。
   - bind mount なら dev スタックが停止していても動く。
   - `Dockerfile.dev` が `biome.jsonc` を COPY し compose watch にも sync 規則を置いてあるのは、
     `exec` で入った場合やイメージ内で完結させたい場合のため。
+  - ⚠️ **`--build` は必須**。Biome はイメージ内の `node_modules` に入っているので、
+    ブランチを取得しただけで**イメージが古いままだと `biome` が存在せず lint が失敗する**。
+    Biome のバージョンを上げた時に古いリンターで検査してしまう事故も防ぐ。
+    レイヤキャッシュが効くので、変更が無ければ実行時間は 2 秒弱（コールドビルドで約 40 秒）。
 - 🚫 **自動修正のスクリプトは置かない**。ホストに `node_modules` が無いためコンテナから書き戻す形になるが、
   **書き込んだファイルの所有者が Docker の rootless / rootful で逆になる**
   （rootless では**コンテナ内 root**がホストの自分にマップされ、rootful ではホストと同じ uid の指定が要る）。
