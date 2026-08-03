@@ -37,6 +37,31 @@
   票数が変化しうる pair の両端を必ず含む。証明は [04](./04-voting.md) §2.3。
   `next/src/lib/votes.ts` に残る「ロジックミス、実際には…全キャラ」というコメントの方が誤りなので、修正する。
 
+### 2.1 `<Link>` の prefetch
+
+**キャラページへ向かうリンクを複数並べる箇所では `prefetch={false}` を付ける。これは既定ではなく明示が必要。**
+
+- `/[charaName]` は `dynamic = 'force-static'` なので Next からは **static route** に見える。
+  `prefetch` の既定（`"auto"` / `null`）では、リンクがビューポートに入った時点で
+  **ページ全部（30 日 × 共起相手数の時系列データ込み）**が取得される。
+- 1 ページの RSC ペイロードは共起相手数に比例する。共起相手が多いキャラで **転送 7 KB / 展開 57 KB** 程度。
+  61 人分がそのままクライアントのルーターキャッシュに積まれる。
+- Next のスケジューラは画面外に出たリンクの prefetch を破棄するが、
+  **読むために視界へ留まるリンク（ランキング行・一覧）は破棄されず全部取得される**。
+
+| 箇所 | 方針 |
+|---|---|
+| 共起ランキング行（`TopAnalysisContent`） | **`prefetch={false}`** |
+| キャラ選択モーダルのセル（`TopCharacterPickerDialog`） | **`prefetch={false}`** |
+| 単発のリンク（ヘッダーのロゴ、`/profile` への導線など） | 既定のままでよい |
+
+- `prefetch={false}` でも**クライアントサイドナビゲーションは効く**（フルリロードにはならない）。
+  失われるのは「事前取得済みで瞬時に出る」ことだけ。
+- 🚫 中間案の「hover 時だけ prefetch する」（`prefetch={active ? null : false}` + `onMouseEnter`）は
+  **採用しない**。主な閲覧環境がスマートフォンで、touch では「タップ＝そのまま遷移」となり先読みにならない。
+- ⚠️ **prefetch は production ビルドでしか走らない**。dev サーバでは再現しないので、
+  この方針を変更する PR は `next build && next start` で確認すること。
+
 ## 3. サーバとの通信
 
 実装: [`next/src/lib/apiClient.ts`](../next/src/lib/apiClient.ts)。Hono RPC クライアント `hc<AppType>` を 2 種類作る。
@@ -72,6 +97,22 @@
 | ↳ 推しの追加 | `AddCharacterDialog` | セルは `<button aria-pressed>`。トグルしてもダイアログは閉じない |
 | 時系列グラフ | `LineChartClient` + chart.js | `chart.js/auto` を使わず**必要モジュールのみ register**（バンドル削減）。`hitRadius: 16` でタッチ配慮 |
 | 横棒グラフ | `AnimatedVoteBar` | `maxCount` で正規化し、マウント後に幅をアニメーション |
+| 共起ランキング | `TopAnalysisContent` | 各行のキャラ名は**そのキャラの分析ページへの `<Link>`**（§4.3）。票数は `AnimatedVoteBar` |
+
+### 4.3 共起ランキング行のリンク（回遊導線）
+
+pair 集計は 61 ノードの重み付き無向グラフで、ランキングの 1 行が 1 本の辺にあたる
+（[05](./05-analysis.md) §1）。**その辺を辿れるように、行のキャラ名を `/{そのキャラ}` へのリンクにする。**
+
+- **相互リンクは定義から保証される**。`count(oshi, related)` は「両方推しているユーザー数」なので
+  `count(A,B) == count(B,A)` であり、集計に `LIMIT` が無い。**A に B が出るなら必ず B にも A が出る**。
+- **自己リンクは発生しない**。集計 SQL が対象キャラ自身を除外している（`ne(l1.characterName, oshi)`）ため、
+  ランキングに現在地のキャラは現れない。`aria-current` の考慮は不要。
+- リンク先は canonical / sitemap と同じ**生の日本語 URL**（§5）。
+- 見た目は現状の文字組みを保ち、**hover / focus-visible でのみ下線**を出す。
+  親が `flex-col` なので `self-end`（通常名）/ `self-start`（複合名）でリンクの箱を文字幅に縮める
+  （既定の stretch のままだと下線が列幅いっぱいに伸びる）。
+- まだ票が入っていないキャラへ直接飛べるので、**空データ時の表示が実際に踏まれる経路になる**。
 
 ### 4.1 シリーズ色の一元化
 
