@@ -35,10 +35,10 @@ GS シリーズファン向けの「推し投票・組み合わせ分析」Web �
 
 ルートの `package.json` scripts は docker compose 経由で動く。基本はルートから操作する:
 
-- `pnpm dev` — `docker compose up --watch --build` で全サービス起動＋ソース同期（next:3000 / server-ts:4000 / MySQL:3306）
+- `pnpm dev` — `docker compose up --watch --build` で全サービス起動＋ソース同期（next:3000 / server-ts:4000。**MySQL はホストに publish しない**）
 - `pnpm stop` / `pnpm down`
 - `pnpm db:push` — dev/CI 用に `drizzle-kit push` でスキーマ強制同期（履歴を残さない使い捨て DB 向け）
-- `pnpm db:migrate` — バージョン管理マイグレーション（`server-ts/drizzle/*`）を適用。本番はこちら
+- `pnpm db:migrate` — バージョン管理マイグレーション（`server-ts/drizzle/*`）を適用
 - `pnpm db:seed` — テストデータ投入
 - `pnpm test` — server-ts の vitest を実行（実 MySQL に対する統合テスト）
 - `pnpm lint` — biome（リンターのみ）。設定は `biome.jsonc`
@@ -54,7 +54,8 @@ MySQL は GitHub Actions の `services: mysql:8.4` で立てる（compose ファ
 
 - パッケージマネージャは pnpm 固定（`packageManager` 参照）。npm/yarn は使わない
 - DB は MySQL 8.4。スキーマは `server-ts/src/db/schema.ts`（Drizzle）
-  - 本番マイグレーションは drizzle-kit の generate/migrate 方式（`server-ts/drizzle/` にバージョン管理、`db:generate` で生成し `db:migrate` で適用）。既存 DB を初めて管理下に載せる時は一度だけ `db:baseline` で 0000 を適用済み登録する
+  - 本番マイグレーションは drizzle-kit の generate/migrate 方式（`server-ts/drizzle/` にバージョン管理、`db:generate` で生成）。**適用は本番イメージに同梱した `migrate.js` を使い捨てコンテナで実行する**（`docker run --rm --network <DB に届く network> --env-file <env> <image> migrate.js`。**`--network` を落とすと DB のホスト名を解決できない**。[prd/02](./prd/02-architecture.md) §6.3）。既存 DB を初めて管理下に載せる時は一度だけ `db:baseline` でベースラインを適用済み登録する
+  - ⚠️ `drizzle/<name>/` は `snapshot.json` と `migration.sql` の**両方をコミットする**。SQL が無いフォルダを migrator は黙って読み飛ばし、「何も流さずに成功」する（[prd/03](./prd/03-data-model.md) §5.1）
   - dev/CI の使い捨て DB は従来どおり `db:push`（強制同期）でよい
   - 歴史的経緯で手書き SQL の `server-ts/migrations/001_*.sql` が残る（generate 導入前の本番適用済み分。参照用）
 - サプライチェーン対策で `minimumReleaseAge`（公開 3 日未満の新バージョンは不採用）を設定済み。lockfile は尊重する
