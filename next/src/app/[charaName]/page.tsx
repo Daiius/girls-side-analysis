@@ -14,7 +14,7 @@ import TopAnalysisContent from '@/components/TopAnalysisContent';
 import LineChartClient from '@/components/LineChartClient';
 import XShareLink from '@/components/XShareLink';
 import JsonLd from '@/components/JsonLd';
-import { characterPageGraph } from '@/lib/structuredData';
+import { characterPageDescription, characterPageGraph } from '@/lib/structuredData';
 import { notFound } from 'next/navigation';
 
 const hostUrl = process.env.HOST_URL 
@@ -62,7 +62,10 @@ export async function generateMetadata({ params }: { params: Promise<{ charaName
     // layout の title.template で " | Girl's Side Analysis" が付与される。
     // 鉤括弧で名前を区切り、長い複合名でも判読しやすくする。
     title: `「${decodedCharaName}」分析`,
-    description: ` GSシリーズの情報共有・分析サイト ${decodedCharaName}分析ページ`,
+    // ⚠️ 子ページの metadata は親のフィールドを上書きするので、ルートの
+    // SITE_DESCRIPTION はここには効かない。JSON-LD の WebPage.description と
+    // 同じ文を使う（定義は structuredData.ts の 1 箇所）。
+    description: characterPageDescription(decodedCharaName),
     alternates: {
       // 内部リンク（router.push(`/${charaName}`)）と同じく生の日本語 URL に揃える。
       // Google は UTF-8 の日本語 URL を正式サポートしており、エンコード形式と
@@ -72,7 +75,7 @@ export async function generateMetadata({ params }: { params: Promise<{ charaName
     openGraph: {
       type: 'website',
       url: `${hostUrl}/${decodedCharaName}`,
-      description: ` GSシリーズの情報共有・分析サイト「${decodedCharaName}」分析ページ`,
+      description: characterPageDescription(decodedCharaName),
       siteName: "Girl's Side Analysis",
       images: `${hostUrl}/girls-side-analysis-logo.png`,
     },

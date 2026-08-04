@@ -146,8 +146,12 @@ pair 集計は 61 ノードの重み付き無向グラフで、ランキング�
 - OGP 画像は**静的ロゴ PNG 固定**。`opengraph-image` / 動的 OG 画像 / Twitter カードは未実装。
 - `robots.ts` は `/profile` を Disallow、`sitemap.xml` を告知。
 - **`description` は形容詞ではなく固有名詞と数字で書く**。想定質問（「ときメモ GS の推しキャラの
-  組み合わせが分かるサイトは？」）への答えの形にする。実体は `SITE_DESCRIPTION`（§5.1）1 箇所で、
-  metadata と JSON-LD が同じ文を使う。
+  組み合わせが分かるサイトは？」）への答えの形にする。
+  - ⚠️ **子ページの `metadata` は親のフィールドを上書きする**。ルートの `description` を直しても
+    `/[charaName]` には効かない（61 ページが取り残される）。
+  - そのため文面は**ページ種別ごとに 1 箇所**で定義し、metadata と JSON-LD が同じものを使う:
+    サイト全体は `SITE_DESCRIPTION`、キャラページは `characterPageDescription(name)`（ともに
+    `next/src/lib/structuredData.ts`）。
 
 ### 5.1 JSON-LD（構造化データ）
 

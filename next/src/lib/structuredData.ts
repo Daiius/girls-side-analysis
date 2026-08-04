@@ -100,6 +100,19 @@ export const siteGraph = () => ({
 });
 
 /**
+ * キャラ別分析ページの説明文。
+ * **metadata（description / OGP）と JSON-LD の WebPage が同じ文を使う**ので、ここが唯一の定義。
+ * サイト全体の `SITE_DESCRIPTION` と同じく、抽象語ではなく何が載っているかで書く。
+ */
+export const characterPageDescription = (characterName: string) =>
+  `${SITE_NAME} における「${characterName}」の共起ランキング。`
+  + 'ファンの投票をもとに、このキャラを推す人が他に誰を推しているかを集計している。';
+
+/** キャラ別分析ページの見出し・名前。metadata と JSON-LD で共有する。 */
+export const characterPageName = (characterName: string) =>
+  `「${characterName}」を推す人が同時に推しているキャラ`;
+
+/**
  * キャラ別分析ページのグラフ。
  * このサイト固有で最も価値がある「誰と誰が一緒に推されているか」を ItemList で機械可読にする。
  */
@@ -113,16 +126,14 @@ export const characterPageGraph = ({
 }) => {
   const url = `${hostUrl}/${characterName}`;
   const entries = Object.entries(ranking);
-  const name = `「${characterName}」を推す人が同時に推しているキャラ`;
+  const name = characterPageName(characterName);
 
   const webPage = {
     '@type': 'WebPage',
     '@id': `${url}#webpage`,
     url,
     name,
-    description:
-      `${SITE_NAME} における「${characterName}」の共起ランキング。`
-      + 'ファンの投票をもとに、このキャラを推す人が他に誰を推しているかを集計している。',
+    description: characterPageDescription(characterName),
     inLanguage: 'ja',
     isPartOf: { '@id': ids.website },
     // まだ票が無いキャラのページでは、空のランキングを主題として宣言しない。
