@@ -11,16 +11,25 @@ import { AnimatedVoteBar } from '@/components/AnimatedVoteBar';
 import CharacterNameLabel from '@/components/CharacterNameLabel';
 
 const TopAnalysisContent: React.FC<
-  { 
+  {
     analysisData: AnalysisData | undefined;
     targetCharacterName: string;
+    /**
+     * 「〇〇推しの人が同時に推すのは、」の見出しレベル。
+     * キャラページではこれがページの主題そのものなので h1、
+     * トップでは順送りで中身が変わるブロックの見出しなので h2 にする
+     * （トップの h1 はページ側が持つ）。
+     */
+    headingLevel?: 1 | 2;
   } & React.ComponentProps<'div'>
 > = ({
   analysisData,
   targetCharacterName,
+  headingLevel = 2,
   className,
   ...props
 }) => {
+  const Heading = headingLevel === 1 ? 'h1' : 'h2';
   // キャラの投票数を直接扱うと、ただの人気投票になってしまうので......
   //const totalCount = Object.values(
   //  topAnalysisData[targetCharacterName] ?? 0
@@ -28,6 +37,9 @@ const TopAnalysisContent: React.FC<
 
   const maxCount = Object.values( analysisData ?? 0)
     .reduce((max, curr) => max < curr ? curr : max, 0);
+  // 票数の多い順（集計 SQL の ORDER BY）で並んだランキング行。
+  // analysisData が null/undefined の場合も空配列に潰して、以降の分岐を 1 つにする。
+  const rankingEntries = Object.entries(analysisData ?? {});
   return (
     <div
       className={clsx('flex flex-col', className)}
@@ -37,13 +49,20 @@ const TopAnalysisContent: React.FC<
         flex-wrap で、名前＋文が1行に収まらない時は文を名前の下へ折り返す（nowrap だと
         名前が潰れて途中改行してしまう）。長い複合名（・入り）は CharacterNameLabel で
         「・の直後だけ」で折り返す。
+
+        この 1 行は「〇〇を推す人は誰を推しているか」という、そのページの結論そのものなので
+        見出し要素にする。Tailwind の preflight が見出しの font-size / font-weight を
+        inherit に落とすため、div から変えても見た目は変わらない。
+        ⚠️ 中身は phrasing content だけにする（div は h1/h2 の中に置けない）。
+        名前部分の key は、トップの順送りで名前が変わるたびに
+        animate-bounce-once を再生させるためのもの（要素を作り直す）。
       */}
-      <div className='flex flex-row flex-wrap items-baseline gap-x-1'>
-        <div key={targetCharacterName} className='text-lg font-bold animate-bounce-once'>
+      <Heading className='flex flex-row flex-wrap items-baseline gap-x-1'>
+        <span key={targetCharacterName} className='text-lg font-bold animate-bounce-once'>
           <CharacterNameLabel name={targetCharacterName} />
-        </div>
+        </span>
         <span>推しの人が同時に推すのは、</span>
-      </div>
+      </Heading>
       <div 
         className={clsx(
           'bg-sky-200 shadow',
@@ -77,9 +96,18 @@ const TopAnalysisContent: React.FC<
             </div>
           </div>
         }
-        {Object.entries(analysisData ?? {})
+        {/*
+          票数の多い順に並んだ順位付きの一覧なので <ol>。
+          1 件 = <li> にすることで「キャラ名」と「その票数」が同じ項目に属することを
+          構造で表す（以前は名前と AnimatedVoteBar 内の票数が別々の div に散っていて、
+          視覚的に隣接しているだけだった）。
+          Tailwind の preflight が list-style と padding を落とすので見た目は変わらない。
+        */}
+        {rankingEntries.length > 0 &&
+        <ol>
+          {rankingEntries
           .map(([characterName, count]) =>
-            <div 
+            <li
               key={characterName}
               className={clsx(
                 'grid grid-cols-[150px_auto] items-center',
@@ -139,23 +167,25 @@ const TopAnalysisContent: React.FC<
                   }
                 </Link>
               </div>
-              <AnimatedVoteBar 
+              <AnimatedVoteBar
                 key={Date.now()}
-                count={count} 
-                maxCount={maxCount} 
+                count={count}
+                maxCount={maxCount}
               />
-            </div>
+            </li>
           )
-        } 
+          }
+        </ol>
+        }
         {/*
-          括弧は必須。&& は || より強いので、括弧が無いと
-          `analysisData == null || (keys.length === 0 && <div/>)` と解釈され、
-          analysisData が null/undefined の時に式全体が true になって
-          （React は true を何も描画しないので）空欄になる。
+          📌 かつてここは `analysisData == null || Object.keys(...).length === 0 && <div/>`
+          と書かれていて、&& が || より強いために analysisData が null/undefined の時は
+          式全体が true になり（React は true を描画しないので）メッセージが出ずに空欄だった。
+          今は rankingEntries に集約したので条件が 1 つになり、この罠自体が無くなっている。
           ランキング行をリンクにした結果、まだ票が入っていないキャラへ直接飛べるようになり、
-          この分岐が実際に踏まれる経路が増えた。
+          この分岐が実際に踏まれる経路が増えている。
         */}
-        {(analysisData == null || Object.keys(analysisData).length === 0) &&
+        {rankingEntries.length === 0 &&
           <div>
             <span>データがまだ有りません... </span>
             <span>推しの方は投票をお願いします！</span>

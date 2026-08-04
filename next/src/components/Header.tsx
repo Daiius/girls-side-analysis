@@ -12,7 +12,7 @@ const gamjaFlower = Gamja_Flower({ weight: "400", subsets: ['latin'] });
  * テーマ切り替えボタンを持ったヘッダです
  */
 const Header = () => (
-  <div className={clsx(
+  <header className={clsx(
     'sticky top-0 h-12 w-full bg-sky-500/90',
     'flex flex-row items-center z-10',
     'px-4',
@@ -35,7 +35,7 @@ const Header = () => (
     <div className='ml-auto'>
       <NoticeButton />
     </div>
-  </div>
+  </header>
 );
 
 export default Header;

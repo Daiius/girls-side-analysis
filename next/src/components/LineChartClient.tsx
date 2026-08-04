@@ -36,11 +36,17 @@ const LineChartClient: React.FC<
   {
     datasets: DataSet[];
     labels?: string[];
+    /**
+     * canvas の中身（chart.js が描いたピクセル）は支援技術から一切読めないので、
+     * 何のグラフなのかを言葉で渡す。role='img' と組で使う。
+     */
+    ariaLabel: string;
   }
   & React.ComponentProps<'canvas'>
 > = ({
   datasets,
   labels,
+  ariaLabel,
   className,
   ...props
 }) => {
@@ -126,8 +132,12 @@ const LineChartClient: React.FC<
     // {/* <div className='rounded-lg bg-white/80'> */}
     //<GSMessage className='h-auto mt-8' heightFixed={false}>
     //<div style={{ height: `${datasets.length * 10 + 200}px`}}>
-      <canvas 
+      <canvas
         id='line-chart'
+        // canvas は既定でアクセシブルな名前も役割も持たない。
+        // 画像として扱い、内容を aria-label で言葉にする。
+        role='img'
+        aria-label={ariaLabel}
         className={clsx('bg-sky-200 shadow rounded-md', className)}
         {...props}
       />

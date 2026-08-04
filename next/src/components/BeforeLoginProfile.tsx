@@ -23,9 +23,13 @@ const BeforeLoginProfile = ({
       className,
     )}
   >
-      <div className='text-lg font-bold'>
+      {/*
+        ログイン前の /profile はこの説明がページの主題なので h1 にする。
+        preflight により見た目は変わらない（font-size / weight は class 側で指定）。
+      */}
+      <h1 className='text-lg font-bold'>
         Twitterアカウント連携について：
-      </div>
+      </h1>
       <GSMessage heightFixed={false}>
         <ul className='list-disc pl-4 text-sm sm:text-base'>
           <li>投票データは匿名で保存されます</li>

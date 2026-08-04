@@ -2,7 +2,7 @@ import type React from 'react';
 import clsx from 'clsx';
 
 const Footer: React.FC = () => (
-  <div className={clsx(
+  <footer className={clsx(
     'w-full h-8 bottom-0',
     'bg-sky-400',
     'relative'
@@ -24,7 +24,7 @@ const Footer: React.FC = () => (
     >
       ご要望・不具合報告
     </a>
-  </div>
+  </footer>
 );
 
 export default Footer;
