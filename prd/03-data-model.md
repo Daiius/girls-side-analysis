@@ -107,12 +107,14 @@
 |---|---|---|
 | `twitter_id` | **varchar(20)** NOT NULL | ⚠️ 他テーブルは varchar(32)。歴史的な不揃い（§6） |
 | `recorded_date` | date NOT NULL | JST |
-| `series` | tinyint unsigned NOT NULL | 1〜4 |
+| `series` | tinyint unsigned NOT NULL | 妥当な値は `Characters` の DISTINCT `series`（現在 1〜4）。FK は無いので**アプリ側で検証する**（[04](./04-voting.md) §4.2） |
 | `status` | varchar(20) NOT NULL → `UserStatesMaster.state` | |
 
 - PK: `(twitter_id, recorded_date, series)`。
-- 行の集合が **series 1〜4 で固定**なので、同日再更新は DELETE+INSERT ではなく
-  `INSERT ... ON DUPLICATE KEY UPDATE`（status のみ）で吸収する（[04](./04-voting.md) §3）。
+- **補完により行の集合が日をまたいでも変わらない**ので（[04](./04-voting.md) §3.1）、同日再申告は
+  DELETE+INSERT ではなく `INSERT ... ON DUPLICATE KEY UPDATE`（status のみ）で吸収する。
+- ⚠️ 補完は read-modify-write なので、書き込みは `SELECT ... FOR UPDATE` を含む
+  トランザクションで行う。初回申告のデッドロックは再実行で吸収する（[04](./04-voting.md) §3.1）。
 - 「現在の状態」テーブル（`LatestUserStates` 相当）は**作らない**。更新頻度が低く `MAX(recorded_date)` で十分軽い。
 
 ### 3.6 認証テーブル（better-auth）

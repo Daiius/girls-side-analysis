@@ -135,7 +135,7 @@ GROUP BY l1.character_name, l2.character_name
 
 ## 7. テスト（実 MySQL に対する統合テスト）
 
-実装: `server-ts/src/lib/{votes,users,aggregate}.test.ts`（Vitest）。
+実装: `server-ts/src/lib/{votes,users,aggregate,validation}.test.ts`（Vitest）。
 
 - **これらは単体テストではなく統合テストである。** 正しさが SQL（self-join / CTE / `ON DUPLICATE KEY UPDATE`）に
   宿っているため、DB をモックすると「モックが返した値を返した」ことしか確認できない。
@@ -153,8 +153,11 @@ snapshot を全廃し、**仕様を語るテスト 15 件**に作り替えた。
 
 - **削除した**: `getVotesRelatedToOshi` × 3（本番から呼ばれない）、`getLatestVotes` × 3 /
   `getLatestUserState` × 2 / `getUserStatesMaster`（seed した行がそのまま返るだけ ＝ ORM の疎通確認）。
-- **現在の内訳**: 決定性（§4）2 件 / 投票の書き込み（[04](./04-voting.md) §2）4 件 /
-  時系列の合成（§3）4 件 / as-of 集計（§2）3 件 / プレイ状態（[04](./04-voting.md) §3）2 件。
+- **現在の内訳（2026-08-05 時点・37 件）**: 決定性（§4）2 件 / 投票の書き込み（[04](./04-voting.md) §2）4 件 /
+  時系列の合成（§3）4 件 / as-of 集計（§2）3 件 / プレイ状態（[04](./04-voting.md) §3）6 件 /
+  入力検証（[04](./04-voting.md) §4）18 件。
+  - 入力検証のうち **zod スキーマの検証は DB を使わない**が、マスタ照合（`findUnknown*`）は
+    実 MySQL に対して回すため、同じファイルに置いている。
 - **テスト名はドメインの言葉で書く**（「PK 衝突しない」ではなく「同じ日に 2 回申告したら、後の内容が採用される」）。
 - **arrange はテスト内で組む**（seed 非依存）。各テストが専用 `twitterID` と
   **seed が使わないキャラ**でデータを作り、assert し、後始末する。

@@ -1,5 +1,3 @@
-'use server'
-
 import { db } from '../db';
 import { votes, latestVotes, dailyOshiCount, characters } from '../db/schema';
 import {
