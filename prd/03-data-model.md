@@ -139,9 +139,17 @@
 |---|---|---|
 | dev / CI の使い捨て DB | `pnpm db:push`（`drizzle-kit push --force`） | 履歴を残さず強制同期 |
 | **本番** | `pnpm db:generate` で生成 → **イメージ同梱の `migrate.js`** を使い捨てコンテナで実行（[02](./02-architecture.md) §6.3） | `server-ts/drizzle/*` にバージョン管理 |
-| 既存 DB を初めて管理下に載せる | `pnpm db:baseline`（**一度だけ**） | **最初の 1 本**を「適用済み」として記録（SQL は実行しない） |
+| 既存 DB を初めて管理下に載せる | `pnpm db:baseline <世代名>`（**一度だけ**） | **指定した世代まで**を「適用済み」として記録（SQL は実行しない） |
 
 - `db:baseline` を忘れて `db:migrate` を打つと、ベースラインの `CREATE TABLE` が既存テーブルと衝突する。**新規 DB では baseline 不要**。
+- ⚠️ **`db:baseline` は「どこまで記録するか」の既定を持たない。必ず引数で指定する。**
+  既存 DB がどの世代まで進んでいるかはスクリプトからは分からず、取り違えると
+  次の `db:migrate` が**適用済みの DDL を再実行して止まる**。
+  - 実測: 現行スキーマの DB に最初の 1 本だけ記録 → `ALTER TABLE Characters ADD reading` が
+    **`ER_DUP_FIELDNAME`** で停止した。
+  - **先に DB の実スキーマを確認してから指定する。** 現行スキーマなら最後の世代まで、
+    `reading` が無い DB なら最初の 1 本まで。
+  - 冪等（記録済みの世代は飛ばす）。接頭辞が一意なら省略形でもよい。
 - `drizzle/` の現在の内容:
   1. `20260706112547_complex_wild_child` — 全テーブルの CREATE（ベースライン。この時点では `Characters.reading` が無い）
   2. `20260706112635_same_sleeper` — `Characters.reading` の ADD COLUMN
