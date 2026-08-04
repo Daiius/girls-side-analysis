@@ -67,15 +67,51 @@ export const insertUserStatesIfUpdated = async ({
   // 申告が空なら記録するものが無い。
   if (data.length === 0) return;
 
-  // ⚠️ 補完（下記）があるため、この関数は read-modify-write である。
+  // ⚠️ 初回申告（行が 1 つも無い）では FOR UPDATE がデッドロックしうる（下記）。
+  // その場合 InnoDB は片方を rollback 済みにして返すので、そのまま流し直せばよい。
+  // 2 回目には勝った側の行が commit されており、FOR UPDATE が gap ではなく
+  // 実レコードを掴む＝以降は素直に直列化されるため、3 回も試せば十分。
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await writeUserStates({ twitterID, data });
+      return;
+    } catch (e) {
+      if (attempt >= 3 || !isDeadlock(e)) throw e;
+    }
+  }
+};
+
+/**
+ * InnoDB のデッドロック。検出時点でそのトランザクションは rollback 済みなので、
+ * 呼び出し側は安全に再実行できる。
+ */
+const isDeadlock = (e: unknown): boolean =>
+  typeof e === 'object' && e !== null && 'code' in e
+  && (e as { code?: unknown }).code === 'ER_LOCK_DEADLOCK';
+
+/**
+ * insertUserStatesIfUpdated の本体（1 トランザクション）。
+ */
+const writeUserStates = async ({
+  twitterID,
+  data,
+}: {
+  twitterID: string;
+  data: { series: number; state: string; }[];
+}) => {
+  // ⚠️ 補完（下記）があるため、この処理は read-modify-write である。
   // Votes は受信データだけで書けるので「per-user の行ロックで自然に直列化される」
   // （prd/04-voting.md §2.2）が、こちらは読んだ値を書き戻すのでそれでは足りない。
   // 同じユーザから別々の series が並行して申告されると、後に書く側が
   // 「読んだ時点の古い値」で相手の変更を潰す（lost update）。
   // ユーザの行をまとめて FOR UPDATE で押さえ、read-modify-write を直列化する。
   await db.transaction(async (tx) => {
-    // 行が 1 つも無い初回申告でも、PK 先頭カラムの範囲に gap lock が掛かるため
-    // 並行する INSERT を締め出せる。
+    // ⚠️ これで直列化できるのは**行が既にある**ときだけ。行が 1 つも無いと
+    // 掴めるのは gap lock で、gap lock 同士は競合しないため両者が通り抜け、
+    // INSERT への昇格でデッドロックする（2 接続で実測。ER_LOCK_DEADLOCK）。
+    // ただし補完元が無い＝各自の series しか書かないので、
+    // **初回申告に lost update は起こりえない**。デッドロックだけを
+    // 呼び出し側の再実行で吸収すれば足りる。
     await tx.select({ series: userStates.series })
       .from(userStates)
       .where(eq(userStates.twitterID, twitterID))

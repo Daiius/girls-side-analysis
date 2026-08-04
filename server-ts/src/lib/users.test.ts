@@ -133,6 +133,26 @@ describe('プレイ状態の記録（prd/04-voting.md §3）', () => {
     expect(latest.find(s => s.series === 2)?.state).toBe('実況視聴')
   })
 
+  it('初回から別のシリーズを同時に申告しても、両方が記録される', async () => {
+    // 行が 1 つも無い状態からの並行申告。補完元が無いので lost update は
+    // 起こりようがないが、FOR UPDATE の gap lock 同士は競合しないため
+    // INSERT への昇格でデッドロックしうる（＝ 500）。
+    await Promise.all([
+      insertUserStatesIfUpdated({
+        twitterID,
+        data: [{ series: 1, state: 'プレイ済み' }],
+      }),
+      insertUserStatesIfUpdated({
+        twitterID,
+        data: [{ series: 2, state: '実況視聴' }],
+      }),
+    ])
+
+    const latest = await getLatestUserState(twitterID)
+    expect(latest.find(s => s.series === 1)?.state).toBe('プレイ済み')
+    expect(latest.find(s => s.series === 2)?.state).toBe('実況視聴')
+  })
+
   it('申告が空なら何も書かない', async () => {
     await insertUserStatesIfUpdated({ twitterID, data: [] })
 
