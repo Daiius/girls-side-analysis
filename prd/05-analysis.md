@@ -135,7 +135,7 @@ GROUP BY l1.character_name, l2.character_name
 
 ## 7. テスト（実 MySQL に対する統合テスト）
 
-実装: `server-ts/src/lib/{votes,users}.test.ts`（Vitest）。
+実装: `server-ts/src/lib/{votes,users,aggregate}.test.ts`（Vitest）。
 
 - **これらは単体テストではなく統合テストである。** 正しさが SQL（self-join / CTE / `ON DUPLICATE KEY UPDATE`）に
   宿っているため、DB をモックすると「モックが返した値を返した」ことしか確認できない。
@@ -146,18 +146,32 @@ GROUP BY l1.character_name, l2.character_name
   CI は GitHub Actions の `services: mysql:8.4` に対して直接動かす（[09](./09-roadmap.md) §2.5）。
 - 時刻依存（`getTimelineData`）は `vi.setSystemTime('2024-01-05T12:00:00+09:00')` で固定する。
 
-### 7.1 テストの作り替え（2026-07-10 決定）
+### 7.1 テストの作り替え（2026-07-10 決定 → 2026-08-04 実施）
 
-現行 12 件の snapshot は **3 テーブル移行の安全網（足場）**として作られたもので、移行完了により役目を終えた。
+旧テストの snapshot 12 件は **3 テーブル移行の安全網（足場）**として作られたもので、移行完了により役目を終えた。
+snapshot を全廃し、**仕様を語るテスト 15 件**に作り替えた。
 
-- **削除**: `getVotesRelatedToOshi` × 3（デッドコード）、`getLatestVotes` × 3 /
+- **削除した**: `getVotesRelatedToOshi` × 3（本番から呼ばれない）、`getLatestVotes` × 3 /
   `getLatestUserState` × 2 / `getUserStatesMaster`（seed した行がそのまま返るだけ ＝ ORM の疎通確認）。
-- **残す（明示 assert に書き直す）**: `getTimelineData`、`insertUserStatesIfUpdated`（同日再更新）。
-  テスト名も**ドメインの言葉**にする（「PK 衝突しない」→「同じ日に 2 回投票したら後の投票が採用される」）。
-- **新規**: ①集計の決定性（§4 の `ORDER BY`）②as-of 集計の歯抜けなしと冪等性（§2）
-  ③`insertVotesIfUpdated` の書き込み ④`getTimelineData` の合成・境界。
-- **arrange はテスト内で組む**（seed 非依存）。各テストが専用 `twitterID` で投票を作り、集計して assert し、後始末する。
+- **現在の内訳**: 決定性（§4）2 件 / 投票の書き込み（[04](./04-voting.md) §2）4 件 /
+  時系列の合成（§3）4 件 / as-of 集計（§2）3 件 / プレイ状態（[04](./04-voting.md) §3）2 件。
+- **テスト名はドメインの言葉で書く**（「PK 衝突しない」ではなく「同じ日に 2 回申告したら、後の内容が採用される」）。
+- **arrange はテスト内で組む**（seed 非依存）。各テストが専用 `twitterID` と
+  **seed が使わないキャラ**でデータを作り、assert し、後始末する。
   `addTestData.ts` は開発用 seed としてのみ残す。
 
-> ⚠️ 現行テストは `byName()` / `bySeries()` でソートしてから snapshot を取るため、
-> **§4 の決定性（`ORDER BY`）を一切検証していない**。壊しても緑のままである。これが新規 ① の動機。
+> ⚠️ 旧テストは `byName()` / `bySeries()` でソートしてから snapshot を取るため、
+> **§4 の決定性（`ORDER BY`）を一切検証していなかった**。壊しても緑のままだった。
+
+#### ⚠️ 決定性のテストは「同票の 2 人」の選び方で無力になる
+
+タイブレークを外す変異を当てて確認したところ、**MySQL は概ね名前順（GROUP BY / PK の順）で返す**。
+そのため**公式順と名前順が一致する組**（例: 三原色 と 白羽大地）で同票を作ると、
+`ORDER BY` のタイブレークを削除してもテストが通ってしまう。
+**両者が食い違う組**（`天之橋一鶴`: series 1 / `佐伯瑛`: series 2。名前順では佐伯瑛が先）を使うこと。
+
+#### 📌 30 日窓を決めているのは SQL ではない
+
+`getTimelineData` の `gte(snapshot_date, start)` は**絞り込みの最適化**であって仕様の境界ではない。
+窓の外の日を落としているのは、その後の「30 日分の `days` に引き当てる」合成の方である
+（SQL の下限を外しても出力は変わらないことを変異で確認した）。境界を検証したいなら**窓の長さ**を変える。

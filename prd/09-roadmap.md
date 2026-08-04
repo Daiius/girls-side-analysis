@@ -34,14 +34,14 @@
 |---|---|---|---|
 | **C** | 投票入力の検証不足 | `POST /votes/:id` に **1 件以上・`characterName` の重複なし・`level` は非負整数（0〜255）** を課す。**`level` の連番性は検証しない**（同順位を将来許すため。§4） | [04](./04-voting.md) §4 |
 | **D** | `UserStates` の series ハードコード | `if (gs1State && ... && gs4State)` の**サイレントスキップを廃止**し、**送られてきた series だけを upsert** する部分更新にする。series の妥当性は `Characters` の DISTINCT series で検証し、不明な値は 400。GS5 は 付録 A に足すだけで動く | [04](./04-voting.md) §3 |
-| **E** | テストが「使い終わった足場」 | 現行 12 件の snapshot は 3 テーブル移行の安全網であり、役目を終えた。**seed 直引きのテストと、本番から呼ばれない `getVotesRelatedToOshi` のテストを削除**し、**仕様を語るテストへ作り替える**。詳細は §2.5 | [05](./05-analysis.md) §7 |
+| ~~**E**~~ | ~~テストが「使い終わった足場」~~ | ✅ **2026-08-04 完了**。snapshot を全廃し、仕様を語るテスト 15 件に作り替えた（G も同時に解消）。詳細は [05](./05-analysis.md) §7.1 | [05](./05-analysis.md) §7 |
 
 ### 2.3 低
 
 | # | 項目 | 決定した方針 |
 |---|---|---|
 | F | `server-ts/src/lib/votes.ts` の `'use server'` | 削除する。Hono では無意味だが、`next/` 側の同名ファイルでは**禁忌**（[04](./04-voting.md) §5）なので、残すと将来混乱する |
-| G | seed の `level` が 1 始まり | UI が送るのは 0 始まり。`addTestData.ts` を実際の入力に合わせる。E と同じ PR で |
+| ~~G~~ | ~~seed の `level` が 1 始まり~~ | ✅ **2026-08-04 完了**（E と同じ PR）。`addTestData.ts` を UI と同じ 0 始まりに揃えた |
 | H | `UserStates.twitter_id` だけ varchar(20) | varchar(32) に揃える。drizzle マイグレーション 1 本。**本番 ALTER の権限確認**が要る（[03](./03-data-model.md) §5.1） |
 | I | `/[charaName]` の `dynamic = 'force-static'` | 指定しないと dynamic rendering に落ちる原因を特定し、コメントを推測から確定事実にする |
 
@@ -81,7 +81,8 @@
   `test/globalSetup.ts` は**無改造**で通った（root で `<DB>_test` を作る構造がそのまま活きた）。
   エラーメッセージだけローカル / CI の両方を指すよう直した。ルートの `pnpm test`（compose 経由）は残す。
 
-**テストの作り替え**
+**テストの作り替え** — ✅ **2026-08-04 実施**。結果と、実施して分かったことは
+[05](./05-analysis.md) §7.1 が正典。以下は着手前の計画（履歴として残す）。
 
 - 現行 12 件のうち、**残すのは 2 件**（`getTimelineData` の合成・境界、`insertUserStatesIfUpdated` の同日再更新）。
   ただし snapshot ではなく**明示 assert**に書き直し、テスト名も**ドメインの言葉**にする
