@@ -19,6 +19,10 @@
 - **Server Action 失敗時のエラー表示**（`error.tsx` + フォーム内 try/catch）→ [04](./04-voting.md) §7
 - **CI（lint + typecheck + test の 3 点セット）**（旧 §2.1 B。2026-08-04 完了）。
   `.github/workflows/ci.yml` の 3 ジョブ → [02](./02-architecture.md) §6.2
+- **投票 API の入力検証**（旧 §2.2 C。2026-08-05 完了）。形は zod、マスタ照合は DB 参照で
+  すべて 400 にした。`server-ts/src/lib/validation.ts` → [04](./04-voting.md) §4.2
+- **プレイ状態の部分申告と補完**（旧 §2.2 D。2026-08-05 完了）。series 番号のハードコードと
+  サイレントスキップを廃止 → [04](./04-voting.md) §3.1
 
 ## 2. 着手する（当面の軸）
 
@@ -30,17 +34,19 @@
 
 ### 2.2 中
 
+なし（**C・D は 2026-08-05 に完了**。§1・[04](./04-voting.md) §3.1・§4.2）。
+
 | # | 項目 | 決定した方針 | 参照 |
 |---|---|---|---|
-| **C** | 投票入力の検証不足 | `POST /votes/:id` に **1 件以上・`characterName` の重複なし・`level` は非負整数（0〜255）** を課す。**`level` の連番性は検証しない**（同順位を将来許すため。§4） | [04](./04-voting.md) §4 |
-| **D** | `UserStates` の series ハードコード | `if (gs1State && ... && gs4State)` の**サイレントスキップを廃止**し、**送られてきた series だけを upsert** する部分更新にする。series の妥当性は `Characters` の DISTINCT series で検証し、不明な値は 400。GS5 は 付録 A に足すだけで動く | [04](./04-voting.md) §3 |
+| ~~**C**~~ | ~~投票入力の検証不足~~ | ✅ **2026-08-05 完了**。形（件数・重複・値域）を zod、マスタ照合（キャラ名・series・state）を DB 参照で 400 にした。**`level` の連番性は検証しない**（同順位を将来許すため） | [04](./04-voting.md) §4.2 |
+| ~~**D**~~ | ~~`UserStates` の series ハードコード~~ | ✅ **2026-08-05 完了**（C と同じ PR）。サイレントスキップを廃止し、**部分申告を受け取って最新値で補完**する形にした。series の妥当性は `Characters` の DISTINCT series で検証。GS5 は 付録 A に足すだけで動く | [04](./04-voting.md) §3.1 |
 | ~~**E**~~ | ~~テストが「使い終わった足場」~~ | ✅ **2026-08-04 完了**。snapshot を全廃し、仕様を語るテスト 15 件に作り替えた（G も同時に解消）。詳細は [05](./05-analysis.md) §7.1 | [05](./05-analysis.md) §7 |
 
 ### 2.3 低
 
 | # | 項目 | 決定した方針 |
 |---|---|---|
-| F | `server-ts/src/lib/votes.ts` の `'use server'` | 削除する。Hono では無意味だが、`next/` 側の同名ファイルでは**禁忌**（[04](./04-voting.md) §5）なので、残すと将来混乱する |
+| ~~F~~ | ~~`server-ts/src/lib/votes.ts` の `'use server'`~~ | ✅ **2026-08-05 完了**（C・D と同じ PR）。Hono では無意味だが、`next/` 側の同名ファイルでは**禁忌**（[04](./04-voting.md) §5）なので削除した |
 | ~~G~~ | ~~seed の `level` が 1 始まり~~ | ✅ **2026-08-04 完了**（E と同じ PR）。`addTestData.ts` を UI と同じ 0 始まりに揃えた |
 | H | `UserStates.twitter_id` だけ varchar(20) | varchar(32) に揃える。drizzle マイグレーション 1 本。**本番 ALTER の権限確認**が要る（[03](./03-data-model.md) §5.1） |
 | I | `/[charaName]` の `dynamic = 'force-static'` | 指定しないと dynamic rendering に落ちる原因を特定し、コメントを推測から確定事実にする |
