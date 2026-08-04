@@ -126,16 +126,25 @@ export default async function Page({
         />
       </div>
       <TopCharacterSelect className='my-5'/>
+      {/* このページの主題そのものなので、分析結果の見出しを h1 にする */}
       <TopAnalysisContent
         className='w-full mb-2'
         analysisData={analysisData}
         targetCharacterName={decodedCharaName}
+        headingLevel={1}
       />
       {datasets.length > 0 &&
         <div className='w-full mb-4'>
+          <h2 className='sr-only'>
+            {`「${decodedCharaName}」と同時に推されているキャラの推移`}
+          </h2>
           <LineChartClient
             className='w-full'
             datasets={datasets}
+            ariaLabel={
+              `「${decodedCharaName}」と同時に推されているキャラの、`
+              + '直近30日間の票数の推移を表す折れ線グラフ'
+            }
           />
         </div>
       }

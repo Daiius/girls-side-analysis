@@ -23,6 +23,12 @@ const AfterLoginProfile: React.FC<
     )}
     {...props}
   >
+    {/*
+      ログイン後の /profile は投票フォームがページの主題。画面上に見出しに相当する
+      文言が無く（「ようこそ」は挨拶であってページの主題ではない）、
+      デザインを変えずに文書構造を与えたいので sr-only の h1 を置く。
+    */}
+    <h1 className='sr-only'>推しの登録</h1>
     <div className='flex flex-row items-center mb-2'>
       <div>ようこそ {session.user.name} さん!</div>
       <LogoutButton className='self-center ms-auto'/>

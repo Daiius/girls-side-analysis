@@ -33,6 +33,15 @@ export default async function Home() {
 
   return (
     <div className='w-full flex flex-col items-center gap-2'>
+      {/*
+        ページの主題を名乗る h1。トップの見える範囲は吹き出し・投票導線・順送りで
+        既に埋まっており、同じ内容の見出しを重ねると冗長なので sr-only にしてある
+        （中身は下の吹き出しと順送りが視覚的に果たしている役割そのもの）。
+        見せる判断に変えるなら sr-only を外すだけでよい。
+      */}
+      <h1 className='sr-only'>
+        ときめきメモリアル Girl's Side 推しキャラの組み合わせ分析
+      </h1>
       <GSMessage>
         <div>
           <span>"ときめきメモリアル Girl's Side" シリーズの</span>
