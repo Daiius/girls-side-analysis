@@ -107,6 +107,8 @@ server-rs/   # Rust(axum + sea-orm) の別実装。workspace / compose の外（
 - **Drizzle は RC を exact pin**（`drizzle-orm` / `drizzle-kit` とも `1.0.0-rc.3`）。catalog に入れず、
   `minimumReleaseAge` の影響を受けない形で版を固定する。
 - **`.env*` はコミットしない**（`.gitignore` 済み）。DB ダンプ（`*.sql` / `*.sql.gz`）も同様。
+  - ⚠️ ただし **`server-ts/drizzle/**/*.sql` と `server-ts/migrations/*.sql` は除外解除してコミットする**。
+    これはダンプではなくソースである（[03](./03-data-model.md) §5.1）。
 
 ## 6. ビルドとデプロイ
 

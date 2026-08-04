@@ -139,16 +139,27 @@
 |---|---|---|
 | dev / CI の使い捨て DB | `pnpm db:push`（`drizzle-kit push --force`） | 履歴を残さず強制同期 |
 | **本番** | `pnpm db:generate` → `pnpm db:migrate` | `server-ts/drizzle/*` にバージョン管理 |
-| 既存 DB を初めて管理下に載せる | `pnpm db:baseline`（**一度だけ**） | `0000` を「適用済み」として記録（SQL は実行しない） |
+| 既存 DB を初めて管理下に載せる | `pnpm db:baseline`（**一度だけ**） | **最初の 1 本**を「適用済み」として記録（SQL は実行しない） |
 
-- `db:baseline` を忘れて `db:migrate` を打つと、`0000` の `CREATE TABLE` が既存テーブルと衝突する。**新規 DB では baseline 不要**。
-- `drizzle/` の現在の内容:
-  1. `20260706112547_complex_wild_child` — 全テーブルの CREATE（ベースライン。この時点では `Characters.reading` が無い）
-  2. `20260706112635_same_sleeper` — `Characters.reading` の ADD COLUMN
-  3. `20260706112653_backfill_readings` — 61 キャラの `reading` を UPDATE で backfill
+- `db:baseline` を忘れて `db:migrate` を打つと、ベースラインの `CREATE TABLE` が既存テーブルと衝突する。**新規 DB では baseline 不要**。
+- `drizzle/` の現在の内容: `20260804080914_baseline` の 1 本のみ（現行スキーマ全テーブルの CREATE）。
+  - 採番は **drizzle-kit 1.0 系のタイムスタンプ形式**（`0000_` のような連番は付かない）。適用順は名前の昇順。
 - `server-ts/migrations/001_*.sql` は **generate 導入前に本番へ手で適用した SQL**。参照用に残す（再実行しない）。
 
-### 5.1 本番 DB のテーブル単位権限
+### 5.1 マイグレーションは**フォルダごと**コミットする
+
+**`drizzle/<name>/` には `snapshot.json` と `migration.sql` の 2 つが要る。両方をコミットする。**
+
+- ⚠️ **`migration.sql` が無いフォルダを migrator は黙って読み飛ばす**
+  （`readMigrationFiles` が `existsSync` で filter する）。
+  結果、`db:migrate` は**何も流さずに成功メッセージを出す**。
+- 実際に踏んだ: ルート `.gitignore` の `*.sql`（DB ダンプ避け）が生成 SQL まで巻き込み、
+  `snapshot.json` だけが入った状態で 3 世代分がコミットされていた。
+  `.gitignore` に `!server-ts/drizzle/**/*.sql` の除外解除を置いてある。**消さないこと**。
+- 検算は「テーブルが実際にできたか」で行う。**成功メッセージは根拠にならない**。
+  空 DB に `db:migrate` → `db:push` が `No changes detected` を返せばスキーマ一致。
+
+### 5.2 本番 DB のテーブル単位権限
 
 本番のアプリ DB ユーザーは**テーブル単位の権限**しか持たない。
 **新テーブルを追加したら明示的に GRANT する**こと。忘れると本番だけ errno 1142 で失敗し、**ローカルでは再現しない**。

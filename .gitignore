@@ -1,11 +1,16 @@
 .env*
 *.zip
-*.sql.gz
 
 /node_modules
 /.claude/local/
 
+# DB ダンプ避け。⚠️ これが drizzle の生成 SQL まで巻き込んでいた
+# （snapshot.json だけがコミットされ、migration.sql が 1 つも入っていなかった）。
+# migrator は migration.sql が無いフォルダを黙って読み飛ばすため、
+# db:migrate は「何も流さずに成功」する。除外はダンプに限る。
 *.sql.gz
 *.sql
+!server-ts/drizzle/**/*.sql
+!server-ts/migrations/*.sql
 
 *.override.yaml
