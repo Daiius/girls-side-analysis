@@ -13,6 +13,8 @@ import TopCharacterSelect from '@/components/TopCharacterSelect';
 import TopAnalysisContent from '@/components/TopAnalysisContent';
 import LineChartClient from '@/components/LineChartClient';
 import XShareLink from '@/components/XShareLink';
+import JsonLd from '@/components/JsonLd';
+import { characterPageGraph } from '@/lib/structuredData';
 import { notFound } from 'next/navigation';
 
 const hostUrl = process.env.HOST_URL 
@@ -109,6 +111,16 @@ export default async function Page({
     
   return (
     <div className='flex flex-col items-center w-full'>
+      {/*
+        このページの主題（共起ランキング）を ItemList として機械可読にする。
+        画面の <ol> と同じ順序・同じ数字を、同じ 1 つの集計結果から出している。
+      */}
+      <JsonLd
+        data={characterPageGraph({
+          characterName: decodedCharaName,
+          ranking: analysisData,
+        })}
+      />
       <div className='relative w-full h-24'>
         <VoteLink
           className={clsx(
