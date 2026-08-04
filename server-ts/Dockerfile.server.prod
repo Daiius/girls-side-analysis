@@ -32,8 +32,11 @@ COPY --from=build /workdir/server-ts/dist/index.js /app/index.js
 # （起動時の自動適用にはしない ── 失敗時の挙動と、将来インスタンスを増やしたときの
 #  競合が読めなくなるため。PRD 03 §5）。
 #
-#   docker run --rm --env-file <env> <image> migrate.js
+#   docker run --rm --network <DB に届く network> --env-file <env> <image> migrate.js
 #
+# ⚠️ **`--network` は必須**。素の `docker run` は既定の bridge に入るので、
+#    `DB_HOST` が別 network 上の名前（compose のサービス名など）だと解決できない。
+#    dev の compose 環境なら `--network girls-side-analysis-network`。
 # ⚠️ このイメージは distroless で **ENTRYPOINT が node** なので、渡すのは
 #    **スクリプトのパスだけ**。`node /app/migrate.js` と書くと node を引数に取って落ちる。
 COPY --from=build /workdir/server-ts/dist/migrate.js /app/migrate.js

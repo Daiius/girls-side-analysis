@@ -231,7 +231,7 @@ server-rs/   # Rust(axum + sea-orm) の別実装。workspace / compose の外（
 マイグレーションは**使い捨てコンテナとして明示的に実行する**。
 
 ```
-docker run --rm --env-file <env> <image> migrate.js
+docker run --rm --network <DB に届く network> --env-file <env> <image> migrate.js
 ```
 
 | 決定 | 理由 |
@@ -240,6 +240,10 @@ docker run --rm --env-file <env> <image> migrate.js
 | **起動時の自動適用にはしない** | 失敗時の挙動と、将来インスタンスを増やしたときの競合が読めなくなる |
 | **seed は同梱しない** | `addTestData.ts` は開発用（[09](./09-roadmap.md) §2.5）。本番に要らない |
 
+- ⚠️ **`--network` は必須**。素の `docker run` は Docker 既定の bridge network に入るため、
+  `DB_HOST` が別 network 上の名前（compose のサービス名など）だと**解決できずに失敗する**。
+  DB を publish しないのだから、**migrate 側が DB と同じ private network に参加する**のが前提になる。
+  dev の compose 環境なら `--network girls-side-analysis-network`。
 - ⚠️ このイメージは **distroless（`ENTRYPOINT` が node）** なので、渡すのは**スクリプトのパスだけ**。
   `node /app/migrate.js` と書くと node 自身を引数に取って落ちる。
 - ⚠️ **`drizzle/*/migration.sql` はバンドルに含まれない**（migrator が実行時に fs で読む）。
