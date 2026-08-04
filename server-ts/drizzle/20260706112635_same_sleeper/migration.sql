@@ -1,0 +1,1 @@
+ALTER TABLE `Characters` ADD `reading` varchar(40) DEFAULT '' NOT NULL;

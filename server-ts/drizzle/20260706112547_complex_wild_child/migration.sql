@@ -18,7 +18,6 @@ CREATE TABLE `Characters` (
 	`series` tinyint unsigned NOT NULL,
 	`sort` tinyint unsigned NOT NULL,
 	`name` varchar(20) NOT NULL,
-	`reading` varchar(40) NOT NULL DEFAULT '',
 	CONSTRAINT PRIMARY KEY(`series`,`sort`),
 	CONSTRAINT `name_unique` UNIQUE INDEX(`name`)
 );
