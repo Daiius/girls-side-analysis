@@ -88,7 +88,9 @@ pair `(X, Y)` の票数がこのユーザーの投票で変化するのは、`[X
 - ✅ **決定**: **4 件揃っていることを要求しない**。送られてきた series を申告として受け取り、
   **送られてこなかった series は最新値で補完して、全 series セットとして upsert する**。
   series の妥当性は `Characters` の DISTINCT series から導出して検証し、不明な値は **400**（§4.2）。
-  これで GS5 は [付録 A](./appendix-characters.md) への追加だけで動く。→ [09](./09-roadmap.md) §2.2 D。
+  → [09](./09-roadmap.md) §2.2 D。
+- ⚠️ **これで GS5 対応が完了したわけではない**。server 側から series 番号は消えたが、
+  **フロントエンドにはまだ GS1〜GS4 の固定列挙が残っている**（§3.2）。
 - 🔑 **なぜ「送られてきた分だけ書く」ではなく補完するのか**。
   `getLatestUserState` は**ユーザ単位の `MAX(recorded_date)` で最新日を 1 つ決め、その日の行を全部返す**。
   一部の series しか無い日を作ると、**書かなかった series が最新状態から消える**
@@ -102,6 +104,30 @@ pair `(X, Y)` の票数がこのユーザーの投票で変化するのは、`[X
   - **一度も申告の無い series は補完元が無いので書かない**（未申告のまま返らない）。
     GS5 追加直後に旧クライアントが GS1〜4 だけ送るケースがこれに当たるが、
     「まだ申告していない」が正しい状態なので歯抜けではない。
+- ⚠️ **補完があるため、この処理は read-modify-write である**。`Votes`（§2.2）は受信データだけで
+  書けるので「per-user の行ロックで自然に直列化される」が、**こちらは読んだ値を書き戻すので
+  それでは足りない**。同じユーザーから別々の series が並行して申告されると、後に書く側が
+  「読んだ時点の古い値」で相手の変更を潰す（lost update）。
+  そのため **`SELECT ... FOR UPDATE` でユーザーの行をまとめて押さえ、トランザクション内で
+  read-modify-write を直列化**する。行が 1 つも無い初回申告でも、PK 先頭カラムの範囲に
+  gap lock が掛かるので並行 INSERT を締め出せる。
+
+### 3.2 残作業: フロントエンドの series 固定列挙
+
+**server 側の series 番号は 2026-08-05 に消えたが、`next/` にはまだ残っている**。
+そのため GS5 は [付録 A](./appendix-characters.md) への追加だけでは**申告できない**。
+
+| 箇所 | 何が固定か |
+|---|---|
+| [`VotingFormUserStatesClient.tsx`](../next/src/components/VotingFormUserStatesClient.tsx) | `gsSeries` が `GS1`〜`GS4` の固定配列。フォームの `<Select>` はこれを `map` して生成する |
+| [`voteActions.ts`](../next/src/actions/voteActions.ts) | `formData.get('GS1')`〜`get('GS4')` を読み、`series: 1`〜`4` の 4 件を組んで送る |
+
+- **必要な変更**: series 一覧を `Characters` 由来のデータとしてフォームへ渡し、
+  `vote()` は FormData のキー（`GS<n>`）から series を復元する。
+  表示名は `GS{series}` で導出できるので、新しいマスタは要らない。
+- ⚠️ **`next/` にはテストが無い**。投票フォームは公開ミューテーションの唯一の入口（§5）なので、
+  着手するなら手動確認の手順を決めてから触る。
+- → [09](./09-roadmap.md) §2.2 J。
 
 ## 4. 入力検証
 
