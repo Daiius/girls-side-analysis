@@ -102,9 +102,15 @@ const TopAnalysisContent: React.FC<
           構造で表す（以前は名前と AnimatedVoteBar 内の票数が別々の div に散っていて、
           視覚的に隣接しているだけだった）。
           Tailwind の preflight が list-style と padding を落とすので見た目は変わらない。
+
+          ⚠️ role='list' は冗長に見えるが必須。WebKit は list-style: none でマーカーを
+          消したリストを「リストとして」公開しないため（preflight が実際に
+          list-style-type: none にしていることは実測で確認済み）、これが無いと
+          Safari + VoiceOver で項目数もリスト境界も伝わらず、構造化した意味が無くなる。
         */}
         {rankingEntries.length > 0 &&
-        <ol>
+        // biome-ignore lint/a11y/noRedundantRoles: preflight の list-style:none で WebKit がリスト意味論を落とすため明示が必要
+        <ol role='list'>
           {rankingEntries
           .map(([characterName, count]) =>
             <li
