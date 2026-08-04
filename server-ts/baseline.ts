@@ -14,9 +14,14 @@
 // 冪等: 既に記録済みの世代は飛ばす。
 // 新規 DB では不要（db:migrate が最初から順に流す）。
 //
+// ⚠️ **データ移行（DDL を含まない世代）は、スキーマを見ても適用済みか判断できない。**
+//    例: reading の backfill は、カラムが default '' で生えているだけの DB でも
+//    「スキーマは現行」に見える。そのまま記録すると backfill が永久に飛ばされる。
+//    対象範囲にデータ移行が入るときは --include-data-migrations を要求する。
+//
 // 実行: pnpm db:baseline <世代名 or その一意な接頭辞>（本番は DDL/INSERT 可能な管理ユーザで）
-//   例) 現行スキーマの DB   … pnpm db:baseline 20260706112653_backfill_readings
-//       reading 追加前の DB … pnpm db:baseline 20260706112547_complex_wild_child
+//   例) reading 追加前の DB … pnpm db:baseline 20260706112547_complex_wild_child
+//       データも投入済みの DB … pnpm db:baseline 20260706112653 --include-data-migrations
 
 import { sql } from 'drizzle-orm'
 import { readMigrationFiles } from 'drizzle-orm/migrator'
@@ -35,11 +40,14 @@ try {
   }
 
   const names = migrations.map(m => m.name)
-  const target = process.argv[2]
+  const args = process.argv.slice(2)
+  const includeData = args.includes('--include-data-migrations')
+  const target = args.find(a => !a.startsWith('--'))
   if (!target) {
     throw new Error(
       'どの世代まで適用済みとして記録するかを指定してください。\n' +
-      `  usage: pnpm db:baseline <世代名>\n  候補: ${names.join('\n        ')}`,
+      `  usage: pnpm db:baseline <世代名> [--include-data-migrations]\n` +
+      `  候補: ${names.join('\n        ')}`,
     )
   }
 
@@ -56,6 +64,27 @@ try {
 
   // 指定世代までを対象にする（それより後は db:migrate が流す）
   const selected = migrations.slice(0, names.indexOf(matched[0]!) + 1)
+
+  // DDL を含まない世代 = データ移行。スキーマを見ても適用済みか判断できないので、
+  // 明示のフラグが無ければ記録を拒否する。⚠️ 判定前にコメント行を落とすこと
+  // （backfill の SQL は「0001 の ALTER で〜」と本文に書いてあり、素で見ると DDL 扱いになる）。
+  const dataOnly = selected.filter(m => {
+    const body = m.sql
+      .join('\n')
+      .split('\n')
+      .filter(line => !line.trimStart().startsWith('--'))
+      .join('\n')
+    return !/\b(CREATE|ALTER|DROP|RENAME|TRUNCATE)\b/i.test(body)
+  })
+  if (dataOnly.length > 0 && !includeData) {
+    throw new Error(
+      '対象範囲にデータ移行（DDL を含まない世代）が入っています:\n' +
+      `        ${dataOnly.map(m => m.name).join('\n        ')}\n` +
+      'これらはスキーマを見ても適用済みか判断できません。**データ側を確認**してから\n' +
+      '--include-data-migrations を付けて再実行してください。\n' +
+      '未投入なら、その手前の世代までを記録して db:migrate に流させること。',
+    )
+  }
 
   // migrator が使うのと同一スキーマで作成（無ければ）
   await db.execute(sql`

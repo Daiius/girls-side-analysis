@@ -147,9 +147,17 @@
   次の `db:migrate` が**適用済みの DDL を再実行して止まる**。
   - 実測: 現行スキーマの DB に最初の 1 本だけ記録 → `ALTER TABLE Characters ADD reading` が
     **`ER_DUP_FIELDNAME`** で停止した。
-  - **先に DB の実スキーマを確認してから指定する。** 現行スキーマなら最後の世代まで、
-    `reading` が無い DB なら最初の 1 本まで。
   - 冪等（記録済みの世代は飛ばす）。接頭辞が一意なら省略形でもよい。
+- 🔥 **「スキーマが現行かどうか」だけで到達世代を決めてはいけない。**
+  `20260706112653_backfill_readings` は **DDL を含まないデータ移行**で、
+  `Characters.reading` は**カラムが default `''` で生えているだけ**でもスキーマ上は現行に見える。
+  この状態で最後まで記録すると、**backfill が永久に飛ばされ `reading` が空のまま残る**。
+  - **データ側を見る**: `SELECT COUNT(*) FROM Characters WHERE reading IS NULL OR reading = '';`
+    → 0 でなければ未適用。**その手前（`..._same_sleeper`）までを記録**し、backfill は `db:migrate` に流させる。
+  - `db:baseline` は対象範囲にデータ移行が入ると**既定で拒否する**。確認したうえで
+    `--include-data-migrations` を付けて初めて記録する。
+  - 📌 一般化: **DDL は実スキーマで検算できるが、データ移行は検算対象が違う。**
+    データ移行を足したら「何を見れば適用済みと言えるか」も一緒に決める。
 - `drizzle/` の現在の内容:
   1. `20260706112547_complex_wild_child` — 全テーブルの CREATE（ベースライン。この時点では `Characters.reading` が無い）
   2. `20260706112635_same_sleeper` — `Characters.reading` の ADD COLUMN
