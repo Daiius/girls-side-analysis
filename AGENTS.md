@@ -40,8 +40,13 @@ GS シリーズファン向けの「推し投票・組み合わせ分析」Web �
 - `pnpm db:push` — dev/CI 用に `drizzle-kit push` でスキーマ強制同期（履歴を残さない使い捨て DB 向け）
 - `pnpm db:migrate` — バージョン管理マイグレーション（`server-ts/drizzle/*`）を適用。本番はこちら
 - `pnpm db:seed` — テストデータ投入
-- `pnpm test` — server-ts の vitest を実行
+- `pnpm test` — server-ts の vitest を実行（実 MySQL に対する統合テスト）
 - `pnpm lint` — biome（リンターのみ）。設定は `biome.jsonc`
+- `pnpm typecheck` — 両パッケージの `tsc --noEmit`（next 側は `next typegen` を伴う）
+
+CI（`.github/workflows/ci.yml`）は **lint / typecheck / test の 3 ジョブ**を PR と main への push で回す。
+MySQL は GitHub Actions の `services: mysql:8.4` で立てる（compose ファイルは増やしていない）。
+構成の根拠は [prd/02-architecture.md](./prd/02-architecture.md) §6.2。
 
 個別パッケージ内では `pnpm <script>`（next: `dev`/`build`/`start`、server-ts: `dev`/`build`/`test`/`db:*` など）。
 

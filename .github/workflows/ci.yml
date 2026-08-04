@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  # 整形は意図的に無効にしてあるので lint のみ（設定は biome.jsonc）。
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # pnpm はルート package.json の packageManager から corepack が解決する。
+      # setup-node の cache: pnpm より先に pnpm を用意しておく必要がある。
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          # 開発・本番の各 Dockerfile と同じ node 24 に揃える
+          node-version: 24
+          cache: pnpm
+
+      # biome だけが必要なので依存の取得は最小限にしたいが、--frozen-lockfile で
+      # lockfile とツリーの整合そのものも検証したいのでフルインストールする。
+      # NOTE: pnpm-workspace.yaml の minimumReleaseAge（公開 3 日未満は不採用）は
+      # lockfile 解決時の制約であり、frozen-lockfile な CI では新たな解決が
+      # 走らないため CI が日付で不安定になることはない。
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ⚠️ --error-on-warnings は必須。biome は warning だけなら exit 0 を返すため、
+      # 付けないと warning 相当のルール（未使用 import 等）が CI をすり抜ける。
+      - name: Run biome lint
+        run: pnpm exec biome lint --error-on-warnings .
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # `pnpm -r` はワークスペースのルートを含まない（--include-workspace-root が要る）。
+      # ルートの typecheck は docker compose 経由なので CI では走らせたくない。ちょうどよい。
+      # next 側の typecheck は `next typegen` を伴う。next-env.d.ts と .next/types は
+      # gitignore 対象＝clone 直後には存在せず、無いまま tsc を叩くと落ちるため
+      # （typegen はアプリの env を必要としない。next.config.ts は env 未設定でも通る）。
+      - name: Run typecheck
+        run: pnpm -r typecheck
+
+  test:
+    runs-on: ubuntu-latest
+    # server-ts のテストは実 MySQL に対する統合テスト（PRD 09 §2.5）。
+    # 正しさが SQL（自己結合 / 相関サブクエリ / ON DUPLICATE KEY UPDATE / ORDER BY の決定性）に
+    # 宿っているため DB をモックしても何も守れない。実 DB は SUT ではなく環境である。
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          # ⚠️ runner 内からしか到達できない使い捨て DB の資格情報であり、
+          # 実環境の値とは一切関係しない。秘匿する対象ではないので直書きする。
+          MYSQL_ROOT_PASSWORD: ci-root-password
+          MYSQL_USER: ci-app
+          MYSQL_PASSWORD: ci-app-password
+          MYSQL_DATABASE: gsa
+          # 開発（compose.yaml）と同じ TZ に揃える
+          TZ: Asia/Tokyo
+        ports:
+          - 3306:3306
+        # runner の起動直後は mysqld の初期化中に TCP が開くことがあるので、
+        # root で実際に認証が通ることを健全性の条件にする（compose の healthcheck と同じ考え方）。
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci-root-password --silent"
+          --health-interval=5s
+          --health-timeout=10s
+          --health-retries=20
+          --health-start-period=30s
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # test/globalSetup.ts が root で `<MYSQL_DATABASE>_test` を作り直し、
+      # アプリユーザに GRANT して drizzle-kit push + seed を流す構造をそのまま使う。
+      - name: Run server-ts tests
+        working-directory: server-ts
+        env:
+          # 「日の定義」は luxon の setZone('Asia/Tokyo') でコード側に明示されているが、
+          # 開発・本番と実行環境を揃えておく（runner の既定は UTC）。
+          TZ: Asia/Tokyo
+          DB_HOST: 127.0.0.1
+          MYSQL_ROOT_PASSWORD: ci-root-password
+          MYSQL_USER: ci-app
+          MYSQL_PASSWORD: ci-app-password
+          MYSQL_DATABASE: gsa
+        run: pnpm test

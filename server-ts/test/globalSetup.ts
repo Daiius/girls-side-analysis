@@ -13,7 +13,8 @@ const requireEnv = () => {
   if (!host || !rootPassword || !appUser || !baseDatabase) {
     throw new Error(
       'test DB env が不足しています（DB_HOST / MYSQL_ROOT_PASSWORD / MYSQL_USER / MYSQL_DATABASE）。'
-      + ' テストは server コンテナ内（docker compose exec server pnpm test）で実行してください。',
+      + ' ローカルでは server コンテナ内（ルートで pnpm test）、'
+      + ' CI では GitHub Actions の mysql service（DB_HOST=127.0.0.1）に対して実行する。',
     )
   }
 }

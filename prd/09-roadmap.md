@@ -17,6 +17,8 @@
 - **推し 0 人の投票を拒否**（旧 §2.1 A の実バグ。2026-08-04 解消）。server の zod `.min(1)` で 400 +
   UI の送信ボタン無効化 + 送信処理内チェックの 3 層 → [04](./04-voting.md) §4.1
 - **Server Action 失敗時のエラー表示**（`error.tsx` + フォーム内 try/catch）→ [04](./04-voting.md) §7
+- **CI（lint + typecheck + test の 3 点セット）**（旧 §2.1 B。2026-08-04 完了）。
+  `.github/workflows/ci.yml` の 3 ジョブ → [02](./02-architecture.md) §6.2
 
 ## 2. 着手する（当面の軸）
 
@@ -24,9 +26,7 @@
 
 ### 2.1 高
 
-| # | 項目 | 決定した方針 | 参照 |
-|---|---|---|---|
-| **B** | **CI が無い**（**lint は 2026-08-04 に着手済み。残りは typecheck + test**） | **Biome + typecheck + test の 3 点セット**を GitHub Actions で回す。Biome は**リンターのみ**（フォーマッタは無効）に改訂。詳細は §2.5 | [02](./02-architecture.md) §6.1 |
+なし（**B は 2026-08-04 に完了**。§1・[02](./02-architecture.md) §6.2）。
 
 ### 2.2 中
 
@@ -59,11 +59,12 @@
 - ✅ **済（2026-08-04）**: **Biome をリンター専用で導入**し、`.github/workflows/lint.yml` を新設。
   `next/package.json` の壊れた `"lint": "next lint"`（Next 16 で廃止済み）を除去。
   既存の指摘 63 件を解消済み。詳細と改訂理由は [02](./02-architecture.md) §6.1。
-- ⏳ **残**: `typecheck` スクリプト（`tsc --noEmit`）を**両パッケージに新設**し CI に載せる。
-  CI での vitest 実行も未着手。
-  - **CI の MySQL は GitHub Actions の `services: mysql:8.4`** で立て、`DB_HOST=127.0.0.1` で
-    `server-ts` の vitest を直接動かす。
-  - ワークフローは既存の `lint.yml` に足すか `ci.yml` に統合するかを着手時に決める。
+- ✅ **済（2026-08-04）**: `typecheck` スクリプトを両パッケージに新設し、CI で vitest も回すようにした。
+  **`lint.yml` は `ci.yml` に統合**し、`lint` / `typecheck` / `test` の 3 ジョブ構成にした
+  （着手時に決めると保留していた点。branch protection が未設定でチェック名の変更が安全なことを確認済み）。
+  構成の詳細と根拠は [02](./02-architecture.md) §6.2。
+  - `next` の typecheck は **`next typegen && tsc --noEmit`**。`next-env.d.ts` と `.next/types` が
+    gitignore 対象で clone 直後に無いため、生成を伴わないと落ちる。
 - 🚫 **改訂（2026-08-04）**: 当初は **Biome のフォーマッタも有効**にし、
   `biome format --write` の整形のみのコミットを 1 本切って
   その SHA を `.git-blame-ignore-revs` に登録する計画だった。
@@ -75,9 +76,10 @@
   - 📌 `useSortedClasses` は安全という分析自体は変わらない。このリポの `!` は
     **Tailwind v4 の接尾辞 important**（`hover:bg-white!`）で、競合は **CSS の生成順**で起きる。
     class 属性内の並べ替えは important にも生成順にも影響しない。
-- **CI の MySQL は GitHub Actions の `services: mysql:8.4`** で立て、`DB_HOST=127.0.0.1` で
-  `server-ts` の vitest を直接動かす。`test/globalSetup.ts` は**無改造**で通る（root で `<DB>_test` を作る構造がそのまま活きる）。
-  エラーメッセージの「server コンテナ内で実行してください」だけ直す。ルートの `pnpm test`（compose 経由）は残す。
+- **CI の MySQL は GitHub Actions の `services: mysql:8.4`**（実施済み）。`DB_HOST=127.0.0.1` で
+  `server-ts` の vitest を直接動かす。**compose ファイルは増やさない**。
+  `test/globalSetup.ts` は**無改造**で通った（root で `<DB>_test` を作る構造がそのまま活きた）。
+  エラーメッセージだけローカル / CI の両方を指すよう直した。ルートの `pnpm test`（compose 経由）は残す。
 
 **テストの作り替え**
 
