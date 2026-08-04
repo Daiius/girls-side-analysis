@@ -15,6 +15,8 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --filter @daiius/girls-side-analysis-server-ts
 
 COPY server-ts/src/ ./server-ts/src/
+# migrate.ts は dist/migrate.js としてバンドルされる（esbuild.config.ts の 2 本目）
+COPY server-ts/migrate.ts ./server-ts/
 
 RUN pnpm --filter @daiius/girls-side-analysis-server-ts build
 
@@ -25,4 +27,21 @@ WORKDIR /app
 
 COPY ./server-ts/package.json /app
 COPY --from=build /workdir/server-ts/dist/index.js /app/index.js
+
+# マイグレーション。**使い捨てコンテナとして明示的に実行する**
+# （起動時の自動適用にはしない ── 失敗時の挙動と、将来インスタンスを増やしたときの
+#  競合が読めなくなるため。PRD 03 §5）。
+#
+#   docker run --rm --env-file <env> <image> migrate.js
+#
+# ⚠️ このイメージは distroless で **ENTRYPOINT が node** なので、渡すのは
+#    **スクリプトのパスだけ**。`node /app/migrate.js` と書くと node を引数に取って落ちる。
+COPY --from=build /workdir/server-ts/dist/migrate.js /app/migrate.js
+
+# 生成済みの SQL。⚠️ **バンドルには含まれない**（migrator が実行時に fs で読むため）。
+# migrator は migration.sql の無いフォルダを黙って読み飛ばすので、
+# ここを忘れると「何も流さずに成功」する（PRD 03 §5.1）。
+# migrate.js は cwd 相対で ./drizzle を読む＝ WORKDIR /app に置くこと。
+COPY server-ts/drizzle/ /app/drizzle/
+
 CMD ["index.js"]

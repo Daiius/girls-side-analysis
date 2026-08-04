@@ -109,8 +109,11 @@ services:
     environment:
       TZ: 'Asia/Tokyo'
       LANG: 'ja_JP.UTF-8'
-    ports:
-      - 3306:3306
+    # ⚠️ ホストへの publish は意図的に持たない。DB へは compose ネットワーク内
+    # （nextjs / server から `database:3306`）だけで届けばよく、`pnpm db:*` も
+    # すべて `docker compose exec server` 経由で動く。
+    # GUI クライアント等で覗きたいときは、その場で `docker compose exec database mysql`
+    # を使うか、一時的に `compose.override.yaml`（gitignore 済み）で publish する。
     cap_add:
       - SYS_NICE
     healthcheck:

@@ -72,8 +72,11 @@ server-rs/   # Rust(axum + sea-orm) の別実装。workspace / compose の外（
 
 ## 4. 開発環境（docker compose watch）
 
-- `compose.yaml` が `nextjs`（:3000）/ `server`（:4000 → コンテナ内 3000）/ `database`（:3306）を起動。
+- `compose.yaml` が `nextjs`（:3000）/ `server`（:4000 → コンテナ内 3000）/ `database` を起動。
   - このほかに `lint` サービスがあるが、`profiles: ['tools']` 付きで `up` では起動しない（§6.1）。
+  - **`database` はホストに publish しない。** compose ネットワーク内で `database:3306` に届けば十分で、
+    `pnpm db:*` もすべて `docker compose exec server` 経由で動く。覗きたいときは
+    `docker compose exec database mysql`、または gitignore 済みの `compose.override.yaml` で一時的に publish する。
 - **`nextjs` と `server` は同一イメージ `girls-side-analysis-dev` を共有**する（`Dockerfile.dev`）。
   両サービスに同じ `build` を書くのは、`pnpm-lock.yaml` 変更時の watch `rebuild` を**両方で効かせる**ため
   （`image` 共有だけだと server 側の rebuild が発火しない）。ビルド実体は片方のキャッシュヒットで済む。
@@ -114,6 +117,7 @@ server-rs/   # Rust(axum + sea-orm) の別実装。workspace / compose の外（
 
 - `server-ts` は **esbuild で `dist/index.js` に単一バンドル**（`esbuild.config.ts`、ESM / node20 target）し、
   最小構成のコンテナイメージに置く（`Dockerfile.server.prod`）。
+- **同じイメージに `dist/migrate.js` と `drizzle/` を同梱する**（§6.3）。
 - イメージのビルドとレジストリへの push は `.github/workflows/build-push.yml`（`workflow_dispatch` の手動起動）で行う。
 - ⚠️ **本番イメージ（linux/amd64）のビルドは必ず GitHub Actions で行う**。
   arm64 Mac 上のエミュレートビルドは libuv の io_uring 周りでクラッシュする。
@@ -220,6 +224,29 @@ server-rs/   # Rust(axum + sea-orm) の別実装。workspace / compose の外（
   - `TZ: Asia/Tokyo` を job と service の両方に置く。runner の既定は UTC で、開発（`compose.yaml`）と
     実行環境が変わるのを避けるため。⚠️ ただし**「日の定義」をこれに依存させてはいけない**。
     コード側は luxon の `setZone('Asia/Tokyo')` で明示している（[01](./01-domain.md) §5）。
+
+### 6.3 マイグレーションは本番イメージに同梱する
+
+**`Dockerfile.server.prod` は API サーバ本体（`index.js`）に加えて、`migrate.js` と `drizzle/` を持つ。**
+マイグレーションは**使い捨てコンテナとして明示的に実行する**。
+
+```
+docker run --rm --env-file <env> <image> migrate.js
+```
+
+| 決定 | 理由 |
+|---|---|
+| **同じイメージ**に同梱する | 適用する SQL とコードのバージョンが構造的に一致する。手元のリポジトリから流す方式は、両者がずれても何も警告しない |
+| **起動時の自動適用にはしない** | 失敗時の挙動と、将来インスタンスを増やしたときの競合が読めなくなる |
+| **seed は同梱しない** | `addTestData.ts` は開発用（[09](./09-roadmap.md) §2.5）。本番に要らない |
+
+- ⚠️ このイメージは **distroless（`ENTRYPOINT` が node）** なので、渡すのは**スクリプトのパスだけ**。
+  `node /app/migrate.js` と書くと node 自身を引数に取って落ちる。
+- ⚠️ **`drizzle/*/migration.sql` はバンドルに含まれない**（migrator が実行時に fs で読む）。
+  Dockerfile で別途 COPY する。忘れても build は通り、**流しても「何も起きずに成功」する**（[03](./03-data-model.md) §5.1）。
+- `migrate.js` は **cwd 相対で `./drizzle` を読む**ので `WORKDIR /app` に置く。
+- これにより **DB へ「外から届く」ことを前提にしない**。`server-ts/src/db/index.ts` の `DB_PORT` は
+  ローカル検証用の逃げ道として残すが、本番の通常運用では使わない。
 
 ## 7. `server-rs` の位置づけ（凍結）
 

@@ -138,7 +138,7 @@
 | 用途 | コマンド | 対象 |
 |---|---|---|
 | dev / CI の使い捨て DB | `pnpm db:push`（`drizzle-kit push --force`） | 履歴を残さず強制同期 |
-| **本番** | `pnpm db:generate` → `pnpm db:migrate` | `server-ts/drizzle/*` にバージョン管理 |
+| **本番** | `pnpm db:generate` で生成 → **イメージ同梱の `migrate.js`** を使い捨てコンテナで実行（[02](./02-architecture.md) §6.3） | `server-ts/drizzle/*` にバージョン管理 |
 | 既存 DB を初めて管理下に載せる | `pnpm db:baseline`（**一度だけ**） | **最初の 1 本**を「適用済み」として記録（SQL は実行しない） |
 
 - `db:baseline` を忘れて `db:migrate` を打つと、ベースラインの `CREATE TABLE` が既存テーブルと衝突する。**新規 DB では baseline 不要**。
