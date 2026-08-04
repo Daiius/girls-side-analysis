@@ -13,6 +13,8 @@ import TopCharacterSelect from '@/components/TopCharacterSelect';
 import TopAnalysisContent from '@/components/TopAnalysisContent';
 import LineChartClient from '@/components/LineChartClient';
 import XShareLink from '@/components/XShareLink';
+import JsonLd from '@/components/JsonLd';
+import { characterPageDescription, characterPageGraph } from '@/lib/structuredData';
 import { notFound } from 'next/navigation';
 
 const hostUrl = process.env.HOST_URL 
@@ -60,7 +62,10 @@ export async function generateMetadata({ params }: { params: Promise<{ charaName
     // layout の title.template で " | Girl's Side Analysis" が付与される。
     // 鉤括弧で名前を区切り、長い複合名でも判読しやすくする。
     title: `「${decodedCharaName}」分析`,
-    description: ` GSシリーズの情報共有・分析サイト ${decodedCharaName}分析ページ`,
+    // ⚠️ 子ページの metadata は親のフィールドを上書きするので、ルートの
+    // SITE_DESCRIPTION はここには効かない。JSON-LD の WebPage.description と
+    // 同じ文を使う（定義は structuredData.ts の 1 箇所）。
+    description: characterPageDescription(decodedCharaName),
     alternates: {
       // 内部リンク（router.push(`/${charaName}`)）と同じく生の日本語 URL に揃える。
       // Google は UTF-8 の日本語 URL を正式サポートしており、エンコード形式と
@@ -70,7 +75,7 @@ export async function generateMetadata({ params }: { params: Promise<{ charaName
     openGraph: {
       type: 'website',
       url: `${hostUrl}/${decodedCharaName}`,
-      description: ` GSシリーズの情報共有・分析サイト「${decodedCharaName}」分析ページ`,
+      description: characterPageDescription(decodedCharaName),
       siteName: "Girl's Side Analysis",
       images: `${hostUrl}/girls-side-analysis-logo.png`,
     },
@@ -109,6 +114,16 @@ export default async function Page({
     
   return (
     <div className='flex flex-col items-center w-full'>
+      {/*
+        このページの主題（共起ランキング）を ItemList として機械可読にする。
+        画面の <ol> と同じ順序・同じ数字を、同じ 1 つの集計結果から出している。
+      */}
+      <JsonLd
+        data={characterPageGraph({
+          characterName: decodedCharaName,
+          ranking: analysisData,
+        })}
+      />
       <div className='relative w-full h-24'>
         <VoteLink
           className={clsx(

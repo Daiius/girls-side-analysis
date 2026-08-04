@@ -120,3 +120,5 @@ seed、`backfill_readings` マイグレーション）は本表に従う。両�
      （FK が `ON UPDATE CASCADE` なので投票データは追随する）。
    - キャラの**削除はできない**（FK が `ON DELETE RESTRICT`）。投票された履歴を壊さないための意図的な制約。
 4. GS5 を足す場合は、プレイ状態の書き込みが series をハードコードしていないか確認する（[04](./04-voting.md) §3.1）。
+5. **人数を書いている文言を直す**。`next/src/lib/structuredData.ts` の `SITE_DESCRIPTION` が
+   「登場人物 61 人」と持っている（metadata の description と JSON-LD が同じ文を使う。[08](./08-frontend.md) §5.1）。

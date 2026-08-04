@@ -8,6 +8,8 @@ import clsx from 'clsx';
 import Header from '@/components/Header';
 import SettingsProvider from '@/providers/SettingsProvider';
 import Footer from '@/components/Footer';
+import JsonLd from '@/components/JsonLd';
+import { SITE_DESCRIPTION, siteGraph } from '@/lib/structuredData';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,14 +22,16 @@ export const metadata: Metadata = {
     default: "Girl's Side Analysis",
     template: "%s | Girl's Side Analysis",
   },
-  description: "GSシリーズの情報共有・分析サイト",
+  // 「GSシリーズの情報共有・分析サイト」から差し替えた。抽象語だけの説明は
+  // 想定質問への答えにならない（固有名詞と数字で書く。structuredData.ts 参照）。
+  description: SITE_DESCRIPTION,
   alternates: {
     canonical: '/',
   },
   openGraph: {
     type: 'website',
     url: hostUrl,
-    description: "GSシリーズの情報共有・分析サイト",
+    description: SITE_DESCRIPTION,
     siteName: "Girl's Side Analysis",
     images: `${hostUrl}/girls-side-analysis-logo.png`,
   },
@@ -63,6 +67,11 @@ export default function RootLayout({
             {children}
           </main>
           <Footer />
+          {/*
+            全ページ共通の実体（WebSite / WebApplication / Person）。
+            各ページはこれを @id で参照するだけにする（structuredData.ts の @id 設計）。
+          */}
+          <JsonLd data={siteGraph()} />
         </body>
       </SettingsProvider>
     </html>

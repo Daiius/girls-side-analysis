@@ -145,6 +145,42 @@ pair 集計は 61 ノードの重み付き無向グラフで、ランキング�
 - `metadataBase` は `HOST_URL`。タイトルは `%s | Girl's Side Analysis` テンプレート。
 - OGP 画像は**静的ロゴ PNG 固定**。`opengraph-image` / 動的 OG 画像 / Twitter カードは未実装。
 - `robots.ts` は `/profile` を Disallow、`sitemap.xml` を告知。
+- **`description` は形容詞ではなく固有名詞と数字で書く**。想定質問（「ときメモ GS の推しキャラの
+  組み合わせが分かるサイトは？」）への答えの形にする。
+  - ⚠️ **子ページの `metadata` は親のフィールドを上書きする**。ルートの `description` を直しても
+    `/[charaName]` には効かない（61 ページが取り残される）。
+  - そのため文面は**ページ種別ごとに 1 箇所**で定義し、metadata と JSON-LD が同じものを使う:
+    サイト全体は `SITE_DESCRIPTION`、キャラページは `characterPageDescription(name)`（ともに
+    `next/src/lib/structuredData.ts`）。
+
+### 5.1 JSON-LD（構造化データ）
+
+実装は `next/src/lib/structuredData.ts` と `next/src/components/JsonLd.tsx`。
+ねらいは検索のリッチリザルトではなく、**このサイトが何であるかを機械可読で断言する**こと
+（本文を要約して答えを作る相手に、要約結果を先回りして置く）。
+
+**`@id` 設計**（後付けは全ページ改修になるので先に決めた）:
+
+| `@id` | 型 | 置き場所 |
+|---|---|---|
+| `${HOST_URL}/#website` | `WebSite` | ルート `layout.tsx`（全ページ） |
+| `${HOST_URL}/#webapp` | `WebApplication` | 同上 |
+| `${HOST_URL}/#author` | `Person` | 同上 |
+| `${HOST_URL}/{キャラ名}#webpage` | `WebPage` | `/[charaName]` |
+| `${HOST_URL}/{キャラ名}#ranking` | `ItemList` | 同上（`WebPage.mainEntity`） |
+
+- **下層ページは実体を再定義せず `{ "@id": ... }` の参照だけを置く**。サイトを
+  「バラバラのページ群」ではなく「ひとつの実体の発信」として読ませるため。
+- **非営利のファンサイトなので `Organization` は立てない**（実体として存在しない）。
+  `WebSite.publisher` も作者の `Person` を指す。
+- **キャラページの `ItemList` がこのサイト固有で最も価値がある持ち札**。画面の `<ol>`（§6.1）と
+  同じ集計結果・同じ順序を出す。票数は `ListItem` の数値プロパティに収まらないので、
+  そのまま引用できる 1 文（「A と B の両方を推している人: N 人」）として `description` に持たせる。
+- **票が 0 のキャラのページでは `ItemList` を出さない**（空のランキングを主題として宣言しない）。
+- URL は canonical / sitemap / 内部リンクと同じ**生の日本語 URL**に揃える（§5）。
+- ⚠️ `JSON.stringify` の結果は `<` を `\u003c` にエスケープしてから流し込む（`</script>` でのブレイクアウト防止）。
+  データにキャラ名（DB 由来）が入るため、「自分たちのデータだから安全」に寄りかからない。
+- 📌 実際に画面にある機能・公開されている発信先だけを書く（`featureList` / `sameAs` を推測で埋めない）。
 - 見出し・landmark・リストといった**文書構造も検索／LLM からの読み取りに効く**が、
   規約としては a11y 側（§6.1）に集約する。同じ 1 つの実装が両方を満たすため、二箇所に書かない。
 
