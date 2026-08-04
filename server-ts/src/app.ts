@@ -22,6 +22,13 @@ import {
 } from './lib/users'
 import { aggregateYesterday } from './lib/aggregate'
 import { auth } from './lib/auth'
+import {
+  findUnknownCharacterNames,
+  findUnknownSeries,
+  findUnknownStates,
+  userStatesInputSchema,
+  votesInputSchema,
+} from './lib/validation'
 
 const apiKey = process.env.API_KEY ??
   (() => { throw new Error('process.env.API_KEY is not defined!') })()
@@ -170,16 +177,30 @@ const route = app
   .post(
     '/users/:id', // ユーザ状態に最新状態からの変更があれば更新します
     zValidator('param', z.object({ id: z.string() })),
-    zValidator('json',
-      z.array(z.object({
-        series: z.number(),
-        state: z.string(),
-      })),
-    ),
+    zValidator('json', userStatesInputSchema),
     async c => {
       const { id } = c.req.valid('param')
       const data = c.req.valid('json')
       try {
+        // series と state の妥当性はマスタ（Characters / UserStatesMaster）が正典で
+        // zod では表現できないため、ここで DB を引いて弾く（prd/04-voting.md §3.1・§4.2）。
+        // 無検証だと status の FK 違反で 500 になり、未知の series は黙って記録される。
+        const [unknownSeries, unknownStates] = await Promise.all([
+          findUnknownSeries(data.map(d => d.series)),
+          findUnknownStates(data.map(d => d.state)),
+        ])
+        if (unknownSeries.length > 0) {
+          return c.json(
+            { error: `未知のシリーズです: ${unknownSeries.join(', ')}` },
+            400,
+          )
+        }
+        if (unknownStates.length > 0) {
+          return c.json(
+            { error: `未知のプレイ状態です: ${unknownStates.join(', ')}` },
+            400,
+          )
+        }
         await insertUserStatesIfUpdated({
           twitterID: id,
           data,
@@ -210,18 +231,22 @@ const route = app
   .post(
     '/votes/:id', 
     zValidator('param', z.object({ id: z.string() })),
-    // 推しは 1 人以上でなければならない（prd/04-voting.md §4.1）。
-    // 0 件を許すと Votes にその日の行が 1 行も残らず、as-of 集計が前回の投票日を
-    // 拾って過去日の集計で推しが復活する。加えて drizzle の values([]) が例外を
-    // 投げて 500 になる。ここで 400 として弾く。
-    zValidator('json', z.array(z.object({
-      characterName: z.string(),
-      level: z.number(),
-    })).min(1, '推しは 1 人以上必要です')),
+    // 件数・重複・level の値域は zod で弾く（prd/04-voting.md §4）。
+    zValidator('json', votesInputSchema),
     async c => {
       const { id } = c.req.valid('param')
       const votes = c.req.valid('json')
       try {
+        // キャラ名の存在は Characters が正典で zod では表現できないため、
+        // ここで DB を引いて弾く。無検証だと character_name の FK 違反で 500 になる。
+        const unknownCharacters =
+          await findUnknownCharacterNames(votes.map(v => v.characterName))
+        if (unknownCharacters.length > 0) {
+          return c.json(
+            { error: `存在しないキャラクターです: ${unknownCharacters.join(', ')}` },
+            400,
+          )
+        }
         const updated = await insertVotesIfUpdated({ twitterID: id, data: votes })
         return c.json(updated, 200)
       } catch (e) {
