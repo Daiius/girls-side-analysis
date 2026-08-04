@@ -129,7 +129,7 @@ server-rs/   # Rust(axum + sea-orm) の別実装。workspace / compose の外（
 #### ✅ 決定（2026-08-04・2026-07-10 の決定を改訂）
 
 **Biome を導入する。ただしリンターのみを有効にし、フォーマッタと assist は無効にする。**
-設定は **`biome.jsonc`**（ルート）。lint CI を `.github/workflows/lint.yml` で回す。
+設定は **`biome.jsonc`**（ルート）。CI は `.github/workflows/ci.yml` で回す（§6.2）。
 
 - **フォーマッタを無効にする理由**: 既存コードの整形方針が **`next` はセミコロンあり /
   `server-ts` はなし**とパッケージ間で揃っておらず、単一の設定ではどちらかが必ず崩れる。
@@ -177,16 +177,47 @@ server-rs/   # Rust(axum + sea-orm) の別実装。workspace / compose の外（
 |---|---|---|
 | Biome のフォーマッタ | 有効（行幅 100 / セミコロンは必要時のみ / `useSortedClasses`） | **無効**（上記の実測による） |
 | 設定ファイル | `biome.json` を別リポから流用 | **`biome.jsonc`**（コメントを残すため） |
-| CI | `ci.yml` に **Biome + typecheck + test の 3 点セット** | **lint のみ**（`lint.yml`）。残り 2 つは未着手 |
+| CI | `ci.yml` に **Biome + typecheck + test の 3 点セット** | 同左（`ci.yml`。§6.2） |
 
 - 🚫 **pre-commit hook は採用しない**。ホストに `node_modules` を置かない docker 専用の
   開発形態では、hook から Biome を呼ぶのに dev スタック起動を前提にするか
   `pnpm dlx` でバージョンを二重管理するかになり、どちらも壊れやすい。
   hook は各開発者の `core.hooksPath` 設定が要り `--no-verify` ですり抜けられる。**関門は CI に置く**。
-- ⏳ **未着手**: `typecheck`（`tsc --noEmit`）スクリプトの新設と CI への追加、
-  および CI での vitest 実行（MySQL は `services: mysql:8.4`）。[09](./09-roadmap.md) §2.5 参照。
 - 📌 フォーマッタを後から入れる場合は、整形のみのコミットを 1 本に切って
   その SHA を `.git-blame-ignore-revs` に登録すれば blame は汚れない（[09](./09-roadmap.md) §2.5）。
+
+### 6.2 CI の構成（`.github/workflows/ci.yml`）
+
+**`lint` / `typecheck` / `test` の 3 ジョブ**を pull request と main への push で回す。
+3 つは互いに独立なので並列に走らせ、どれが落ちたかがチェック名で分かるようにしてある
+（1 ジョブに直列で詰めない）。各ジョブは corepack + node 24 + `pnpm install --frozen-lockfile` を個別に行う。
+
+| ジョブ | 実行内容 |
+|---|---|
+| `lint` | `pnpm exec biome lint --error-on-warnings .`（§6.1） |
+| `typecheck` | `pnpm -r typecheck` |
+| `test` | `server-ts` で `pnpm test`（vitest）。MySQL は `services: mysql:8.4` |
+
+- **typecheck スクリプトは各パッケージが持つ**。`server-ts` は `tsc --noEmit` のみ、
+  `next` は **`next typegen && tsc --noEmit`**。
+  - ⚠️ `next-env.d.ts` と `.next/types/**` は **gitignore 対象**で clone 直後には存在しない。
+    `tsconfig.json` がこれらを `include` しているため、生成せずに `tsc` を叩くと落ちる。
+    `next typegen` は**フルビルドなしで**これらを生成するコマンドで、アプリの env を必要としない
+    （`next.config.ts` は `API_URL` 未設定でも成立する）。
+  - `pnpm -r` は**ワークスペースのルートを含まない**ので、CI では `next` と `server-ts` の
+    2 つだけが走る。ルートの `pnpm typecheck` は docker compose 経由の開発者向けで、CI では使わない。
+- **`test` ジョブは実 MySQL に対する統合テスト**（[09](./09-roadmap.md) §2.5）。
+  - **compose ファイルは増やさない**。GitHub Actions の `services:` で `mysql:8.4` を立て、
+    runner の `127.0.0.1:3306` に publish する。`DB_HOST=127.0.0.1` で `server-ts` の vitest を直接動かす。
+  - `test/globalSetup.ts` は**無改造**で通る（root で `<MYSQL_DATABASE>_test` を作り直し、
+    アプリユーザに GRANT して `drizzle-kit push` + seed を流す構造がそのまま活きる）。
+  - service の資格情報は **runner 内からしか到達できない使い捨て DB のもの**で、実環境とは無関係。
+    秘匿対象ではないので workflow に直書きする。
+  - healthcheck は TCP が開いただけでは通さず、**root で実際に認証が通ること**を条件にする
+    （`mysqladmin ping -h 127.0.0.1 -uroot -p...`）。mysqld は初期化中にも一時的に起動するため。
+  - `TZ: Asia/Tokyo` を job と service の両方に置く。runner の既定は UTC で、開発（`compose.yaml`）と
+    実行環境が変わるのを避けるため。⚠️ ただし**「日の定義」をこれに依存させてはいけない**。
+    コード側は luxon の `setZone('Asia/Tokyo')` で明示している（[01](./01-domain.md) §5）。
 
 ## 7. `server-rs` の位置づけ（凍結）
 
