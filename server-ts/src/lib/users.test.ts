@@ -1,56 +1,27 @@
-import { afterAll, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 
 import { db } from '../db'
 import { userStates } from '../db/schema'
-import {
-  getLatestUserState,
-  getUserStatesMaster,
-  insertUserStatesIfUpdated,
-} from './users'
+import { getLatestUserState, insertUserStatesIfUpdated } from './users'
 
-// addTestData.ts の seed（決定的）に対する現状ロジックの出力を凍結する。
-describe('users.ts（現状ロジックの baseline snapshot）', () => {
-  const bySeries = <T extends { series: number }>(rows: T[]) =>
-    [...rows].sort((a, b) => a.series - b.series)
+// プレイ状態（prd/04-voting.md §3）の統合テスト。
+// arrange は各テストの中で組み、専用の twitterID を使って後始末する。
 
-  describe('getLatestUserState', () => {
-    it('testID の最新状態', async () => {
-      expect(bySeries(await getLatestUserState('testID'))).toMatchSnapshot()
-    })
-    it('testID2 の最新状態', async () => {
-      expect(bySeries(await getLatestUserState('testID2'))).toMatchSnapshot()
-    })
-  })
-
-  describe('getUserStatesMaster', () => {
-    it('プレイ状態マスタ', async () => {
-      expect(await getUserStatesMaster()).toMatchSnapshot()
-    })
-  })
-})
-
-// 回帰テスト：date 化で recorded_date が当日固定になったため、
-// 同日に状態を再更新すると PK (twitter_id, recorded_date, series) 衝突で落ちていた。
-// 当日分を DELETE+INSERT で置き換える修正が効いていることを確認する。
-// snapshot 群を汚さないよう専用 twitterID を使い、後始末する。
-describe('insertUserStatesIfUpdated（同日再更新）', () => {
-  const twitterID = 'testWriterUserStates'
-  afterAll(async () => {
+describe('プレイ状態の記録（prd/04-voting.md §3）', () => {
+  const twitterID = 'userStatesTestUser'
+  afterEach(async () => {
     await db.delete(userStates).where(eq(userStates.twitterID, twitterID))
   })
 
-  it('同日に2回更新しても PK 衝突せず最新状態へ置き換わる', async () => {
-    await insertUserStatesIfUpdated({
-      twitterID,
-      data: [
-        { series: 1, state: '未プレイ' },
-        { series: 2, state: '未プレイ' },
-        { series: 3, state: '未プレイ' },
-        { series: 4, state: '未プレイ' },
-      ],
-    })
-    // 同日に series1 を変更して再更新（旧実装ではここで PK 衝突）
+  const allSeries = (state: string) =>
+    [1, 2, 3, 4].map(series => ({ series, state }))
+
+  it('同じ日に 2 回申告したら、後の内容が採用される', async () => {
+    // recorded_date は日付粒度なので、同じ日の 2 回目は PK
+    // (twitter_id, recorded_date, series) が衝突する。status だけを
+    // 上書きする upsert になっていることを確かめる。
+    await insertUserStatesIfUpdated({ twitterID, data: allSeries('未プレイ') })
     await insertUserStatesIfUpdated({
       twitterID,
       data: [
@@ -64,5 +35,14 @@ describe('insertUserStatesIfUpdated（同日再更新）', () => {
     const latest = await getLatestUserState(twitterID)
     expect(latest.length).toBe(4)
     expect(latest.find(s => s.series === 1)?.state).toBe('プレイ済み')
+  })
+
+  it('内容が変わらなければ行は増えない（1 日あたり series ごとに 1 行）', async () => {
+    await insertUserStatesIfUpdated({ twitterID, data: allSeries('未プレイ') })
+    await insertUserStatesIfUpdated({ twitterID, data: allSeries('未プレイ') })
+
+    const rows = await db.select().from(userStates)
+      .where(eq(userStates.twitterID, twitterID))
+    expect(rows.length).toBe(4)
   })
 })

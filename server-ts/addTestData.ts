@@ -82,49 +82,51 @@ await db.transaction(async (_tx) => {
   ]);
 });
 
+// level は「推しの順位」で、UI（dnd-kit の並び）が送るのは **0 始まり**。
+// seed もそれに合わせる（1 始まりだと、実際には起こり得ない値で開発することになる）。
 await db.insert(votes).values([
   // かつてヤノ単体推しだったある人が、
   {
     twitterID: 'testID',
     votedDate: '2023-09-21',
     characterName: '柊夜ノ介',
-    level: 1,
+    level: 0,
   },
   // GS2をプレイして格くん推しにもなった！
   {
     twitterID: 'testID',
     votedDate: '2024-01-01',
     characterName: '氷上格',
-    level: 1,
+    level: 0,
   }, {
     twitterID: 'testID',
     votedDate: '2024-01-01',
     characterName: '柊夜ノ介',
-    level: 2,
+    level: 1,
   },
   // ある人は登録した時にはすでにヤノくん&格くん推し
   {
     twitterID: process.env.TEST_TWITTER_ID ?? 'testID2',
     votedDate: '2023-05-31',
     characterName: '柊夜ノ介',
-    level: 2,
+    level: 1,
   }, {
     twitterID: process.env.TEST_TWITTER_ID ?? 'testID2',
     votedDate: '2023-05-31',
     characterName: '氷上格',
-    level: 1,
+    level: 0,
   },
   // 格くん推しには玉緒先輩推しもいらっしゃるらしい
   {
     twitterID: 'testID3',
     votedDate: '2023-12-01',
     characterName: '紺野玉緒',
-    level: 2,
+    level: 1,
   }, {
     twitterID: 'testID3',
     votedDate: '2023-12-01',
     characterName: '氷上格',
-    level: 1,
+    level: 0,
   },
 ]);
 
@@ -133,14 +135,14 @@ await db.insert(votes).values([
 const testID2 = process.env.TEST_TWITTER_ID ?? 'testID2';
 await db.insert(latestVotes).values([
   // testID: 最新は 2024-01-01 の 氷上格 + 柊夜ノ介
-  { twitterID: 'testID', votedDate: '2024-01-01', characterName: '氷上格', level: 1 },
-  { twitterID: 'testID', votedDate: '2024-01-01', characterName: '柊夜ノ介', level: 2 },
+  { twitterID: 'testID', votedDate: '2024-01-01', characterName: '氷上格', level: 0 },
+  { twitterID: 'testID', votedDate: '2024-01-01', characterName: '柊夜ノ介', level: 1 },
   // testID2: 2023-05-31 の 柊夜ノ介 + 氷上格
-  { twitterID: testID2, votedDate: '2023-05-31', characterName: '柊夜ノ介', level: 2 },
-  { twitterID: testID2, votedDate: '2023-05-31', characterName: '氷上格', level: 1 },
+  { twitterID: testID2, votedDate: '2023-05-31', characterName: '柊夜ノ介', level: 1 },
+  { twitterID: testID2, votedDate: '2023-05-31', characterName: '氷上格', level: 0 },
   // testID3: 2023-12-01 の 紺野玉緒 + 氷上格
-  { twitterID: 'testID3', votedDate: '2023-12-01', characterName: '紺野玉緒', level: 2 },
-  { twitterID: 'testID3', votedDate: '2023-12-01', characterName: '氷上格', level: 1 },
+  { twitterID: 'testID3', votedDate: '2023-12-01', characterName: '紺野玉緒', level: 1 },
+  { twitterID: 'testID3', votedDate: '2023-12-01', characterName: '氷上格', level: 0 },
 ]);
 
 // DailyOshiCount: 過去日分の pair 集計を backfill する。
