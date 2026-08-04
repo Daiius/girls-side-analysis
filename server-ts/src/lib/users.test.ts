@@ -112,6 +112,27 @@ describe('プレイ状態の記録（prd/04-voting.md §3）', () => {
     expect(latest.find(s => s.series === 5)?.state).toBe('実況視聴')
   })
 
+  it('別のシリーズを同時に申告しても、互いの変更を打ち消さない', async () => {
+    // 補完のせいでこの関数は read-modify-write になっている。直列化しないと
+    // 後に書く側が「読んだ時点の古い値」で相手の変更を潰す（lost update）。
+    await insertUserStatesIfUpdated({ twitterID, data: allSeries('未プレイ') })
+
+    await Promise.all([
+      insertUserStatesIfUpdated({
+        twitterID,
+        data: [{ series: 1, state: 'プレイ済み' }],
+      }),
+      insertUserStatesIfUpdated({
+        twitterID,
+        data: [{ series: 2, state: '実況視聴' }],
+      }),
+    ])
+
+    const latest = await getLatestUserState(twitterID)
+    expect(latest.find(s => s.series === 1)?.state).toBe('プレイ済み')
+    expect(latest.find(s => s.series === 2)?.state).toBe('実況視聴')
+  })
+
   it('申告が空なら何も書かない', async () => {
     await insertUserStatesIfUpdated({ twitterID, data: [] })
 
