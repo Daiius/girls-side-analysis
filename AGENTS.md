@@ -54,7 +54,7 @@ MySQL は GitHub Actions の `services: mysql:8.4` で立てる（compose ファ
 
 - パッケージマネージャは pnpm 固定（`packageManager` 参照）。npm/yarn は使わない
 - DB は MySQL 8.4。スキーマは `server-ts/src/db/schema.ts`（Drizzle）
-  - 本番マイグレーションは drizzle-kit の generate/migrate 方式（`server-ts/drizzle/` にバージョン管理、`db:generate` で生成）。**適用は本番イメージに同梱した `migrate.js` を使い捨てコンテナで実行する**（`docker run --rm --network <DB に届く network> --env-file <env> <image> migrate.js`。**`--network` を落とすと DB のホスト名を解決できない**。[prd/02](./prd/02-architecture.md) §6.3）。既存 DB を初めて管理下に載せる時は一度だけ `db:baseline` でベースラインを適用済み登録する
+  - 本番マイグレーションは drizzle-kit の generate/migrate 方式（`server-ts/drizzle/` にバージョン管理、`db:generate` で生成）。**適用は本番イメージに同梱した `migrate.js` を使い捨てコンテナで実行する**（`docker run --rm --network <DB に届く network> --env-file <env> <image> migrate.js`。**`--network` を落とすと DB のホスト名を解決できない**。[prd/02](./prd/02-architecture.md) §6.3）。既存 DB を初めて管理下に載せる時は一度だけ `db:baseline <世代名>` で適用済み登録する（**どこまで記録するかの既定は無い。DB の実スキーマを見てから指定する**）
   - ⚠️ `drizzle/<name>/` は `snapshot.json` と `migration.sql` の**両方をコミットする**。SQL が無いフォルダを migrator は黙って読み飛ばし、「何も流さずに成功」する（[prd/03](./prd/03-data-model.md) §5.1）
   - dev/CI の使い捨て DB は従来どおり `db:push`（強制同期）でよい
   - 歴史的経緯で手書き SQL の `server-ts/migrations/001_*.sql` が残る（generate 導入前の本番適用済み分。参照用）

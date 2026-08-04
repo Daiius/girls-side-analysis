@@ -139,10 +139,29 @@
 |---|---|---|
 | dev / CI の使い捨て DB | `pnpm db:push`（`drizzle-kit push --force`） | 履歴を残さず強制同期 |
 | **本番** | `pnpm db:generate` で生成 → **イメージ同梱の `migrate.js`** を使い捨てコンテナで実行（[02](./02-architecture.md) §6.3） | `server-ts/drizzle/*` にバージョン管理 |
-| 既存 DB を初めて管理下に載せる | `pnpm db:baseline`（**一度だけ**） | **最初の 1 本**を「適用済み」として記録（SQL は実行しない） |
+| 既存 DB を初めて管理下に載せる | `pnpm db:baseline <世代名>`（**一度だけ**） | **指定した世代まで**を「適用済み」として記録（SQL は実行しない） |
 
 - `db:baseline` を忘れて `db:migrate` を打つと、ベースラインの `CREATE TABLE` が既存テーブルと衝突する。**新規 DB では baseline 不要**。
-- `drizzle/` の現在の内容: `20260804080914_baseline` の 1 本のみ（現行スキーマ全テーブルの CREATE）。
+- ⚠️ **`db:baseline` は「どこまで記録するか」の既定を持たない。必ず引数で指定する。**
+  既存 DB がどの世代まで進んでいるかはスクリプトからは分からず、取り違えると
+  次の `db:migrate` が**適用済みの DDL を再実行して止まる**。
+  - 実測: 現行スキーマの DB に最初の 1 本だけ記録 → `ALTER TABLE Characters ADD reading` が
+    **`ER_DUP_FIELDNAME`** で停止した。
+  - 冪等（記録済みの世代は飛ばす）。接頭辞が一意なら省略形でもよい。
+- 🔥 **「スキーマが現行かどうか」だけで到達世代を決めてはいけない。**
+  `20260706112653_backfill_readings` は **DDL を含まないデータ移行**で、
+  `Characters.reading` は**カラムが default `''` で生えているだけ**でもスキーマ上は現行に見える。
+  この状態で最後まで記録すると、**backfill が永久に飛ばされ `reading` が空のまま残る**。
+  - **データ側を見る**: `SELECT COUNT(*) FROM Characters WHERE reading IS NULL OR reading = '';`
+    → 0 でなければ未適用。**その手前（`..._same_sleeper`）までを記録**し、backfill は `db:migrate` に流させる。
+  - `db:baseline` は対象範囲にデータ移行が入ると**既定で拒否する**。確認したうえで
+    `--include-data-migrations` を付けて初めて記録する。
+  - 📌 一般化: **DDL は実スキーマで検算できるが、データ移行は検算対象が違う。**
+    データ移行を足したら「何を見れば適用済みと言えるか」も一緒に決める。
+- `drizzle/` の現在の内容:
+  1. `20260706112547_complex_wild_child` — 全テーブルの CREATE（ベースライン。この時点では `Characters.reading` が無い）
+  2. `20260706112635_same_sleeper` — `Characters.reading` の ADD COLUMN
+  3. `20260706112653_backfill_readings` — 61 キャラの `reading` を UPDATE で backfill（データのみ）
   - 採番は **drizzle-kit 1.0 系のタイムスタンプ形式**（`0000_` のような連番は付かない）。適用順は名前の昇順。
 - `server-ts/migrations/001_*.sql` は **generate 導入前に本番へ手で適用した SQL**。参照用に残す（再実行しない）。
 
@@ -158,6 +177,17 @@
   `.gitignore` に `!server-ts/drizzle/**/*.sql` の除外解除を置いてある。**消さないこと**。
 - 検算は「テーブルが実際にできたか」で行う。**成功メッセージは根拠にならない**。
   空 DB に `db:migrate` → `db:push` が `No changes detected` を返せばスキーマ一致。
+
+#### `__drizzle_migrations.hash` は `migration.sql` の sha256 そのもの
+
+**適用済み DB の記録と、手元のファイルの `sha256sum` を突き合わせられる。**
+migrator は `crypto.createHash('sha256').update(<ファイル全文>)` で計算しているため、
+`sha256sum migration.sql`（macOS は `shasum -a 256`）の値がそのまま入る。
+
+- 用途: 「このファイルは本当にその DB に流れたものか」を **DB に書き込まずに検証できる**。
+  失った SQL を別環境から回収したとき、正当性の判断がこれ一本で付く。
+- ⚠️ **適用判定に使われるのは `name` だけ**（`getMigrationsToRun` は名前で突き合わせる）。
+  hash が違っても再実行はされないし、警告も出ない。**hash は人間が検証するための材料**。
 
 ### 5.2 本番 DB のテーブル単位権限
 
