@@ -82,12 +82,35 @@ export const insertUserStatesIfUpdated = async ({
 };
 
 /**
+ * `cause` を辿る深さの上限。`cause` が自分自身や祖先を指していても止まるようにするため
+ * （drizzle は 1 段しか包まないので、実運用でここに届くことはない）。
+ */
+const MAX_CAUSE_DEPTH = 8;
+
+/**
  * InnoDB のデッドロック。検出時点でそのトランザクションは rollback 済みなので、
  * 呼び出し側は安全に再実行できる。
+ *
+ * ⚠️ **`cause` チェーンを辿ること**。drizzle はドライバの例外を `DrizzleQueryError`
+ * で包んで投げる（`mysql-core/session.ts`）ので、最上位に `code` は載っていない。
+ * 実測した形は
+ *   DrizzleQueryError { query, params, cause }
+ *     └─ cause: Error { code: 'ER_LOCK_DEADLOCK', errno: 1213, sqlState: '40001' }
+ * で、最上位だけを見ると必ず false になり、上の再実行ループが 1 回目で throw する
+ * （＝リトライが丸ごと死ぬ）。prd/04-voting.md §3.1。
  */
-const isDeadlock = (e: unknown): boolean =>
-  typeof e === 'object' && e !== null && 'code' in e
-  && (e as { code?: unknown }).code === 'ER_LOCK_DEADLOCK';
+const isDeadlock = (e: unknown): boolean => {
+  let cause: unknown = e;
+  for (let depth = 0; cause != null && depth < MAX_CAUSE_DEPTH; depth++) {
+    if (
+      typeof cause === 'object'
+      && 'code' in cause
+      && (cause as { code?: unknown }).code === 'ER_LOCK_DEADLOCK'
+    ) return true;
+    cause = (cause as { cause?: unknown }).cause;
+  }
+  return false;
+};
 
 /**
  * insertUserStatesIfUpdated の本体（1 トランザクション）。

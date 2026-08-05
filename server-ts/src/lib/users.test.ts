@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from 'vitest'
-import { and, eq } from 'drizzle-orm'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { and, DrizzleQueryError, eq } from 'drizzle-orm'
 import { DateTime } from 'luxon'
 
 import { db } from '../db'
@@ -159,5 +159,89 @@ describe('プレイ状態の記録（prd/04-voting.md §3）', () => {
     const rows = await db.select().from(userStates)
       .where(eq(userStates.twitterID, twitterID))
     expect(rows.length).toBe(0)
+  })
+})
+
+// デッドロックの再実行ループ（prd/04-voting.md §3.1）。
+//
+// 本物のデッドロックは初回同時申告の約 7% でしか起きないため、上の
+// 「初回から別のシリーズを同時に申告しても、両方が記録される」だけでは
+// 再実行ループの検算にならない（直す前でも大半の実行で通ってしまう）。
+// ここだけエラーを注入して、ループの分岐そのものを決定的に確かめる。
+//
+// 🔑 **合成エラーは drizzle が実際に投げる形に合わせること。**
+// 実測（2 接続で本物のデッドロックを起こして捕まえた中身）:
+//   DrizzleQueryError { name: 'DrizzleQueryError', query, params, cause }  ← code は無い
+//     └─ cause: Error { code: 'ER_LOCK_DEADLOCK', errno: 1213, sqlState: '40001',
+//                       message: 'Deadlock found when trying to get lock; try restarting transaction' }
+// 包み方は 1 段（drizzle-orm 1.0.0-rc.3 の mysql-core/session.ts）。
+// `code` を最上位に直接載せた「それっぽい」エラーで検算すると、判定が
+// cause を辿っていなくても通ってしまい、意味が無くなる（実際に一度踏んだ）。
+describe('デッドロックの再実行（prd/04-voting.md §3.1）', () => {
+  // twitter_id は varchar(20)（schema.ts）。長い ID にすると ER_DATA_TOO_LONG になる。
+  const twitterID = 'userStatesRetry'
+
+  afterEach(async () => {
+    vi.restoreAllMocks()
+    await db.delete(userStates).where(eq(userStates.twitterID, twitterID))
+  })
+
+  /** drizzle に包まれた ER_LOCK_DEADLOCK。上記の実測どおりの入れ子にする。 */
+  const wrappedDeadlock = () =>
+    new DrizzleQueryError(
+      'insert into `UserStates` (`twitter_id`, `recorded_date`, `series`, `status`) values (?, ?, ?, ?)',
+      [],
+      Object.assign(
+        new Error('Deadlock found when trying to get lock; try restarting transaction'),
+        { code: 'ER_LOCK_DEADLOCK', errno: 1213, sqlState: '40001' },
+      ),
+    )
+
+  it('包まれたデッドロックは再実行され、最終的に成功する', async () => {
+    // 1 回目だけ失敗させる。spyOn は mockImplementationOnce を使い切ると
+    // 本物の実装に戻るので、2 回目は実 DB に書かれる。
+    const transaction = vi.spyOn(db, 'transaction')
+      .mockImplementationOnce(() => Promise.reject(wrappedDeadlock()))
+
+    await insertUserStatesIfUpdated({
+      twitterID,
+      data: [{ series: 1, state: 'プレイ済み' }],
+    })
+
+    expect(transaction).toHaveBeenCalledTimes(2)
+    const latest = await getLatestUserState(twitterID)
+    expect(latest.find(s => s.series === 1)?.state).toBe('プレイ済み')
+  })
+
+  it('デッドロックでないエラーは再実行せず、そのまま伝播する', async () => {
+    // 再実行して意味があるのはデッドロックだけ。それ以外を 3 回流すと
+    // 壊れた書き込みを 3 倍投げつけることになる。
+    const error = new DrizzleQueryError(
+      'insert into `UserStates` (`twitter_id`, `recorded_date`, `series`, `status`) values (?, ?, ?, ?)',
+      [],
+      Object.assign(new Error("Column 'status' cannot be null"), {
+        code: 'ER_BAD_NULL_ERROR', errno: 1048, sqlState: '23000',
+      }),
+    )
+    const transaction = vi.spyOn(db, 'transaction').mockRejectedValue(error)
+
+    await expect(insertUserStatesIfUpdated({
+      twitterID,
+      data: [{ series: 1, state: 'プレイ済み' }],
+    })).rejects.toBe(error)
+
+    expect(transaction).toHaveBeenCalledTimes(1)
+  })
+
+  it('3 回とも失敗したら諦めて投げる（無限に流し直さない）', async () => {
+    const error = wrappedDeadlock()
+    const transaction = vi.spyOn(db, 'transaction').mockRejectedValue(error)
+
+    await expect(insertUserStatesIfUpdated({
+      twitterID,
+      data: [{ series: 1, state: 'プレイ済み' }],
+    })).rejects.toBe(error)
+
+    expect(transaction).toHaveBeenCalledTimes(3)
   })
 })
