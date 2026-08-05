@@ -35,15 +35,24 @@ const TopAnalysis: React.FC<
     React.useState<string>(Object.keys(topAnalysisData)[0]);
 
   /**
-   * 順送りを一時停止しているか（hover / focus 中）。
+   * 順送りを一時停止する理由。**hover と focus は独立した理由なので別々に持つ。**
    *
    * ここにリンク（見出しの対象キャラ名・ランキング行）を置いた以上、止めないと壊れる:
    * - **キーボードで到達できない**。フォーカスしても最大 10 秒でリンクごと
    *   subtree が入れ替わり、焦点が body に落ちる（次の Tab が文書先頭からになる）。
    * - **タップが吸われる / 別人へ飛ぶ**。tick が pointerdown と click の間に挟まると、
    *   押したアンカーが消えて click が不発になるか、読んでいた名前と違うキャラへ飛ぶ。
+   *
+   * ⚠️ 1 つの state に 4 つのイベントが直接 true/false を書く形にすると、
+   * **片方が外れただけで再開してしまう**。
+   * 実際に踏んだ: リンクにフォーカスしたままポインタだけ領域外へ動かすと、
+   * pointerleave が停止を解除し、フォーカスが残っているのに順送りが再開して
+   * 上のフォーカス喪失がそのまま再発する（逆に、ポインタが領域内でも blur で再開する）。
    */
-  const [isPaused, setIsPaused] = React.useState(false);
+  const [isPointerInside, setIsPointerInside] = React.useState(false);
+  const [isFocusWithin, setIsFocusWithin] = React.useState(false);
+  // 「どちらかの理由が残っている限り止める」= 論理和で合成する
+  const isPaused = isPointerInside || isFocusWithin;
 
   React.useEffect(() => {
     // 一時停止中はタイマーを張らない。解除時は effect が動き直して
@@ -71,14 +80,27 @@ const TopAnalysis: React.FC<
       （touch では触れた時に pointerenter、離した時に pointerleave が飛ぶ）。
       キーボードは focus / blur で拾う（React のこれらは focusin / focusout 相当で
       バブルするので、この div に付ければ中のリンクのフォーカスが届く）。
+      2 つは独立した停止理由なので、それぞれ別の state に書いて上で論理和にする。
     */
     // biome-ignore lint/a11y/noStaticElementInteractions: 自動送りを止めるだけで div 自体に操作可能な機能は無く、role を名乗る方が支援技術に嘘をつくことになる
     <div
       className='w-full'
-      onPointerEnter={() => setIsPaused(true)}
-      onPointerLeave={() => setIsPaused(false)}
-      onFocus={() => setIsPaused(true)}
-      onBlur={() => setIsPaused(false)}
+      // pointerenter / pointerleave は :hover と同じで、
+      // この div の外へ出た時にしか leave が飛ばない（中の要素を跨いでも飛ばない）。
+      // なので focus 側のような relatedTarget の判定は要らない。
+      onPointerEnter={() => setIsPointerInside(true)}
+      onPointerLeave={() => setIsPointerInside(false)}
+      onFocus={() => setIsFocusWithin(true)}
+      onBlur={(e) => {
+        // focus はバブルするので、中のリンク間を Tab で移るだけでも blur が飛ぶ。
+        // 移動先がこの div の中ならまだ focus-within なので解除しない
+        // （見出しのリンク → ランキング行のリンク、の瞬間に一度再開してしまうのを防ぐ）。
+        // relatedTarget が null なのはフォーカスが文書の外（ブラウザ UI・他タブ）へ
+        // 抜けた時で、その時は文書内の focus-within が実際に外れているので解除する。
+        // 戻ってきて同じ要素にフォーカスが復帰すれば、その focus でまた止まる。
+        if (e.relatedTarget && e.currentTarget.contains(e.relatedTarget)) return;
+        setIsFocusWithin(false);
+      }}
     >
       {/*
         key は「順送りで対象キャラが変わった時だけ作り直す」ためのもの。

@@ -161,6 +161,23 @@ pair 集計は 61 ノードの重み付き無向グラフで、ランキング�
 - 実装は `TopAnalysis`。`onPointerEnter` / `onPointerLeave`（**hover とタップを 1 組で拾う**。
   touch では触れた時に pointerenter、離した時に pointerleave が飛ぶ）＋ `onFocus` / `onBlur`
   （React のこれらは focusin / focusout 相当でバブルするので、中のリンクのフォーカスが届く）。
+- ⚠️ **hover と focus は独立した停止理由なので、別々に保持して論理和で合成する**
+  （`isPaused = isPointerInside || isFocusWithin`）。**1 つの state に 4 つのイベントが
+  直接 true / false を書く形にしてはいけない。片方が外れただけで再開してしまう。**
+  - 実際に踏んだ再現手順: リンクにホバー → `focus()` → **ポインタだけを領域外へ動かす**（フォーカスは残る）
+    → 11 秒 → `pointerleave` が停止を解除しているので順送りが走り、**焦点が `<body>` に落ちる**
+    （この節が塞いだはずの症状がそのまま再発する）。逆に、**ポインタが領域内でも `blur` だけで再開**する。
+  - 📌 `blur` では **`relatedTarget` がコンテナ内なら focus-within を解除しない**
+    （`e.currentTarget.contains(e.relatedTarget)`）。focus はバブルするので、
+    **見出しのリンクからランキング行のリンクへ Tab で移る瞬間**にも `blur` が飛び、
+    判定しないとそこで一度再開してしまう。
+  - 📌 `relatedTarget` が **`null` になるのはフォーカスが文書の外**（ブラウザ UI・他タブ）へ抜けた時。
+    その時は文書内の focus-within が実際に外れているので**解除する**（戻ってきて同じ要素に
+    フォーカスが復帰すれば、その `focus` でまた止まる）。**`null` を「まだ中に居る」と扱うと、
+    ブラウザ UI をクリックしただけで永久に止まったままになる**。
+  - 📌 pointer 側に同じ判定は**要らない**。`pointerenter` / `pointerleave` は CSS の `:hover` と同じ
+    境界の意味論で、**この div の外へ出た時にしか `leave` が飛ばない**（中の要素を跨いでも飛ばない）。
+    実測でも、見出しのリンク ⇄ ランキング行のリンク間の移動では一時停止が解除されない。
 - 一時停止中は `setInterval` を張らず、解除時に**タイマーを 0 から張り直す**。
   📌 **タップの競合が閉じるのはこの性質に依存している**。指を離してから click が届くまでの間に
   次の tick は来ない（10 秒空く）。「残り時間を覚えて再開する」実装に変えると**この保証が消える**。
