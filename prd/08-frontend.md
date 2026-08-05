@@ -104,6 +104,29 @@
 | 横棒グラフ | `AnimatedVoteBar` | `maxCount` で正規化し、マウント後に幅をアニメーション |
 | 共起ランキング | `TopAnalysisContent` | 見出しの対象キャラ名は**トップでのみ `<Link>`**（§4.4）。各行のキャラ名は**そのキャラの分析ページへの `<Link>`**（§4.3）。票数は `AnimatedVoteBar` |
 
+### 4.1 シリーズ色の一元化
+
+**シリーズと色の対応は本表が原典**。実装はこれに従う。
+
+| シリーズ | 色 |
+|---|---|
+| GS1 | green |
+| GS2 | sky |
+| GS3 | pink |
+| GS4 | orange |
+
+- 実装上、この対応を **Tailwind のクラス名に落とす場所は `src/components/characterCellStyle.ts` の
+  `seriesTheme` ただ 1 箇所**である。ヘッダーのハート 4 色もこれに対応する。**色を変えるときはそこだけを直す**。
+- Tailwind のクラス検出のため**完全リテラル**で書く（文字列連結でクラス名を組み立てない）。
+- 「・」を含む複合名の折り返し・フォントサイズ・`col-span-2` の判定も同ファイルに集約する。
+
+### 4.2 スタイル
+
+- **Tailwind CSS v4**（`@tailwindcss/postcss`）。設定は CSS ファーストで `globals.css` の `@theme` に集約し、
+  `tailwind.config.ts` は実質空。
+- **daisyUI は使っていない**。UI プリミティブは Headless UI + Heroicons + 自作 `Button` / `GSButton`。
+- **ライトテーマ固定**（`bg-sky-100 text-black`）。ダークモード切替は未実装。
+
 ### 4.3 共起ランキング行のリンク（回遊導線）
 
 pair 集計は 61 ノードの重み付き無向グラフで、ランキングの 1 行が 1 本の辺にあたる
@@ -188,29 +211,6 @@ pair 集計は 61 ノードの重み付き無向グラフで、ランキング�
   `animate-bounce-once` と `AnimatedVoteBar` の再生条件は変わらない（どちらもキャラが変わった時に再生される）。
   - 同じ理由で `AnimatedVoteBar` の `key={Date.now()}` も外す。残すと**hover するたびに全部の横棒が
     0 から再アニメーション**する。identity は `<li>` の `key={characterName}` が決めるので key は要らない。
-
-### 4.1 シリーズ色の一元化
-
-**シリーズと色の対応は本表が原典**。実装はこれに従う。
-
-| シリーズ | 色 |
-|---|---|
-| GS1 | green |
-| GS2 | sky |
-| GS3 | pink |
-| GS4 | orange |
-
-- 実装上、この対応を **Tailwind のクラス名に落とす場所は `src/components/characterCellStyle.ts` の
-  `seriesTheme` ただ 1 箇所**である。ヘッダーのハート 4 色もこれに対応する。**色を変えるときはそこだけを直す**。
-- Tailwind のクラス検出のため**完全リテラル**で書く（文字列連結でクラス名を組み立てない）。
-- 「・」を含む複合名の折り返し・フォントサイズ・`col-span-2` の判定も同ファイルに集約する。
-
-### 4.2 スタイル
-
-- **Tailwind CSS v4**（`@tailwindcss/postcss`）。設定は CSS ファーストで `globals.css` の `@theme` に集約し、
-  `tailwind.config.ts` は実質空。
-- **daisyUI は使っていない**。UI プリミティブは Headless UI + Heroicons + 自作 `Button` / `GSButton`。
-- **ライトテーマ固定**（`bg-sky-100 text-black`）。ダークモード切替は未実装。
 
 ## 5. SEO / メタデータ
 
