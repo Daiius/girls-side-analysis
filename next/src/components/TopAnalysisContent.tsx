@@ -221,8 +221,16 @@ const TopAnalysisContent: React.FC<
                   }
                 </Link>
               </div>
+              {/*
+                ⚠️ key={Date.now()} にしてはいけない。再レンダリングのたびに
+                横棒が作り直されて 0 から再アニメーションするため、
+                トップで hover するだけ（＝順送りの一時停止トグル）で
+                全部の棒が動き直してしまう。
+                対象キャラが変わった時に animate し直すのは、親（TopAnalysis）が
+                key={targetCharacterName} で subtree ごと作り直すことで成り立つ。
+                <li> の key が identity を決めるので、ここに key は要らない。
+              */}
               <AnimatedVoteBar
-                key={Date.now()}
                 count={count}
                 maxCount={maxCount}
               />

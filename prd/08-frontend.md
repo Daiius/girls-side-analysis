@@ -148,6 +148,30 @@ pair 集計は 61 ノードの重み付き無向グラフで、ランキング�
   再生させるためのもの）は**分岐の外側に置いたままにする**。`<Link>` 側へ動かすと
   キャラページで key が消える。
 
+#### 4.4.1 順送りは hover / focus 中は止める（リンクを置いたことの帰結）
+
+**ここに focusable な要素を置いた以上、10 秒ごとの入れ替えを止めずには使えない。**
+リンクを置くまでこの領域に focusable が無かったので、入れ替えは無害だった。
+
+| 症状 | 中身 |
+|---|---|
+| **キーボードで到達できない** | フォーカスしても最大 10 秒でリンクごと subtree が入れ替わり、焦点が `<body>` に落ちる。次の Tab は文書先頭からやり直しになる |
+| **タップが吸われる / 別人へ飛ぶ** | tick が `pointerdown` と `click` の間に挟まると、押したアンカーが消えて click が不発になる。tick 直後なら**読んでいた名前と違うキャラのページ**へ行く |
+
+- 実装は `TopAnalysis`。`onPointerEnter` / `onPointerLeave`（**hover とタップを 1 組で拾う**。
+  touch では触れた時に pointerenter、離した時に pointerleave が飛ぶ）＋ `onFocus` / `onBlur`
+  （React のこれらは focusin / focusout 相当でバブルするので、中のリンクのフォーカスが届く）。
+- 一時停止中は `setInterval` を張らず、解除時に**タイマーを 0 から張り直す**。
+  📌 **タップの競合が閉じるのはこの性質に依存している**。指を離してから click が届くまでの間に
+  次の tick は来ない（10 秒空く）。「残り時間を覚えて再開する」実装に変えると**この保証が消える**。
+- ⚠️ **一時停止だけでは直らない。`key` の見直しとセットで初めて成立する。**
+  `TopAnalysis` の `key` が `Date.now()` だと**あらゆる再レンダリングで** `TopAnalysisContent` の
+  subtree が作り直され、**一時停止のトグル自体がフォーカスを飛ばす**。
+  `key={targetCharacterName}` にして「**対象キャラが変わった時だけ**作り直す」という本来の意図に戻す。
+  `animate-bounce-once` と `AnimatedVoteBar` の再生条件は変わらない（どちらもキャラが変わった時に再生される）。
+  - 同じ理由で `AnimatedVoteBar` の `key={Date.now()}` も外す。残すと**hover するたびに全部の横棒が
+    0 から再アニメーション**する。identity は `<li>` の `key={characterName}` が決めるので key は要らない。
+
 ### 4.1 シリーズ色の一元化
 
 **シリーズと色の対応は本表が原典**。実装はこれに従う。
@@ -254,6 +278,10 @@ pair 集計は 61 ノードの重み付き無向グラフで、ランキング�
 - ネイティブ要素を優先する（`Button` は `as` で `button` / `a` / `Link` を切り替え、フォーカスと押下はネイティブの擬似クラスに任せる）。
 - `aria-current="page"`（表示中キャラ）/ `aria-pressed`（トグル）/ `role="group"` + `aria-label`（シリーズ絞り込み）/
   検索入力と閉じるボタンの `aria-label` / 装飾アイコンの `aria-hidden`。
+- **自動で入れ替わる領域に focusable を置くなら、hover / focus 中は入れ替えを止める**。
+  止めないと、フォーカスした要素が数秒で DOM から消えて**焦点が `<body>` に落ちる**（キーボードで到達できない）。
+  ポインタ操作でも `pointerdown` と `click` の間に入れ替わりが挟まると**押した対象が消える**。
+  トップの順送り（10 秒ごと）がこれに当たる。実装と落とし穴は §4.4.1。
 - タッチ配慮: D&D の `activationConstraint.distance: 10`、グラフの `hitRadius: 16`、`touch-none`。
 - 外部リンクには `rel="noopener noreferrer"`。
 
