@@ -11,14 +11,22 @@ import type { TopAnalysisData, } from '@/types';
 
 
 const TopAnalysis: React.FC<
-  { 
+  {
     topAnalysisData: TopAnalysisData,
     //timelineDataDict: Record<string, DataSet[]>,
+    /**
+     * 順送りで表示中のキャラが現在地かどうか。ここは素通しするだけで、
+     * 意味と既定値は {@link TopAnalysisContent} 側が持つ
+     * （どのページに置かれているかを知っているのは呼び出し元＝ルートなので、
+     * この中間コンポーネントで決め打ちせず渡してもらう）。
+     */
+    targetCharacterIsCurrent?: boolean,
   }
   & React.ComponentProps<'div'>
 > = ({
   topAnalysisData,
   //timelineDataDict,
+  targetCharacterIsCurrent,
   className,
   ...props
 }) => {
@@ -45,6 +53,7 @@ const TopAnalysis: React.FC<
       <TopAnalysisContent
         key={Date.now()}
         targetCharacterName={targetCharacterName}
+        targetCharacterIsCurrent={targetCharacterIsCurrent}
         analysisData={topAnalysisData[targetCharacterName]}
         className={clsx('mb-2', className)}
         {...props}

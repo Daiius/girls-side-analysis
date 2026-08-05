@@ -70,9 +70,14 @@ export default async function Home() {
       </div>
       {/* 上下の要素から離して分析への入口を目立たせる（親は gap-2 なので追加で my） */}
       <TopCharacterSelect className='my-6' />
-      <TopAnalysis 
-        className='w-full flex-1' 
+      {/*
+        順送りで出るキャラはトップの現在地ではないので、名前をそのキャラの
+        分析ページへのリンクにする（キャラページ側は既定のまま＝リンクにしない）。
+      */}
+      <TopAnalysis
+        className='w-full flex-1'
         topAnalysisData={data}
+        targetCharacterIsCurrent={false}
       />
     </div>
   );
