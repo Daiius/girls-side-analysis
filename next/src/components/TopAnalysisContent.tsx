@@ -21,11 +21,23 @@ const TopAnalysisContent: React.FC<
      * （トップの h1 はページ側が持つ）。
      */
     headingLevel?: 1 | 2;
+    /**
+     * 見出しの対象キャラ（「〇〇推しの人が……」の〇〇）が、
+     * 今見ているページの主題＝現在地そのものかどうか。
+     * キャラページでは true（そのページ自身なのでリンクにしない）、
+     * トップの順送りでは false（誰の現在地でもないのでリンクにする）。
+     *
+     * 既定は true。渡し忘れた時に困るのは「現在地へのリンク（自己リンク）を
+     * 作ってしまう」側なので、リンクを出さない方を既定にして安全側へ倒す。
+     * 効果は「リンクにするか否か」だけで、aria-current は付けない（§4.4）。
+     */
+    targetCharacterIsCurrent?: boolean;
   } & React.ComponentProps<'div'>
 > = ({
   analysisData,
   targetCharacterName,
   headingLevel = 2,
+  targetCharacterIsCurrent = true,
   className,
   ...props
 }) => {
@@ -58,8 +70,44 @@ const TopAnalysisContent: React.FC<
         animate-bounce-once を再生させるためのもの（要素を作り直す）。
       */}
       <Heading className='flex flex-row flex-wrap items-baseline gap-x-1'>
-        <span key={targetCharacterName} className='text-lg font-bold animate-bounce-once'>
-          <CharacterNameLabel name={targetCharacterName} />
+        {/*
+          対象キャラ名は、そこが現在地かどうかで出し分ける
+          （現在地はリンクにしない、という TopCharacterPickerDialog と同じ規則）。
+          - キャラページ: このページの主題そのもの＝現在地なので、リンクにしない
+            （自分自身へのリンクは作らない）。
+            aria-current は付けない。あれは「一覧の中の今どれか」を示す属性で、
+            モーダルの61セルのような集合がある所で意味を持つ。見出しの名前は
+            集合の一員ではないので、読み上げに冗長な付言が増えるだけになる。
+          - トップ: 10秒ごとに入れ替わる順送りで、誰の現在地でもない。
+            「今出ている人をもっと見たい」という動線がここにしか無いので、
+            そのキャラの分析ページへのリンクにする。
+          key は分岐の外側（この span）に置いたままにする。中の Link へ動かすと
+          キャラページ側で key が消え、順送りの作り直しが効かなくなる。
+        */}
+        <span
+          key={targetCharacterName}
+          className='text-lg font-bold animate-bounce-once'
+        >
+          {targetCharacterIsCurrent
+            ? <CharacterNameLabel name={targetCharacterName} />
+            /*
+              prefetch={false} は必須。画面に出ているリンクは1本だが、
+              href が10秒ごとに次のキャラへ変わるので、既定のままだと
+              「トップに留まっている時間に比例して」61ページ分
+              （転送 429 KB / 展開 3.4 MB）を取りに行くことになる。
+              数えるべきは同時に並ぶ本数ではなく、1本のリンクが時間とともに
+              指す href の個数（08 §2.1）。
+              切ってもクライアントサイドナビゲーション自体は効く。
+              リンク先は canonical / sitemap と同じ生の日本語 URL に揃える。
+            */
+            : <Link
+                href={`/${targetCharacterName}`}
+                prefetch={false}
+                className='hover:underline focus-visible:underline underline-offset-4'
+              >
+                <CharacterNameLabel name={targetCharacterName} />
+              </Link>
+          }
         </span>
         <span>推しの人が同時に推すのは、</span>
       </Heading>
@@ -173,8 +221,16 @@ const TopAnalysisContent: React.FC<
                   }
                 </Link>
               </div>
+              {/*
+                ⚠️ key={Date.now()} にしてはいけない。再レンダリングのたびに
+                横棒が作り直されて 0 から再アニメーションするため、
+                トップで hover するだけ（＝順送りの一時停止トグル）で
+                全部の棒が動き直してしまう。
+                対象キャラが変わった時に animate し直すのは、親（TopAnalysis）が
+                key={targetCharacterName} で subtree ごと作り直すことで成り立つ。
+                <li> の key が identity を決めるので、ここに key は要らない。
+              */}
               <AnimatedVoteBar
-                key={Date.now()}
                 count={count}
                 maxCount={maxCount}
               />

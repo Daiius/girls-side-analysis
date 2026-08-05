@@ -141,7 +141,11 @@ export default async function Page({
         />
       </div>
       <TopCharacterSelect className='my-5'/>
-      {/* このページの主題そのものなので、分析結果の見出しを h1 にする */}
+      {/*
+        このページの主題そのものなので、分析結果の見出しを h1 にする。
+        同じ理由で見出しのキャラ名は現在地なので、リンクにはしない。
+        それが targetCharacterIsCurrent の既定なので、ここでは何も渡さない。
+      */}
       <TopAnalysisContent
         className='w-full mb-2'
         analysisData={analysisData}
