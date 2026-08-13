@@ -1,6 +1,7 @@
 'use client'
 
 import type React from 'react';
+import { useId } from 'react';
 import clsx from 'clsx';
 
 import {
@@ -84,6 +85,14 @@ const VotingFormCharactersClient: React.FC<
   ...props
 }) => {
 
+  // dnd-kit の id はモジュール大域のカウンタで振られる（@dnd-kit/utilities の
+  // useUniqueId）。サーバはレンダリングのたびに増え続け、クライアントは常に 0 から
+  // 始まるので、各ストリップの aria-describedby が SSR と CSR で食い違い
+  // hydration mismatch になる。id を渡すとカウンタを使わずその値がそのまま
+  // 使われる（useUniqueId は第 2 引数があれば即返す）ので、useId() で
+  // hydration 安全な値を与える。
+  const dndContextId = useId();
+
   const sensors = useSensors(
     useSensor(TouchSensor, {
       activationConstraint: { distance: 10 }
@@ -129,6 +138,7 @@ const VotingFormCharactersClient: React.FC<
     >
       <div className='flex flex-col gap-2'>
         <DndContext
+          id={dndContextId}
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}

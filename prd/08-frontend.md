@@ -301,6 +301,12 @@ pair 集計は 61 ノードの重み付き無向グラフで、ランキング�
   トップの順送り（10 秒ごと）がこれに当たる。実装と落とし穴は §4.4.1。
 - タッチ配慮: D&D の `activationConstraint.distance: 10`、グラフの `hitRadius: 16`、`touch-none`。
 - 外部リンクには `rel="noopener noreferrer"`。
+- **SSR される client component で、ライブラリが生成した id を `aria-*` に載せるなら、id を明示的に渡す**。
+  ライブラリがモジュール大域のカウンタで id を振る実装だと、サーバはレンダリングのたびに増え続け
+  クライアントは常に 0 から始まるため、**hydration mismatch になる**。React は属性の不一致を
+  「patch up しない」ので**サーバ側の値が DOM に残り、参照先の要素が存在しない** ——
+  つまり支援技術への説明が実際に届かなくなる。値は `useId()` で取る。
+  dnd-kit の `DndContext` がこれに当たる（`id` を渡すと `aria-describedby` に使われる）。
 
 ## 7. 環境変数（next）
 
