@@ -6,7 +6,19 @@ import type { NextConfig } from 'next'
 const apiUrl = process.env.API_URL
 const enableAuthRewrites = process.env.ENABLE_AUTH_REWRITES === 'true' && !!apiUrl
 
+// リモート dev 公開（`pnpm dev:remote`）で前段プロキシ越しに開くときのホスト名。
+// dev サーバは /_next/* と /__nextjs*（HMR の WebSocket を含む）への
+// クロスオリジン要求を既定で 403 にするため、公開ホストを明示的に許可する。
+// localhost / **.localhost は Next 側で常に許可されているので、ローカル dev では空でよい。
+// ⚠️ allowedDevOrigins が受け取るのは **オリジンではなくホスト名**（Origin / Referer の
+// hostname と突き合わせる実装）。URL をそのまま渡しても一致しない。
+const publicOrigin = process.env.PUBLIC_ORIGIN
+const allowedDevOrigins = publicOrigin
+  ? [new URL(publicOrigin).hostname]
+  : []
+
 const nextConfig = {
+  allowedDevOrigins,
   async rewrites() {
     if (!enableAuthRewrites) return []
     return [

@@ -1,3 +1,17 @@
+# ローカル dev（`pnpm dev`）とリモート dev 公開（`pnpm dev:remote`）で compose を分けない。
+# 単一の compose.yaml を環境変数でパラメータ化し、remote 差分は `.env.remote` に集約する
+# （雛形は `.env.remote.example`。`pnpm dev:remote` = `docker compose --env-file .env.remote ...`）。
+#
+#   | 差分            | ローカル既定            | remote（.env.remote）           |
+#   |-----------------|-------------------------|---------------------------------|
+#   | next の公開      | 3000（全 IF）           | NEXT_BIND=127.0.0.1:8401 等     |
+#   | server の公開    | 4000（全 IF）           | SERVER_BIND=127.0.0.1:4000      |
+#   | 公開オリジン      | http://localhost:3000   | PUBLIC_ORIGIN=https://<host>    |
+#
+# ⚠️ **compose の `environment:` は `env_file:` より優先される。** 下で HOST_URL /
+# BETTER_AUTH_URL を書いているため、dev スタックにおける公開オリジンの原典は
+# `next/.env.development` ではなく**この compose（＝ PUBLIC_ORIGIN）**である。
+# 既定値はローカルの従来値と同一なので、`pnpm dev` の挙動は変わらない。
 services:
   nextjs:
     # next / server は同一の開発イメージを共有する（中身が一致するため）。
@@ -13,11 +27,20 @@ services:
     command: ['pnpm', 'dev']
     environment:
       TZ: 'Asia/Tokyo'
+      # 公開オリジン。remote 公開時のみ .env.remote から入る。
+      # next.config.ts がこれを見て allowedDevOrigins にホスト名を足す
+      # （足さないと /_next/* と HMR の WebSocket が 403 になる）。
+      PUBLIC_ORIGIN: '${PUBLIC_ORIGIN:-}'
+      # metadataBase / canonical / sitemap / OGP / シェア文言に使う自身の公開 URL。
+      # ⚠️ env_file より優先されるので、既定値は next/.env.development と同じ値にしてある。
+      HOST_URL: '${PUBLIC_ORIGIN:-http://localhost:3000}'
     env_file:
       - next/.env.development
       - next/.env.local
     ports:
-      - 3000:3000
+      # ローカルは 3000 を全 IF に公開。remote は .env.remote の NEXT_BIND で
+      # 前段プロキシ向けに loopback の 1 ポートだけ公開する（唯一の外向きの口）。
+      - '${NEXT_BIND:-3000}:3000'
     depends_on:
       server:
         condition: service_started
@@ -61,9 +84,15 @@ services:
       - ./server-ts/.env.development
     environment:
       TZ: 'Asia/Tokyo'
+      # フロントエンドの origin。better-auth の baseURL / trustedOrigins と
+      # Hono の CORS 許可オリジンに使われる（src/lib/auth.ts, src/app.ts）。
+      # ⚠️ env_file より優先されるので、既定値は server-ts/.env.development と同じ値。
+      BETTER_AUTH_URL: '${PUBLIC_ORIGIN:-http://localhost:3000}'
     working_dir: /workspace/server-ts
     ports:
-      - 4000:3000
+      # remote では SERVER_BIND=127.0.0.1:4000 として外から届かないようにする。
+      # ブラウザは next の rewrites 経由で /api/auth/* に届くので、直接の口は要らない。
+      - '${SERVER_BIND:-4000}:3000'
     depends_on:
       database:
         condition: service_healthy

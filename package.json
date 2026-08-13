@@ -5,6 +5,9 @@
   "packageManager": "pnpm@10.33.2",
   "scripts": {
     "dev": "docker compose up --watch --build",
+    "dev:remote": "docker compose --env-file .env.remote up --watch --build",
+    "dev:remote:logs": "docker compose --env-file .env.remote logs -f",
+    "dev:remote:down": "docker compose --env-file .env.remote down",
     "stop": "docker compose stop",
     "down": "docker compose down",
     "db:push": "docker compose exec server pnpm db:push",
