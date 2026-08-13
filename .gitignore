@@ -1,4 +1,9 @@
 .env*
+# 雛形（.env.example / .env.<name>.example）だけは追跡する。
+# ⚠️ この否定パターンを消すと .env.remote.example が黙って外れる。
+!.env.example
+!.env.*.example
+
 *.zip
 
 /node_modules

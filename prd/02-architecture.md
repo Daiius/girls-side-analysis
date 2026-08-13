@@ -100,6 +100,42 @@ server-rs/   # Rust(axum + sea-orm) の別実装。workspace / compose の外（
 
 個別パッケージ内では `pnpm <script>`（`server-ts`: `db:generate` / `db:baseline` / `db:backfill` / `build` など）。
 
+### 4.2 リモート dev 公開（`pnpm dev:remote`）
+
+前段プロキシ越しに、手元のブラウザから開発中の dev スタックを開くための構成。
+
+**compose ファイルは増やさない。** 単一の `compose.yaml` を環境変数でパラメータ化し、
+remote 差分は `.env.remote` に集約する（雛形 `.env.remote.example` はコミットする。実体はしない）。
+`pnpm dev:remote` = `docker compose --env-file .env.remote up --watch --build`。
+
+| 変数 | ローカル既定 | remote |
+|---|---|---|
+| `PUBLIC_ORIGIN` | `http://localhost:3000` | `https://<host>` |
+| `NEXT_BIND` | `3000`（全 IF） | `127.0.0.1:<port>`（**唯一の外向きの口**） |
+| `SERVER_BIND` | `4000`（全 IF） | `127.0.0.1:4000`（外へ出さない） |
+
+- **`PUBLIC_ORIGIN` は 3 か所に効く。**
+  1. `next.config.ts` の **`allowedDevOrigins`**。dev サーバは `/_next/*` と `/__nextjs*`
+     （**HMR の WebSocket を含む**）へのクロスオリジン要求を既定で 403 にする。
+     ⚠️ **これが無いと「ページは出るが HMR とクライアント遷移が壊れる」**という分かりにくい壊れ方をする
+     （素のページ遷移は `Origin` を送らないので通ってしまう）。
+     ⚠️ `allowedDevOrigins` が受け取るのは**オリジンではなくホスト名**（`Origin` / `Referer` の
+     hostname と突き合わせる実装）。URL をそのまま渡しても一致しない。
+  2. `next` の **`HOST_URL`**（`metadataBase` / canonical / sitemap / OGP / シェア文言）。
+  3. `server-ts` の **`BETTER_AUTH_URL`**（better-auth の `baseURL` / `trustedOrigins`、Hono の CORS）。
+- ⚠️ **`environment:` は `env_file:` より優先される。** 上記 2 つを compose の `environment:` で
+  渡しているため、**dev スタックにおける公開オリジンの原典は `PUBLIC_ORIGIN`** であり
+  `next/.env.development` ではない。既定値は従来のローカル値と同一なので `pnpm dev` の挙動は変わらない。
+- **外向きの口は next の 1 つだけにする。** ブラウザは同一オリジンの `/api/auth/*` を叩き、
+  `next.config.ts` の rewrites が `server-ts` へ転送する（§3.1 / [08](./08-frontend.md) §3.1）。
+  `server` を直接公開する必要はない。
+- 🚫 **認証は前段プロキシの責務**。dev サーバはソースマップも HMR もそのまま晒すので、
+  `NEXT_BIND` を `0.0.0.0` にして直接ネットワークへ出さない。
+  **公開ホスト名・ポート・プロキシの具体設定は公開リポに書かない**（`.env.remote` の実体と非公開の運用メモへ）。
+- ⚠️ **X OAuth ログインは別途 callback URL の登録が要る。** `BETTER_AUTH_URL` が公開オリジンに
+  なることで better-auth の redirect_uri も `<公開オリジン>/api/auth/callback/twitter` に変わる。
+  X 側に登録されていなければログインは失敗する（**閲覧そのものには影響しない**）。
+
 ## 5. 依存ポリシー
 
 - **pnpm `catalog:`**: 両パッケージで共有する依存（`better-auth` / `luxon` / `tsx` / `typescript` / `@types/*`）は
