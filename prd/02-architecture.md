@@ -154,10 +154,22 @@ remote 差分は `.env.remote` に集約する（雛形 `.env.remote.example` �
 - `server-ts` は **esbuild で `dist/index.js` に単一バンドル**（`esbuild.config.ts`、ESM / node20 target）し、
   最小構成のコンテナイメージに置く（`Dockerfile.server.prod`）。
 - **同じイメージに `dist/migrate.js` と `drizzle/` を同梱する**（§6.3）。
-- イメージのビルドとレジストリへの push は、**linux/amd64 のホストならローカルで直接行ってよい**
-  （`docker build -f server-ts/Dockerfile.server.prod` → `docker push`）。
+- イメージのビルドとレジストリへの push は、**linux/amd64 のホストならローカルで直接行ってよい**。
+  ビルドコンテキストは**リポジトリのルート**（Dockerfile がルートの `pnpm-lock.yaml` などを COPY する）。
   タグは workflow と揃えて `:sha-<40桁フルSHA>` / `:main` / `:latest` を付ける。
+
+  ```bash
+  IMAGE=ghcr.io/daiius/girls-side-analysis-server
+  SHA=$(git rev-parse HEAD)
+  docker build --platform linux/amd64 -f server-ts/Dockerfile.server.prod \
+    -t "$IMAGE:sha-$SHA" -t "$IMAGE:main" -t "$IMAGE:latest" .
+  docker push "$IMAGE:sha-$SHA"
+  docker push "$IMAGE:main"
+  docker push "$IMAGE:latest"
+  ```
+
   - **ビルド元は main の先端のコミット内容にする**（未コミットの変更や未追跡ファイルを入れない）。
+    上の例は作業ツリーをそのまま使うので、`git status` が clean で HEAD が `origin/main` と一致することを先に確かめる。
 - `.github/workflows/build-push.yml`（`workflow_dispatch` の手動起動）も同じイメージを作る。
   ⚠️ **arm64 Mac からはこちらを使う**。エミュレートビルドは遅く、libuv の io_uring 周りでクラッシュする。
   かつて「必ず GitHub Actions で」としていたのは開発環境が arm64 Mac だったためで、amd64 のホストには当てはまらない。
