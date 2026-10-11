@@ -22,20 +22,20 @@
     "clsx": "^2.1.1",
     "debug": "^4.4.3",
     "luxon": "catalog:",
-    "next": "16.3.0",
-    "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
   },
   "devDependencies": {
     "@daiius/girls-side-analysis-server-ts": "workspace:*",
-    "@tailwindcss/postcss": "^4.3.0",
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/debug": "^4.1.13",
     "@types/luxon": "catalog:",
     "@types/node": "catalog:",
-    "@types/react": "^19.2.15",
-    "@types/react-dom": "^19.2.3",
-    "postcss": "^8.5.15",
-    "tailwindcss": "^4.3.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "postcss": "^8.5.29",
+    "tailwindcss": "^4.3.3",
     "tsx": "catalog:",
     "typescript": "catalog:"
   }
