@@ -159,17 +159,30 @@ remote 差分は `.env.remote` に集約する（雛形 `.env.remote.example` �
   タグは workflow と揃えて `:sha-<40桁フルSHA>` / `:main` / `:latest` を付ける。
 
   ```bash
-  IMAGE=ghcr.io/daiius/girls-side-analysis-server
-  SHA=$(git rev-parse HEAD)
-  docker build --platform linux/amd64 -f server-ts/Dockerfile.server.prod \
-    -t "$IMAGE:sha-$SHA" -t "$IMAGE:main" -t "$IMAGE:latest" .
-  docker push "$IMAGE:sha-$SHA"
-  docker push "$IMAGE:main"
-  docker push "$IMAGE:latest"
+  (
+    set -eu
+    # main の先端で、追跡ファイルに未コミットの変更が無いことを確かめる。
+    # fetch を省くと、古い origin/main と一致しただけで通ってしまう。
+    git fetch origin main
+    [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] || { echo "HEAD が origin/main の先端ではない" >&2; exit 1; }
+    [ -z "$(git status --porcelain --untracked-files=no)" ] || { echo "未コミットの変更がある" >&2; exit 1; }
+
+    IMAGE=ghcr.io/daiius/girls-side-analysis-server
+    SHA=$(git rev-parse HEAD)
+    docker build --platform linux/amd64 -f server-ts/Dockerfile.server.prod \
+      -t "$IMAGE:sha-$SHA" -t "$IMAGE:main" -t "$IMAGE:latest" .
+    docker push "$IMAGE:sha-$SHA"
+    docker push "$IMAGE:main"
+    docker push "$IMAGE:latest"
+  )
   ```
 
   - **ビルド元は main の先端のコミット内容にする**（未コミットの変更や未追跡ファイルを入れない）。
-    上の例は作業ツリーをそのまま使うので、`git status` が clean で HEAD が `origin/main` と一致することを先に確かめる。
+    `:main` と `:latest` は可変タグなので、古いコミットからビルドすると新しいイメージを上書きしてしまう。
+    上の例は作業ツリーをそのまま使うため、**`git fetch` してから** HEAD と `origin/main` の一致を確かめている。
+    全体を `( ... )` で囲んであるのは、確認に失敗したとき**サブシェルだけ**を終わらせるため（対話シェルごと閉じない）。
+  - ⚠️ **未追跡ファイルは上の確認では検出しない。** Dockerfile はディレクトリごと COPY するので、
+    `server-ts/src/` と `server-ts/drizzle/` に置いた未追跡ファイルはイメージに入る。
 - `.github/workflows/build-push.yml`（`workflow_dispatch` の手動起動）も同じイメージを作る。
   ⚠️ **arm64 Mac からはこちらを使う**。エミュレートビルドは遅く、libuv の io_uring 周りでクラッシュする。
   かつて「必ず GitHub Actions で」としていたのは開発環境が arm64 Mac だったためで、amd64 のホストには当てはまらない。
