@@ -21,7 +21,7 @@ COPY server-ts/migrate.ts ./server-ts/
 RUN pnpm --filter @daiius/girls-side-analysis-server-ts build
 
 
-FROM gcr.io/distroless/nodejs24-debian12:debug
+FROM gcr.io/distroless/nodejs24-debian13:debug
 
 WORKDIR /app
 
