@@ -32,7 +32,7 @@
     "luxon": "catalog:",
     "mysql2": "^3.24.5",
     "node-cron": "^4.6.0",
-    "zod": "^4.6.5"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@types/luxon": "catalog:",
@@ -41,6 +41,6 @@
     "esbuild": "^0.28.2",
     "tsx": "catalog:",
     "typescript": "catalog:",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.12"
   }
 }
