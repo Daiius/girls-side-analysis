@@ -13,13 +13,9 @@ catalog:
 # サプライチェーン対策: 公開から 3 日(4320 分)未満の新バージョンは採用しない。
 # 公開直後に差し込まれる悪意あるリリースを踏みにくくする。
 minimumReleaseAge: 4320
-# ⚠️ 一時的な例外: next 16.4.1 のセキュリティ修正（Server Actions の DoS ほか）を
-# 3 日待たずに取り込むため。16.4.1 が 3 日を過ぎたら（2026-10-17 17:43 UTC 以降）削除する。
-# next はプラットフォーム別の @next/swc-* を同時に公開するので、両方が要る。
-minimumReleaseAgeExclude:
-  - next
-  - '@next/*'
-onlyBuiltDependencies:
-  - '@tailwindcss/oxide'
-  - esbuild
-  - sharp
+# ビルドスクリプト（postinstall 等）の実行を許可するパッケージ。ここに無いものが
+# スクリプトを持っていると、pnpm 11 以降は install がエラーになる（strictDepBuilds）。
+allowBuilds:
+  '@tailwindcss/oxide': true
+  esbuild: true
+  sharp: true
