@@ -44,7 +44,7 @@
 | 日時 | **luxon** | TZ は常に `Asia/Tokyo` を明示 |
 | バッチ | **node-cron 4**（in-process） | 型同梱のため `@types/node-cron` 不要 |
 | テスト | **Vitest 4**（server-ts のみ） | 実 MySQL に対する統合テスト（[05](./05-analysis.md) §7） |
-| パッケージ管理 | **pnpm 10**（workspace + catalog） | `packageManager` で固定。npm/yarn は使わない |
+| パッケージ管理 | **pnpm 12**（workspace + catalog） | `packageManager` で固定。npm/yarn は使わない |
 | 開発環境 | **docker compose watch** | bind mount を使わない |
 | Lint | **Biome 2**（**リンターのみ**。フォーマッタは無効） | 設定は `biome.jsonc`。§6.1 |
 
@@ -142,7 +142,9 @@ remote 差分は `.env.remote` に集約する（雛形 `.env.remote.example` �
   `pnpm-workspace.yaml` の `catalog:` に集約し、各 `package.json` は `"catalog:"` で参照する。版ズレ事故を防ぐ。
 - **`minimumReleaseAge: 4320`（3 日）**: 公開直後の悪意あるリリースを踏みにくくするサプライチェーン対策。
   lockfile は尊重する（`--frozen-lockfile` 前提）。
-- **`onlyBuiltDependencies`**: postinstall ビルドを許可するのは `@tailwindcss/oxide` / `esbuild` / `sharp` のみ。
+- **`allowBuilds`**: postinstall ビルドを許可するのは `@tailwindcss/oxide` / `esbuild` / `sharp` のみ。
+  pnpm 11 以降は `strictDepBuilds` が既定で有効なので、ここに無いパッケージがビルドスクリプトを持つと install がエラーになる
+  （pnpm 10 までの `onlyBuiltDependencies` は廃止され、書いても無視される）。
 - **Drizzle は RC を exact pin**（`drizzle-orm` / `drizzle-kit` とも `1.0.0-rc.3`）。catalog に入れず、
   `minimumReleaseAge` の影響を受けない形で版を固定する。
 - **`.env*` はコミットしない**（`.gitignore` 済み）。DB ダンプ（`*.sql` / `*.sql.gz`）も同様。
