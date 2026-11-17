@@ -22,6 +22,7 @@ import {
 } from './lib/users'
 import { aggregateYesterday } from './lib/aggregate'
 import { auth } from './lib/auth'
+import { buildVersionFromEnv } from './lib/buildVersion'
 import {
   findUnknownCharacterNames,
   findUnknownSeries,
@@ -66,6 +67,13 @@ app.use(
 
 // better-auth は cookie ベースで自己完結するため API キー認証の対象外
 app.on(['POST', 'GET'], '/api/auth/*', (c) => auth.handler(c.req.raw))
+
+// ビルドの版（prd/07-api.md §2.2）。本番の server がどのコミットから作られたかを外から確かめる口。
+// SHA とビルド日時しか返さないので認証は要らない。**API キー認証より前に登録する**ことで
+// その対象から外している（下の '*' は、ここで応答を返した経路には届かない）。DB にも触れない。
+// イメージの ENV は起動後に変わらないので、読み込み時に 1 回だけ読む。
+const buildVersion = buildVersionFromEnv(process.env)
+app.get('/version', (c) => c.json(buildVersion, 200))
 
 // 既存 API（投票・キャラ等）は API キー認証必須
 app.use('*', async (c, next) => {

@@ -27,6 +27,7 @@
 | POST | `/votes/:id` | API キー + **本人** | `{characterName: string, level: number}[]` | `{updatedCharaNames: string[]}` |
 | POST | `/admin/aggregate-day` | API キー + **管理者キー** | query `date?=YYYY-MM-DD` | `{ok: true, snapshotDate}` |
 | GET/POST | `/api/auth/*` | **認証対象外** | better-auth 準拠 | better-auth の応答 |
+| GET | `/version` | **認証対象外** | — | `{commit, builtAt, dirty}`（ビルドの版。§2.2） |
 
 - `:id` は **`twitter_id`**（better-auth の `user.id` ではない。[06](./06-auth-and-privacy.md) §2）。
 - 例外は握って `console.error` し、**本文なしの 500** を返す（エラー詳細をクライアントに漏らさない）。
@@ -52,17 +53,33 @@
 - ⚠️ **例外を握って本文なし 500** を返す既定（上記）と違い、**検証失敗は 400 + `{ error }`** を返す。
   クライアントに直させるべき情報なので、ここだけは本文を出す。
 
+### 2.2 ビルドの版（`GET /version`）
+
+動いている server がどのコミットから作られたかを、外から確かめるための口（デプロイの確認に使う）。
+
+- **認証なし・DB に触れない。** 返すのは `{ "commit", "builtAt", "dirty" }` だけ。
+  `commit` は 40 桁の SHA、`builtAt` は ISO 8601 の UTC、`dirty` は追跡しているファイルに
+  未コミットの変更がある状態でビルドしたか。
+- **分からない値は文字列 `"unknown"`**（`dirty` は `false`）にし、ビルドも起動も止めない。
+  短縮形の SHA や日時として読めない値も `"unknown"` にする（どのコミットか言い切れないため）。
+- 値は**イメージのビルド引数**（`GIT_COMMIT` / `BUILD_TIME` / `GIT_DIRTY`）を `Dockerfile.server.prod` の
+  最終ステージで `ENV` に入れたもの（[02](./02-architecture.md) §6）。起動時に 1 回読むだけ。
+  開発環境（`Dockerfile.dev` と compose）は渡さないので `"unknown"` になる。
+- RPC 型（§4）には含めない。Next からは呼ばない。
+
 ## 3. ミドルウェアの適用順
 
 `app.ts` の記述順がそのまま適用順になる。**順序に意味がある**。
 
 1. `cors()` — `/api/auth/*` のみ。`origin: BETTER_AUTH_URL`, `credentials: true`。
 2. better-auth ハンドラ — `/api/auth/*` の GET/POST。**cookie で自己完結するので API キーの対象外**。
-3. **API キー認証** — `'*'`。ただし `/api/auth/` で始まるパスは素通り。
+3. **`GET /version`** — ビルドの版（§2.2）。**API キー認証より前に登録する**ので、その対象にならない
+   （完全一致の GET だけ。`/version/` や POST は次の API キー認証に掛かる）。
+4. **API キー認証** — `'*'`。ただし `/api/auth/` で始まるパスは素通り。
    - ヘッダ無し → **401** / `Bearer <token>` の形でない → **400** / 不一致 → **401**。
    - 比較は `timingSafeEqual`（長さが違えば即 false。鍵長の漏洩は実害なしと判断）。
-4. **管理者キー** — `/admin/*`。`ADMIN_API_KEY` 未設定なら警告ログのみで通過（後方互換）。
-5. **`requireOwnId`** — `/votes/:id` と `/users/:id`。セッションの `twitterId` と `:id` の不一致は **403**。
+5. **管理者キー** — `/admin/*`。`ADMIN_API_KEY` 未設定なら警告ログのみで通過（後方互換）。
+6. **`requireOwnId`** — `/votes/:id` と `/users/:id`。セッションの `twitterId` と `:id` の不一致は **403**。
 
 ## 4. RPC 型の共有
 
