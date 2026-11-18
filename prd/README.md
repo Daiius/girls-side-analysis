@@ -53,7 +53,7 @@
 | 文書 | 内容 |
 |---|---|
 | [01-domain.md](./01-domain.md) | ドメイン事実（GS シリーズ / キャラ / 推し・順位・組み合わせ / プレイ状態 / 日の定義） |
-| [02-architecture.md](./02-architecture.md) | 技術スタック / monorepo / 開発環境 / 依存ポリシー / デプロイ |
+| [02-architecture.md](./02-architecture.md) | 技術スタック / monorepo / 開発環境 / 依存ポリシー / デプロイ（server-ts は main で自動。§6.4） |
 | [03-data-model.md](./03-data-model.md) | DB スキーマ / 3 テーブル設計 / インデックス / 日付と TZ / マイグレーション運用 |
 | [04-voting.md](./04-voting.md) | 投票の入力仕様・書き込み規則・差分判定・認可 |
 | [05-analysis.md](./05-analysis.md) | pair 集計の定義 / 夜間 cron / 時系列 / 決定性ルール |

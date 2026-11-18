@@ -157,13 +157,14 @@ remote 差分は `.env.remote` に集約する（雛形 `.env.remote.example` �
   最小構成のコンテナイメージに置く（`Dockerfile.server.prod`）。
 - **同じイメージに `dist/migrate.js` と `drizzle/` を同梱する**（§6.3）。
 - イメージのビルドとレジストリへの push は、**linux/amd64 のホストならローカルで直接行ってよい**。
-  タグは workflow と揃える（`:sha-<40桁フルSHA>` / `:main` / `:latest`）。
+  タグは workflow と揃える（`:sha-<40桁フルSHA>` / `:main`）。
+  ⚠️ **`:latest` は手元から push しない。workflow だけが付ける**（本番が追いかけるタグ。追従が有効なら、push した版がそのまま本番に出る。§6.4）。
   **ビルド元は、取得し直した main の先端のコミット内容に限る。作業ツリーをそのままコンテキストにしない**
   （`git archive` の展開先や clean な worktree を使う）。
-  - `:main` / `:latest` は可変タグなので、古いコミットからビルドすると新しいイメージを上書きしてしまう。
+  - `:main` は可変タグなので、古いコミットからビルドすると新しいイメージを上書きしてしまう。
   - Dockerfile は `server-ts/src/` と `server-ts/drizzle/` をディレクトリごと COPY する。作業ツリーに
     未追跡の `migration.sql` があると、コミットに無い SQL を含むイメージができる（§6.3）。
-- `.github/workflows/build-push.yml`（`workflow_dispatch` の手動起動）も同じイメージを作る。
+- `.github/workflows/build-push.yml`（**main への push**（`paths` に当たるとき）と `workflow_dispatch` の手動起動）も同じイメージを作る（§6.4）。
   ⚠️ **arm64 Mac からはこちらを使う**。エミュレートビルドは遅く、libuv の io_uring 周りでクラッシュする。
   かつて「必ず GitHub Actions で」としていたのは開発環境が arm64 Mac だったためで、amd64 のホストには当てはまらない。
 - **ビルドの版をビルド引数で渡す**（`GIT_COMMIT` / `BUILD_TIME` / `GIT_DIRTY`）。イメージはそれを `ENV` に持ち、
@@ -177,7 +178,8 @@ remote 差分は `.env.remote` に集約する（雛形 `.env.remote.example` �
 
 ### 6.1 Lint と CI
 
-- `build-push.yml` は手動起動のイメージビルドのみで、自動 CI ではない（ローカルビルドの代替。§6 冒頭）。
+- `build-push.yml` はイメージのビルドと push だけで、検査はしない（検査は `ci.yml`。§6.2）。
+  main への push で走るのは、server-ts のイメージに効く変更のときだけ（§6.4）。
 - かつて **lint は実体が無かった**。`next/package.json` の `"lint": "next lint"` は
   **Next 16 でコマンドが廃止済み**で動かず、ESLint / Biome とも依存・設定ファイルが無かった。
 
@@ -300,6 +302,40 @@ docker run --rm --network <DB に届く network> --env-file <env> <image> migrat
 - `migrate.js` は **cwd 相対で `./drizzle` を読む**ので `WORKDIR /app` に置く。
 - これにより **DB へ「外から届く」ことを前提にしない**。`server-ts/src/db/index.ts` の `DB_PORT` は
   ローカル検証用の逃げ道として残すが、本番の通常運用では使わない。
+
+### 6.4 server-ts は main に入ると本番に出る（タグの追従）
+
+⏳ **状態（2026-11-18 時点）: workflow の側は実装済み、本番の追従は未有効。** 今は main への push でイメージがビルドされ、
+`latest` が動くところまで。VPS の側で追従が有効になると、以下の流れで本番に出る（有効になったら、この行を日付つきで書き換える）。
+
+**追従が有効になったあとは、main にマージされた server-ts の変更は、数分で本番に出る。**
+
+- 流れ: main への push → [`build-push.yml`](../.github/workflows/build-push.yml) が
+  イメージをビルドして `latest` と `sha-<40 桁>`（と `main`）を付ける → 本番の VPS がレジストリの `latest` を数分おきに見て、
+  変わっていれば入れ替える → VPS の側で疎通と版（`/version` の `commit` がイメージの `GIT_COMMIT` と一致するか）を
+  確かめ、駄目なら前のイメージに自動で戻す。動いているが挙動がおかしいときは、所有者が VPS で手で戻す（エージェントは VPS に触らない）。
+  デプロイの仕組みの設計は、所有者の非公開のリポジトリにある。
+- ビルドが走るのは、`Dockerfile.server.prod` が読むものに触れた push だけ（workflow の `paths`）:
+  根の `package.json` / `pnpm-lock.yaml` / `pnpm-workspace.yaml`・
+  `server-ts/{package.json,tsconfig.json,esbuild.config.ts,migrate.ts,Dockerfile.server.prod}`・
+  `server-ts/src/**`・`server-ts/drizzle/**`・workflow 自身。
+  文書・next・server-rs・server-ts のテストや開発用スクリプト（`test/`・`addTestData.ts` など）だけの変更では、本番は入れ替わらない。
+  - `next/package.json` は Dockerfile が COPY するが入れていない（`--frozen-lockfile` のためだけ。依存を変えれば `pnpm-lock.yaml` が変わる）。
+- `latest` は、**main の回で、そのコミットがいまの main の先頭か祖先であり、そこから先頭までの間に
+  `paths` に当たる変更が無い**ときだけ付ける（＝イメージの中身が main の最新と同じ）。
+  - server-ts の変更のあとに文書だけのコミットが入っても、server-ts の変更の回が `latest` を付ける（文書だけのコミットでは
+    ビルドが起動しないので、先頭だけを条件にすると取り残される）
+  - 手動起動でほかの枝を選んだ回、main に無いコミット、あとに server-ts の変更がある古い回の再実行には付けない
+  - 判定できないとき（履歴が浅い・main を取れない・`paths` の一覧を読めない）は付けない。結果と理由は実行の Summary に 1 行出る
+  - `paths` の一覧は workflow の起動条件の 1 か所だけにあり、判定の step はそれを読む
+  - 同じ ref のビルドは直列に走る（`concurrency`）
+- 🔒 **順序を守るのは、マージする人とエージェント。** 仕組みの側にマイグレーションで止める関所は無い。
+  - マイグレーション・環境変数の追加・手作業の後処理を伴う PR は、マージの前に所有者と段取りを決める。エージェントは勝手にマージしない。
+  - マイグレーションは**古い server-ts でも動く形（足すだけ）**にし、**先に本番へ流してからマージする**。
+    同梱の `migrate.js`（§6.3）で流すには、そのマイグレーションを含むイメージが先に要る。PR の枝で workflow を手動起動すれば、
+    `latest` を動かさずに `sha-<40 桁>` のイメージができる。どう流すかは所有者と決める。
+    ⚠️ 切り戻しで server-ts を戻しても、スキーマは戻らない。戻した server-ts が新しいスキーマで動けることが前提になる。
+- 手元からのビルドで `:latest` を push しない（§6）。push した版がそのまま本番に出る。
 
 ## 7. `server-rs` の位置づけ（凍結）
 
