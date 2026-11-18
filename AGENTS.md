@@ -4,13 +4,34 @@ GS シリーズファン向けの「推し投票・組み合わせ分析」Web �
 **仕様の正典は [`prd/`](./prd/)**（下表）。実装レビュー・仕様判断はここを基準に行う。
 背景・設計の経緯・試行錯誤の記録は [README.md](./README.md) と [docs/](./docs/) を参照（このファイルでは繰り返さない）。
 
+## ⚠ main に入ると server-ts は数分で本番に出る（マージの前に必ず読む）
+
+> ⏳ **状態: 本番の追従は未有効（2026-11-18 時点）**。今は「main に入るとイメージが自動でビルドされる」ところまで。
+> 下の決まりは、追従が有効になった前提で書いてある（有効になったら、この行を有効化の日付に書き換える）。
+
+- **server-ts は、main にマージされると数分で本番に出る。** main への push で server-ts のイメージがビルドされ
+  （[`build-push.yml`](./.github/workflows/build-push.yml)。`paths` に当たる変更のとき）、
+  本番の VPS がレジストリの `latest` を数分おきに見て、変わっていれば自動で入れ替える。
+  **「マージしても本番には出ない」と考えない。** 出したくない変更は main に入れない。
+- 対象は server-ts だけ。**next（ホスティング事業者の側でビルド・配信）と server-rs（凍結）は対象外**。
+- 🔒 **次の PR は、マージの前に所有者と段取りを決める。エージェントは勝手にマージしない。**
+  - マイグレーション（`server-ts/src/db/schema.ts` の変更と `server-ts/drizzle/` の追加）を伴う
+  - 環境変数の追加・変更を伴う（本番の env は所有者が置く。[prd/07](./prd/07-api.md) §5）
+  - デプロイの前後に手作業（`db:backfill` のようなデータの後処理など）が要る
+- マイグレーションは**古い server-ts でも動く形（足すだけ）**にし、**先に本番へ流してからマージする**。
+  マージすると新しい server-ts が先に出るため、順序が逆だと新しい server-ts が古いスキーマの上で動く。
+  切り戻したときも、戻した server-ts が新しいスキーマの上で動けるようにしておく。
+- 本番の版は `GET /version` の `commit` で確かめる（[prd/07](./prd/07-api.md) §2.2）。
+  **おかしいときの戻し方（VPS での切り戻し）は所有者の作業。エージェントは VPS に触らない。**
+- 詳細は [prd/02](./prd/02-architecture.md) §6.4。デプロイの仕組みの設計は、所有者の非公開のリポジトリにある。
+
 ## 仕様（PRD）
 
 | 文書 | 内容 |
 |---|---|
 | [prd/README.md](./prd/README.md) | 目的 / スコープ / アーキ概観 / 索引・使い方 |
 | [prd/01-domain.md](./prd/01-domain.md) | ドメイン事実（キャラ / 推し・順位・組み合わせ / プレイ状態 / 日の定義） |
-| [prd/02-architecture.md](./prd/02-architecture.md) | 技術スタック / monorepo / 開発環境 / 依存ポリシー / デプロイ |
+| [prd/02-architecture.md](./prd/02-architecture.md) | 技術スタック / monorepo / 開発環境 / 依存ポリシー / デプロイ（server-ts は main で自動。§6.4） |
 | [prd/03-data-model.md](./prd/03-data-model.md) | DB スキーマ / 3 テーブル設計 / 日付と TZ / マイグレーション運用 |
 | [prd/04-voting.md](./prd/04-voting.md) | 投票の入力仕様・書き込み規則・差分判定・認可 |
 | [prd/05-analysis.md](./prd/05-analysis.md) | pair 集計 / 夜間 cron / 時系列 / 決定性ルール |
