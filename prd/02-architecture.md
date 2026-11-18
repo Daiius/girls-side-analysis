@@ -166,6 +166,10 @@ remote 差分は `.env.remote` に集約する（雛形 `.env.remote.example` �
 - `.github/workflows/build-push.yml`（`workflow_dispatch` の手動起動）も同じイメージを作る。
   ⚠️ **arm64 Mac からはこちらを使う**。エミュレートビルドは遅く、libuv の io_uring 周りでクラッシュする。
   かつて「必ず GitHub Actions で」としていたのは開発環境が arm64 Mac だったためで、amd64 のホストには当てはまらない。
+- **ビルドの版をビルド引数で渡す**（`GIT_COMMIT` / `BUILD_TIME` / `GIT_DIRTY`）。イメージはそれを `ENV` に持ち、
+  `GET /version` で返す（[07](./07-api.md) §2.2）。`.dockerignore` が `.git` を除くので、イメージの中では git から取れない。
+  - `build-push.yml` が渡す（コミットは `github.sha`・日時は UTC・`dirty` は `false`）。
+  - ローカルでビルドするときは `--build-arg` を自分で付ける。**付けなくてもビルドは通り、`"unknown"` を返すだけ**になる。
 - `next` はホスティング事業者側でビルド・配信される。
 - ⚠️ **本リポジトリは public である。** デプロイ先の事業者名・ドメイン・TLS / リバースプロキシ構成・接続先・
   シークレット・DB 権限付与の実手順といった**環境の具体情報は書かない**。
