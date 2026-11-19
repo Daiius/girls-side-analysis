@@ -305,10 +305,9 @@ docker run --rm --network <DB に届く network> --env-file <env> <image> migrat
 
 ### 6.4 server-ts は main に入ると本番に出る（タグの追従）
 
-⏳ **状態（2026-11-18 時点）: workflow の側は実装済み、本番の追従は未有効。** 今は main への push でイメージがビルドされ、
-`latest` が動くところまで。VPS の側で追従が有効になると、以下の流れで本番に出る（有効になったら、この行を日付つきで書き換える）。
+✅ **状態: workflow の側は実装済み、本番の追従は有効（2026-11-19 に有効化）。** 有効化の直後に、本番が main のイメージへ入れ替わり、版の口が main のコミットを返すことを確かめた。
 
-**追従が有効になったあとは、main にマージされた server-ts の変更は、数分で本番に出る。**
+**main にマージされた server-ts の変更は、数分で本番に出る。**
 
 - 流れ: main への push → [`build-push.yml`](../.github/workflows/build-push.yml) が
   イメージをビルドして `sha-<40 桁>`（と `main`）で push し、そのあとの job が main に突き合わせて `latest` を動かす → 本番の VPS がレジストリの `latest` を数分おきに見て、
