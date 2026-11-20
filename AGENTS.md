@@ -22,6 +22,9 @@ GS シリーズファン向けの「推し投票・組み合わせ分析」Web �
   切り戻したときも、戻した server-ts が新しいスキーマの上で動けるようにしておく。
 - 本番の版は `GET /version` の `commit` で確かめる（[prd/07](./prd/07-api.md) §2.2）。
   **おかしいときの戻し方（VPS での切り戻し）は所有者の作業。エージェントは VPS に触らない。**
+- server-ts は停止の合図（SIGTERM / SIGINT）で処理中のリクエストを返し切ってから終了する（上限 7.5 秒。停止の猶予 10 秒に収める）。
+  夜間の集計の cron は合図のあと新しく始まらないが、走っている最中の集計は切れる。closer を足す・上限を変えるときは
+  [prd/02](./prd/02-architecture.md) §6.5 と `server-ts/src/lib/graceful-shutdown.ts` の JSDoc を読む。
 - 詳細は [prd/02](./prd/02-architecture.md) §6.4。デプロイの仕組みの設計は、所有者の非公開のリポジトリにある。
 
 ## 仕様（PRD）
